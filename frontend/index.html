@@ -936,7 +936,7 @@ main { flex: 1; padding: 20px 24px; }
       <button class="btn small" onclick="closeCompExport()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="import-bm-hint">Select columns to include and drag rows to set export order. Requirement ID stays first. TSV copies include section and subsection grouping rows.</div>
+      <div class="import-bm-hint">Select columns to include and drag rows to set export order. Requirement ID stays first. TSV copies include section/subsection grouping rows and an HTML table for rich-text paste (e.g. PlexTrac).</div>
       <div class="export-column-list" id="comp-export-columns"></div>
     </div>
     <div class="modal-footer">
@@ -1035,6 +1035,23 @@ function buildListTsv(header, values) {
 
 function tsvCell(v) {
   return String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+}
+
+function htmlCell(v) {
+  return esc(String(v ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'));
+}
+
+async function copyPlainAndHtml(plain, html) {
+  if (navigator.clipboard?.write && window.ClipboardItem) {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' }),
+      }),
+    ]);
+    return;
+  }
+  await navigator.clipboard.writeText(plain);
 }
 
 function csvEscape(v) {
@@ -2537,6 +2554,32 @@ function buildComplianceExportTsv(columns) {
   return lines.join('\n');
 }
 
+function buildComplianceExportHtml(columns) {
+  const colCount = columns.length;
+  const headerCells = columns.map(c => `<th>${htmlCell(c.label)}</th>`).join('');
+  const bodyRows = [];
+  let lastSection = null;
+  let lastSubSection = null;
+  for (const req of loadedBenchmark.Requirements || []) {
+    const attr = req.Attributes?.[0] || {};
+    const section = attr.Section || 'General';
+    const subSection = attr.SubSection || '';
+    const res = getRequirementStatus(req);
+    if (section !== lastSection) {
+      bodyRows.push(`<tr><td colspan="${colCount}"><strong>${htmlCell(section)}</strong></td></tr>`);
+      lastSection = section;
+      lastSubSection = null;
+    }
+    if (subSection && subSection !== lastSubSection) {
+      bodyRows.push(`<tr><td colspan="${colCount}"><em>${htmlCell(subSection)}</em></td></tr>`);
+      lastSubSection = subSection;
+    }
+    const cells = columns.map(c => `<td>${htmlCell(c.get(req, attr, res, loadedBenchmark))}</td>`).join('');
+    bodyRows.push(`<tr>${cells}</tr>`);
+  }
+  return `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows.join('')}</tbody></table>`;
+}
+
 function buildComplianceExportFilename() {
   const bm = loadedBenchmark;
   const framework = String(bm?.Framework || 'benchmark').replace(/[^a-z0-9]+/gi, '_');
@@ -2552,11 +2595,15 @@ function runCompExportAction() {
   if (compExportMode === 'csv') {
     downloadCsv(buildComplianceExportFilename(), buildComplianceExportCsv(columns));
     toast(`Exported ${count} requirements`);
-  } else {
-    const tsv = buildComplianceExportTsv(columns);
-    navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${count} requirements as TSV`));
+    closeCompExport();
+    return;
   }
-  closeCompExport();
+  const tsv = buildComplianceExportTsv(columns);
+  const html = buildComplianceExportHtml(columns);
+  copyPlainAndHtml(tsv, html)
+    .then(() => toast(`Copied ${count} requirements as TSV`))
+    .catch(() => toast('Failed to copy to clipboard', 'error'))
+    .finally(() => closeCompExport());
 }
 
 function renderComplianceView() {
