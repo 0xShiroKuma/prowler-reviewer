@@ -444,6 +444,29 @@ main { flex: 1; padding: 20px 24px; }
 }
 .comp-profile-btn:hover { border-color: var(--grey1); color: var(--text); }
 .comp-profile-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.comp-toolbar-actions { margin-left: auto; align-self: flex-end; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.export-column-list { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; padding: 8px; }
+.export-column-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 3px; font-size: 12px;
+  border: 1px solid transparent;
+}
+.export-column-item:hover { background: var(--surface2); }
+.export-column-item.dragging { opacity: 0.45; }
+.export-column-item.drag-over { border-color: var(--accent); background: rgba(11,124,181,0.08); }
+.export-drag-handle {
+  flex-shrink: 0; width: 16px; color: var(--text-dim); font-size: 14px; line-height: 1;
+  cursor: grab; user-select: none; text-align: center;
+}
+.export-drag-handle:active { cursor: grabbing; }
+.export-drag-handle.disabled { visibility: hidden; pointer-events: none; }
+.export-column-label { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; min-width: 0; }
+.export-column-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.export-column-label input { accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.export-column-item.locked { opacity: 0.85; }
+.export-column-item.locked .export-column-label { cursor: default; }
+.export-column-item.locked input { cursor: not-allowed; }
 
 .impact-subsection { margin-bottom: 10px; }
 .impact-subsection:last-child { margin-bottom: 0; }
@@ -525,7 +548,7 @@ main { flex: 1; padding: 20px 24px; }
 /* =========================================================
    REPORTING VIEW
    ========================================================= */
-.report-view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.report-view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 .report-count { font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
 .report-finding { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
 .report-finding.status-confirmed { border-left: 3px solid var(--status-confirmed); }
@@ -815,6 +838,10 @@ main { flex: 1; padding: 20px 24px; }
             <div class="comp-toolbar-label" id="comp-profile-label">Profile</div>
             <div class="comp-profile-btns" id="comp-profile-btns"></div>
           </div>
+          <div class="comp-toolbar-actions" id="comp-export-wrap" style="display:none">
+            <button class="btn small accent" onclick="openCompExportModal('csv')">Export CSV</button>
+            <button class="btn small accent" onclick="openCompExportModal('tsv')">Copy TSV</button>
+          </div>
         </div>
         <div id="comp-stats"></div>
         <div id="comp-requirements">
@@ -901,6 +928,24 @@ main { flex: 1; padding: 20px 24px; }
   </div>
 </div>
 
+<!-- ── COMPLIANCE EXPORT MODAL ───────────────────────────── -->
+<div class="modal-overlay" id="comp-export-modal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2 id="comp-export-modal-title">EXPORT COMPLIANCE</h2>
+      <button class="btn small" onclick="closeCompExport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="import-bm-hint">Select columns to include and drag rows to set export order. Requirement ID stays first. TSV copies include section and subsection grouping rows.</div>
+      <div class="export-column-list" id="comp-export-columns"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn small" onclick="closeCompExport()">Cancel</button>
+      <button class="btn small primary" id="comp-export-action-btn" onclick="runCompExportAction()">Export</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST ─────────────────────────────────────────────── -->
 <div id="toast"></div>
 
@@ -926,6 +971,8 @@ let benchmarkCache       = new Map();
 let loadedBenchmark      = null;
 let complianceBenchmarkId = '';
 let complianceProfileFilter = '';
+let compExportMode = 'csv';
+let compExportDragInit = false;
 let checkNameMap         = new Map();
 let checkMetadataIndex   = {};
 
@@ -984,6 +1031,72 @@ function buildListTsv(header, values) {
     return r.join('\t');
   });
   return [headerRow, ...rows].join('\n');
+}
+
+function tsvCell(v) {
+  return String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+}
+
+function csvEscape(v) {
+  const s = String(v ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename, content) {
+  const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function formatComplianceStatus(status) {
+  if (status === 'fail') return 'FAIL';
+  if (status === 'pass') return 'PASS';
+  return 'N/A';
+}
+
+const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 };
+
+function getMaxSeverityFromFindings(findings) {
+  if (!findings?.length) return '';
+  let best = findings[0].severity;
+  for (const f of findings) {
+    if ((SEV_ORDER[f.severity] ?? 5) < (SEV_ORDER[best] ?? 5)) best = f.severity;
+  }
+  return best;
+}
+
+function getFailedAssetLabels(findings) {
+  const items = [];
+  const seen = new Set();
+  for (const f of findings || []) {
+    for (const a of f.assets || []) {
+      if (a.status !== 'FAIL') continue;
+      const label = a.name || a.resourceId || '';
+      if (label && !seen.has(label)) {
+        seen.add(label);
+        items.push(label);
+      }
+    }
+  }
+  return items.join('; ');
+}
+
+function getUniqueFromFailedAssets(findings, field) {
+  const items = new Set();
+  for (const f of findings || []) {
+    for (const a of f.assets || []) {
+      if (a.status !== 'FAIL') continue;
+      const val = a[field];
+      if (val) items.add(val);
+    }
+  }
+  return [...items].join('; ');
 }
 
 function renderMD(text) {
@@ -2199,6 +2312,7 @@ async function onCompBenchmarkChange(id) {
     document.getElementById('comp-stats').innerHTML = '';
     document.getElementById('comp-requirements').innerHTML = '<div class="empty-state"><div class="icon">📋</div>Select a benchmark to view compliance status</div>';
     document.getElementById('comp-profile-filter-wrap').style.display = 'none';
+    updateCompExportButton();
     return;
   }
   await loadComplianceBenchmark(id);
@@ -2258,8 +2372,196 @@ function getRequirementStatus(req) {
   return { status: failCount > 0 ? 'fail' : 'pass', failCount, passCount, findings };
 }
 
+const COMPLIANCE_EXPORT_COLUMNS = [
+  { key: 'requirementId', label: 'Requirement ID', defaultOn: true, locked: true, get: req => req.Id },
+  { key: 'requirement', label: 'Requirement', defaultOn: true, locked: false, get: req => req.Description || '' },
+  { key: 'profile', label: 'Profile / Level', defaultOn: true, locked: false, get: (req, attr) => attr.Profile || attr.Type || '' },
+  { key: 'checks', label: 'Mapped Prowler Checks', defaultOn: false, locked: false, get: req => (req.Checks || []).join('; ') },
+  { key: 'section', label: 'Section', defaultOn: false, locked: false, get: (req, attr) => attr.Section || '' },
+  { key: 'subsection', label: 'Subsection', defaultOn: false, locked: false, get: (req, attr) => attr.SubSection || '' },
+  { key: 'assessmentType', label: 'Assessment Type', defaultOn: false, locked: false, get: (req, attr) => attr.AssessmentStatus || '' },
+  { key: 'failedCount', label: 'Failed Resources (count)', defaultOn: false, locked: false, get: (req, attr, res) => String(res.failCount ?? 0) },
+  { key: 'passedCount', label: 'Passed Resources (count)', defaultOn: false, locked: false, get: (req, attr, res) => String(res.passCount ?? 0) },
+  { key: 'findingTitles', label: 'Finding Title(s)', defaultOn: false, locked: false, get: (req, attr, res) => (res.findings || []).map(f => f.title).join('; ') },
+  { key: 'maxSeverity', label: 'Max Severity', defaultOn: false, locked: false, get: (req, attr, res) => getMaxSeverityFromFindings(res.findings) },
+  { key: 'affectedResources', label: 'Affected Resources', defaultOn: false, locked: false, get: (req, attr, res) => getFailedAssetLabels(res.findings) },
+  { key: 'subscriptions', label: 'Subscriptions/Accounts', defaultOn: false, locked: false, get: (req, attr, res) => getUniqueFromFailedAssets(res.findings, 'subscription') },
+  { key: 'regions', label: 'Regions', defaultOn: false, locked: false, get: (req, attr, res) => getUniqueFromFailedAssets(res.findings, 'region') },
+  { key: 'rationale', label: 'Rationale', defaultOn: false, locked: false, get: (req, attr) => attr.RationaleStatement || '' },
+  { key: 'impact', label: 'Impact', defaultOn: false, locked: false, get: (req, attr) => attr.ImpactStatement || '' },
+  { key: 'remediation', label: 'Remediation Procedure', defaultOn: false, locked: false, get: (req, attr) => attr.RemediationProcedure || '' },
+  { key: 'audit', label: 'Audit Procedure', defaultOn: false, locked: false, get: (req, attr) => attr.AuditProcedure || '' },
+  { key: 'defaultValue', label: 'Default Value', defaultOn: false, locked: false, get: (req, attr) => attr.DefaultValue || '' },
+  { key: 'references', label: 'References', defaultOn: false, locked: false, get: (req, attr) => attr.References || '' },
+  { key: 'benchmark', label: 'Benchmark', defaultOn: false, locked: false, get: (req, attr, res, bm) => bm ? `${bm.Name || ''}${bm.Version ? ' v' + bm.Version : ''}`.trim() : '' },
+  { key: 'status', label: 'Compliance Status', defaultOn: true, locked: false, get: (req, attr, res) => formatComplianceStatus(res.status) },
+];
+
+function updateCompExportButton() {
+  const wrap = document.getElementById('comp-export-wrap');
+  if (wrap) wrap.style.display = loadedBenchmark ? '' : 'none';
+}
+
+function renderCompExportColumnList() {
+  const list = document.getElementById('comp-export-columns');
+  list.innerHTML = COMPLIANCE_EXPORT_COLUMNS.map(col => `
+    <div class="export-column-item${col.locked ? ' locked' : ''}" data-col="${esc(col.key)}">
+      <span class="export-drag-handle${col.locked ? ' disabled' : ''}" draggable="${col.locked ? 'false' : 'true'}" title="${col.locked ? '' : 'Drag to reorder'}">⠿</span>
+      <label class="export-column-label">
+        <input type="checkbox" data-col="${esc(col.key)}" ${col.defaultOn ? 'checked' : ''} ${col.locked ? 'checked disabled' : ''}>
+        <span>${esc(col.label)}${col.locked ? ' (always included)' : ''}</span>
+      </label>
+    </div>`).join('');
+  initCompExportDragDrop();
+}
+
+function initCompExportDragDrop() {
+  const list = document.getElementById('comp-export-columns');
+  if (compExportDragInit) return;
+  compExportDragInit = true;
+
+  list.addEventListener('dragstart', e => {
+    const handle = e.target.closest('.export-drag-handle');
+    if (!handle || handle.classList.contains('disabled')) { e.preventDefault(); return; }
+    const item = handle.closest('.export-column-item');
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.dataset.col);
+  });
+
+  list.addEventListener('dragend', e => {
+    const item = e.target.closest('.export-column-item');
+    if (item) item.classList.remove('dragging');
+    list.querySelectorAll('.export-column-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  });
+
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const item = e.target.closest('.export-column-item:not(.locked)');
+    list.querySelectorAll('.export-column-item.drag-over').forEach(el => {
+      if (el !== item) el.classList.remove('drag-over');
+    });
+    if (item && !item.classList.contains('dragging')) item.classList.add('drag-over');
+  });
+
+  list.addEventListener('dragleave', e => {
+    const item = e.target.closest('.export-column-item');
+    if (item && !item.contains(e.relatedTarget)) item.classList.remove('drag-over');
+  });
+
+  list.addEventListener('drop', e => {
+    e.preventDefault();
+    const dragged = list.querySelector('.export-column-item.dragging');
+    if (!dragged) return;
+
+    const locked = list.querySelector('.export-column-item.locked');
+    const items = [...list.querySelectorAll('.export-column-item')].filter(i => i !== dragged);
+    let insertBefore = null;
+    for (const item of items) {
+      if (item.classList.contains('locked')) continue;
+      const rect = item.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) {
+        insertBefore = item;
+        break;
+      }
+    }
+
+    if (insertBefore) list.insertBefore(dragged, insertBefore);
+    else list.appendChild(dragged);
+    if (locked) list.insertBefore(locked, list.firstElementChild);
+
+    list.querySelectorAll('.export-column-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  });
+}
+
+function openCompExportModal(mode) {
+  if (!loadedBenchmark) { toast('Select a benchmark first', 'error'); return; }
+  compExportMode = mode;
+  document.getElementById('comp-export-modal-title').textContent =
+    mode === 'csv' ? 'EXPORT COMPLIANCE CSV' : 'COPY COMPLIANCE TSV';
+  document.getElementById('comp-export-action-btn').textContent =
+    mode === 'csv' ? 'Export CSV' : 'Copy TSV';
+  renderCompExportColumnList();
+  document.getElementById('comp-export-modal').classList.add('open');
+}
+
+function closeCompExport() {
+  document.getElementById('comp-export-modal').classList.remove('open');
+}
+
+function getSelectedExportColumns() {
+  const colMap = new Map(COMPLIANCE_EXPORT_COLUMNS.map(c => [c.key, c]));
+  const selected = [];
+  for (const item of document.querySelectorAll('#comp-export-columns .export-column-item')) {
+    const key = item.dataset.col;
+    const col = colMap.get(key);
+    if (!col) continue;
+    const cb = item.querySelector('input[type=checkbox]');
+    if (col.locked || cb?.checked) selected.push(col);
+  }
+  return selected;
+}
+
+function buildComplianceExportCsv(columns) {
+  const header = columns.map(c => csvEscape(c.label)).join(',');
+  const rows = (loadedBenchmark.Requirements || []).map(req => {
+    const attr = req.Attributes?.[0] || {};
+    const res = getRequirementStatus(req);
+    return columns.map(c => csvEscape(c.get(req, attr, res, loadedBenchmark))).join(',');
+  });
+  return [header, ...rows].join('\n');
+}
+
+function buildComplianceExportTsv(columns) {
+  const header = columns.map(c => tsvCell(c.label)).join('\t');
+  const lines = [header];
+  const pad = columns.length > 1 ? '\t' + Array(columns.length - 1).fill('').join('\t') : '';
+  let lastSection = null;
+  let lastSubSection = null;
+  for (const req of loadedBenchmark.Requirements || []) {
+    const attr = req.Attributes?.[0] || {};
+    const section = attr.Section || 'General';
+    const subSection = attr.SubSection || '';
+    const res = getRequirementStatus(req);
+    if (section !== lastSection) {
+      lines.push(`${tsvCell(section)}${pad}`);
+      lastSection = section;
+      lastSubSection = null;
+    }
+    if (subSection && subSection !== lastSubSection) {
+      lines.push(`${tsvCell(subSection)}${pad}`);
+      lastSubSection = subSection;
+    }
+    lines.push(columns.map(c => tsvCell(c.get(req, attr, res, loadedBenchmark))).join('\t'));
+  }
+  return lines.join('\n');
+}
+
+function buildComplianceExportFilename() {
+  const bm = loadedBenchmark;
+  const framework = String(bm?.Framework || 'benchmark').replace(/[^a-z0-9]+/gi, '_');
+  const version = String(bm?.Version || '').replace(/[^a-z0-9.]+/gi, '');
+  const date = new Date().toISOString().slice(0, 10);
+  return `compliance_${framework}${version ? '_' + version : ''}_${date}.csv`;
+}
+
+function runCompExportAction() {
+  if (!loadedBenchmark) { toast('Select a benchmark first', 'error'); return; }
+  const columns = getSelectedExportColumns();
+  const count = loadedBenchmark.Requirements.length;
+  if (compExportMode === 'csv') {
+    downloadCsv(buildComplianceExportFilename(), buildComplianceExportCsv(columns));
+    toast(`Exported ${count} requirements`);
+  } else {
+    const tsv = buildComplianceExportTsv(columns);
+    navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${count} requirements as TSV`));
+  }
+  closeCompExport();
+}
+
 function renderComplianceView() {
   if (!loadedBenchmark) return;
+  updateCompExportButton();
   let reqs = loadedBenchmark.Requirements;
   if (complianceProfileFilter) {
     reqs = reqs.filter(req => {
