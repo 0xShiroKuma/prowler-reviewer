@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      - DATA_DIR=/data
+      - PORT=3001
+    volumes:
+      - prowler_data:/data
+    restart: unless-stopped
+
+volumes:
+  prowler_data:
+    driver: local

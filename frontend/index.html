@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prowler Reviewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* =========================================================
+   DESIGN SYSTEM
+   ========================================================= */
+:root {
+  --grey1: #d1d1d1;
+  --grey2: #525252;
+  --grey3: #424242;
+  --grey4: #313131;
+  --red:   #CA3E47;
+  --red2:  #A72E36;
+  --accent: #0B7CB5;
+
+  --sev-none:     #53AA33;
+  --sev-low:      #FFCB0D;
+  --sev-medium:   #F9A009;
+  --sev-high:     #DF3D03;
+  --sev-critical: #CC0501;
+  --sev-fp:       #BFBFBF;
+
+  --status-to-report:    #CA3E47;
+  --status-flagged:      #F9A009;
+  --status-false-pos:    #BFBFBF;
+  --status-reported:     #53AA33;
+  --status-none:         #525252;
+
+  --bg:       #2a2a2a;
+  --surface:  #313131;
+  --surface2: #3a3a3a;
+  --surface3: #424242;
+  --border:   #525252;
+  --text:     #d1d1d1;
+  --text-dim: #888;
+
+  --font-body: 'Calibri', 'Trebuchet MS', sans-serif;
+  --font-code: 'Consolas', 'Courier New', monospace;
+  --font-ui:   'Calibri', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--grey1); }
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
+header {
+  background: var(--surface);
+  border-bottom: 2px solid var(--red);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+
+.logo {
+  font-family: var(--font-code);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.logo span { color: var(--grey1); }
+
+.project-name {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-code);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.save-indicator {
+  font-size: 11px;
+  color: var(--sev-none);
+  font-family: var(--font-code);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.save-indicator.visible { opacity: 1; }
+
+main { flex: 1; padding: 20px 24px; }
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--surface3); border-color: var(--grey1); }
+.btn.primary { background: var(--red); border-color: var(--red2); color: #fff; }
+.btn.primary:hover { background: var(--red2); }
+.btn.small { padding: 3px 9px; font-size: 11px; }
+.btn.danger { border-color: var(--red); color: var(--red); }
+.btn.danger:hover { background: var(--red); color: #fff; }
+.btn.accent { border-color: var(--accent); color: var(--accent); }
+.btn.accent:hover { background: var(--accent); color: #fff; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* =========================================================
+   LANDING / PROJECT LIST
+   ========================================================= */
+#landing { max-width: 860px; margin: 40px auto; }
+
+.landing-title {
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 4px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+  background: var(--surface);
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--red);
+  background: var(--surface2);
+}
+.upload-zone .icon { font-size: 32px; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.upload-zone p { font-size: 12px; color: var(--text-dim); }
+
+.project-list { display: flex; flex-direction: column; gap: 6px; }
+
+.project-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.project-item:hover { border-color: var(--red); background: var(--surface2); }
+.project-item .proj-name { flex: 1; font-size: 13px; font-weight: 600; }
+.project-item .proj-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); }
+.project-item .proj-actions { display: flex; gap: 6px; }
+
+/* =========================================================
+   STATS BAR
+   ========================================================= */
+#stats-section { margin-bottom: 16px; }
+
+.stats-top {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  flex-wrap: wrap;
+}
+
+.stat-item { text-align: center; }
+.stat-item .stat-value {
+  font-family: var(--font-code);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--red);
+  line-height: 1;
+}
+.stat-item .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+.stats-divider { width: 1px; height: 40px; background: var(--border); }
+
+.charts-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.charts-toggle:hover { color: var(--text); }
+
+.charts-section {
+  display: none;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+}
+.charts-section.open { display: flex; gap: 24px; flex-wrap: wrap; }
+
+.chart-wrap {
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+.chart-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-family: var(--font-code);
+}
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+#filters-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.filters-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 3px; }
+.filter-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+.filter-select, .filter-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filter-select:focus, .filter-input:focus { border-color: var(--red); }
+.filter-input { min-width: 220px; }
+
+.filters-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.results-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-code);
+  padding: 5px 0;
+  align-self: flex-end;
+}
+
+/* =========================================================
+   FINDINGS TABLE HEADER
+   ========================================================= */
+.findings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.findings-header-left { display: flex; align-items: center; gap: 10px; }
+
+/* =========================================================
+   FINDING CARD
+   ========================================================= */
+.finding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.finding-card:hover { border-color: var(--grey2); }
+.finding-card.status-to-report { border-left: 3px solid var(--status-to-report); }
+.finding-card.status-flagged    { border-left: 3px solid var(--status-flagged); }
+.finding-card.status-false-positive { border-left: 3px solid var(--status-false-pos); }
+.finding-card.status-reported   { border-left: 3px solid var(--status-reported); }
+
+.finding-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  min-height: 46px;
+}
+.finding-header:hover { background: var(--surface2); }
+
+.sev-badge {
+  flex-shrink: 0;
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 7px;
+  border-radius: 2px;
+  min-width: 62px;
+  text-align: center;
+  color: #111;
+}
+.sev-informational, .sev-none { background: var(--sev-none); }
+.sev-low    { background: var(--sev-low); }
+.sev-medium { background: var(--sev-medium); }
+.sev-high   { background: var(--sev-high); color: #fff; }
+.sev-critical { background: var(--sev-critical); color: #fff; }
+
+.finding-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.finding-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid;
+  font-family: var(--font-code);
+  white-space: nowrap;
+}
+.tag-service { color: var(--accent); border-color: var(--accent); background: rgba(11,124,181,0.1); }
+.tag-cloud   { color: var(--grey1); border-color: var(--border); background: var(--surface3); }
+.tag-assets  { color: var(--text-dim); border-color: var(--border); }
+.tag-failed  { color: var(--red); border-color: var(--red); background: rgba(202,62,71,0.1); }
+.tag-passed  { color: var(--sev-none); border-color: var(--sev-none); background: rgba(83,170,51,0.1); }
+
+.status-select {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  min-width: 110px;
+}
+.status-select:focus { border-color: var(--red); }
+.status-select.s-to-report    { border-color: var(--status-to-report); color: var(--status-to-report); }
+.status-select.s-flagged      { border-color: var(--status-flagged); color: var(--status-flagged); }
+.status-select.s-false-positive { border-color: var(--status-false-pos); color: var(--status-false-pos); }
+.status-select.s-reported     { border-color: var(--status-reported); color: var(--status-reported); }
+
+.expand-icon {
+  color: var(--text-dim);
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  width: 16px;
+  text-align: center;
+}
+.finding-card.open .expand-icon { transform: rotate(90deg); }
+
+/* =========================================================
+   FINDING BODY
+   ========================================================= */
+.finding-body {
+  display: none;
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+.finding-card.open .finding-body { display: block; }
+
+.finding-body-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  margin-top: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.body-tab {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: var(--font-code);
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.body-tab:hover { color: var(--text); }
+.body-tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Assets panel */
+.assets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.assets-header h4 { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-code); }
+
+.assets-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.asset-row {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  font-family: var(--font-code);
+}
+.asset-cell {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 2px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.asset-cell.status-failed { border-left: 2px solid var(--red); }
+.asset-cell.status-passed { border-left: 2px solid var(--sev-none); }
+
+.asset-name { color: var(--text); }
+.asset-rg   { font-size: 10px; color: var(--text-dim); margin-left: 8px; }
+.asset-rg::before { content: '📁 '; }
+.asset-region { font-size: 10px; color: var(--text-dim); margin-left: 6px; }
+.asset-portal-link {
+  margin-left: 8px;
+  color: var(--accent);
+  font-size: 11px;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+  font-family: var(--font-code);
+}
+.asset-portal-link:hover { opacity: 1; text-decoration: underline; }
+
+/* Risk / Remediation panels */
+.md-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 14px 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.md-block h1, .md-block h2, .md-block h3 { color: var(--grey1); margin: 8px 0 4px; font-size: 13px; }
+.md-block p { margin: 4px 0; color: var(--text); }
+.md-block ul, .md-block ol { padding-left: 20px; color: var(--text); }
+.md-block li { margin: 2px 0; }
+.md-block code {
+  font-family: var(--font-code);
+  font-size: 10px;
+  background: var(--surface3);
+  padding: 1px 5px;
+  border-radius: 2px;
+  color: var(--grey1);
+}
+.md-block pre {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.md-block pre code { background: none; padding: 0; font-size: 10px; }
+.md-block a { color: var(--accent); }
+.md-block strong { color: var(--grey1); }
+.md-block blockquote { border-left: 3px solid var(--red); padding-left: 10px; color: var(--text-dim); margin: 4px 0; }
+
+.section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  font-family: var(--font-code);
+  margin-bottom: 6px;
+}
+
+.references-block {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.references-block .section-label { margin-bottom: 6px; }
+.references-block a {
+  display: block;
+  font-size: 11px;
+  font-family: var(--font-code);
+  color: var(--accent);
+  text-decoration: none;
+  margin: 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.references-block a:hover { text-decoration: underline; }
+
+/* Controls panel */
+.controls-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.control-badge {
+  font-family: var(--font-code);
+  font-size: 10px;
+  padding: 2px 7px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-dim);
+}
+
+/* =========================================================
+   HISTORY MODAL
+   ========================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 540px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h2 { font-size: 13px; font-family: var(--font-code); letter-spacing: 1px; color: var(--grey1); }
+.modal-body { padding: 14px 18px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+
+.history-list { display: flex; flex-direction: column; gap: 4px; }
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.history-item:hover { border-color: var(--grey2); }
+.history-item .hist-ts { color: var(--text); }
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--sev-none);
+  color: var(--text);
+  font-size: 12px;
+  padding: 10px 16px;
+  border-radius: 3px;
+  font-family: var(--font-code);
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; }
+#toast.error { border-left-color: var(--red); }
+
+/* =========================================================
+   MISC
+   ========================================================= */
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+
+.sep { height: 1px; background: var(--border); margin: 16px 0; }
+
+.inline-code {
+  font-family: var(--font-code);
+  font-size: 11px;
+  background: var(--surface3);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="logo">PROWLER<span>·</span>REVIEWER</div>
+      <div class="project-name" id="header-project-name"></div>
+    </div>
+    <div class="header-right">
+      <span class="save-indicator" id="save-indicator">✓ SAVED</span>
+      <button class="btn small" id="btn-history" style="display:none" onclick="openHistory()">⟳ History</button>
+      <button class="btn small" id="btn-back" style="display:none" onclick="goHome()">← Projects</button>
+      <button class="btn small primary" id="btn-new" onclick="goHome()">+ New Project</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LANDING -->
+    <div id="landing">
+      <div class="landing-title">Projects</div>
+
+      <div class="upload-zone" id="upload-zone"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)"
+           onclick="document.getElementById('file-input').click()">
+        <div class="icon">📂</div>
+        <h3>Load Prowler OCSF JSON</h3>
+        <p>Drop your prowler JSON file here or click to browse</p>
+        <p style="margin-top:6px;font-size:11px;color:var(--red)">AWS · Azure · GCP</p>
+      </div>
+      <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileSelect(event)">
+
+      <div id="project-list-wrap">
+        <div class="landing-title" style="font-size:11px">Recent Projects</div>
+        <div id="project-list" class="project-list">
+          <div class="empty-state"><div class="icon">📋</div>No projects yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW VIEW -->
+    <div id="review" style="display:none">
+      <!-- Stats -->
+      <div id="stats-section">
+        <div class="stats-top">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Findings</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-failed" style="color:var(--red)">0</div>
+            <div class="stat-label">Failed</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-passed" style="color:var(--sev-none)">0</div>
+            <div class="stat-label">Passed</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-assets">0</div>
+            <div class="stat-label">Assets</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-critical" style="color:var(--sev-critical)">0</div>
+            <div class="stat-label">Critical</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-high" style="color:var(--sev-high)">0</div>
+            <div class="stat-label">High</div>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-to-report" style="color:var(--status-to-report)">0</div>
+            <div class="stat-label">To Report</div>
+          </div>
+          <div class="charts-toggle" onclick="toggleCharts()">
+            <span id="charts-toggle-icon">▼</span> Charts
+          </div>
+        </div>
+        <div class="charts-section" id="charts-section">
+          <div class="chart-wrap">
+            <div class="chart-title">Failed findings by severity</div>
+            <canvas id="chart-sev" height="180"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-title">Pass / Fail distribution</div>
+            <canvas id="chart-pf" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div id="filters-section">
+        <div class="filters-row">
+          <div class="filter-group">
+            <div class="filter-label">Search</div>
+            <input type="text" class="filter-input" id="f-search" placeholder="Title, asset, description..." oninput="applyFilters()">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Status</div>
+            <select class="filter-select" id="f-status" onchange="applyFilters()">
+              <option value="">All</option>
+              <option value="FAIL">Failed</option>
+              <option value="PASS">Passed</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Severity</div>
+            <select class="filter-select" id="f-severity" onchange="applyFilters()">
+              <option value="">All</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="informational">Informational</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Analysis</div>
+            <select class="filter-select" id="f-analysis" onchange="applyFilters()">
+              <option value="">All</option>
+              <option value="to-report">To Report</option>
+              <option value="flagged">Flagged</option>
+              <option value="false-positive">False Positive</option>
+              <option value="reported">Reported</option>
+              <option value="none">Unset</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Cloud</div>
+            <select class="filter-select" id="f-cloud" onchange="applyFilters()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Subscription / Account</div>
+            <select class="filter-select" id="f-subscription" onchange="applyFilters()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Resource Group</div>
+            <select class="filter-select" id="f-rg" onchange="applyFilters()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Service</div>
+            <select class="filter-select" id="f-service" onchange="applyFilters()">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="filter-group" style="align-self:flex-end">
+            <button class="btn small" onclick="clearFilters()">✕ Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Findings list header -->
+      <div class="findings-header">
+        <div class="findings-header-left">
+          <span class="results-count" id="results-count"></span>
+        </div>
+        <button class="btn small accent" onclick="copyFindingsTSV()" title="Copy filtered findings as TSV for Excel">
+          📋 Copy TSV
+        </button>
+      </div>
+
+      <!-- Findings -->
+      <div id="findings-list"></div>
+    </div>
+  </main>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="history-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>STATE HISTORY</h2>
+      <button class="btn small" onclick="closeHistory()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="history-list" class="history-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn small" onclick="closeHistory()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// =========================================================
+// STATE
+// =========================================================
+let currentProjectId = null;
+let rawFindings = [];         // consolidated findings
+let filteredFindings = [];    // after filters
+let analysisStatuses = {};    // { findingId: 'to-report'|'flagged'|'false-positive'|'reported'|'' }
+let saveDebounceTimer = null;
+let chartSev = null;
+let chartPF = null;
+
+// =========================================================
+// TOAST
+// =========================================================
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type === 'error' ? ' error' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 2500);
+}
+
+// =========================================================
+// SAVE INDICATOR
+// =========================================================
+function showSaved() {
+  const el = document.getElementById('save-indicator');
+  el.classList.add('visible');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('visible'), 2500);
+}
+
+// =========================================================
+// API HELPERS
+// =========================================================
+async function api(method, url, body) {
+  const opts = { method, headers: {} };
+  if (body && !(body instanceof FormData)) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  } else if (body) {
+    opts.body = body;
+  }
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(`API ${url} failed: ${r.status}`);
+  return r.json();
+}
+
+// =========================================================
+// PROJECT LIST
+// =========================================================
+async function loadProjectList() {
+  try {
+    const projects = await api('GET', '/api/projects');
+    renderProjectList(projects);
+  } catch (e) {
+    console.error('Failed to load projects', e);
+  }
+}
+
+function renderProjectList(projects) {
+  const el = document.getElementById('project-list');
+  if (!projects.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No projects yet</div>';
+    return;
+  }
+  el.innerHTML = projects.map(p => `
+    <div class="project-item" onclick="openProject('${p.id}')">
+      <div>
+        <div class="proj-name">${esc(p.name)}</div>
+        <div class="proj-meta">${p.findingCount || '?'} findings · Updated ${p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'unknown'}</div>
+      </div>
+      <div class="proj-actions" onclick="event.stopPropagation()">
+        <button class="btn small danger" onclick="deleteProject('${p.id}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  await api('DELETE', `/api/project/${id}`);
+  toast('Project deleted');
+  loadProjectList();
+}
+
+// =========================================================
+// FILE UPLOAD
+// =========================================================
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+  e.target.value = '';
+}
+
+async function processFile(file) {
+  toast('Uploading and processing...');
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('name', file.name.replace('.json', ''));
+    const result = await api('POST', '/api/project', fd);
+    await openProject(result.id);
+  } catch (e) {
+    toast('Failed to upload: ' + e.message, 'error');
+  }
+}
+
+// =========================================================
+// OPEN PROJECT
+// =========================================================
+async function openProject(id) {
+  try {
+    currentProjectId = id;
+    toast('Loading project...');
+
+    // Load raw JSON and state in parallel
+    const [rawResp, state] = await Promise.all([
+      fetch(`/api/project/${id}/raw`).then(r => r.json()),
+      api('GET', `/api/project/${id}/state`)
+    ]);
+
+    analysisStatuses = state.statuses || {};
+
+    // Parse OCSF findings
+    rawFindings = consolidateFindings(rawResp);
+    // Initialise filteredFindings to full set so stats are correct before first filter
+    filteredFindings = [...rawFindings];
+
+    // Update state with finding count
+    scheduleSave({ findingCount: rawFindings.length }, false);
+
+    // Update UI
+    document.getElementById('header-project-name').textContent = state.name || id;
+    document.getElementById('btn-history').style.display = '';
+    document.getElementById('btn-back').style.display = '';
+    document.getElementById('btn-new').style.display = 'none';
+
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('review').style.display = 'block';
+
+    buildFilterOptions();
+    // applyFilters calls computeStats + renderFindings internally
+    applyFilters();
+
+    toast('Project loaded');
+  } catch (e) {
+    toast('Failed to open project: ' + e.message, 'error');
+    console.error(e);
+  }
+}
+
+function goHome() {
+  currentProjectId = null;
+  rawFindings = [];
+  filteredFindings = [];
+  analysisStatuses = {};
+
+  document.getElementById('landing').style.display = '';
+  document.getElementById('review').style.display = 'none';
+  document.getElementById('btn-history').style.display = 'none';
+  document.getElementById('btn-back').style.display = 'none';
+  document.getElementById('btn-new').style.display = '';
+  document.getElementById('header-project-name').textContent = '';
+
+  if (chartSev) { chartSev.destroy(); chartSev = null; }
+  if (chartPF)  { chartPF.destroy();  chartPF  = null; }
+
+  loadProjectList();
+}
+
+// =========================================================
+// OCSF PARSING & CONSOLIDATION
+// =========================================================
+function consolidateFindings(data) {
+  let items = Array.isArray(data) ? data : (data.findings || data.results || Object.values(data)[0] || []);
+  if (!Array.isArray(items)) items = [];
+
+  if (items.length > 0) {
+    console.debug('[Prowler Reviewer] First raw item sample:', JSON.stringify(items[0], null, 2).slice(0, 2000));
+  }
+
+  const map = new Map();
+
+  for (const item of items) {
+    // ------------------------------------------------------------------
+    // CONSOLIDATION KEY
+    // finding_info.uid pattern:
+    //   prowler-azure-app_client_certificates_on-<sub_guid>-<Region Name>-<resource>
+    //   prowler-aws-s3_bucket_encryption-<account>-<region>-<bucket>
+    // Stable key = everything up to (but not including) the account/subscription segment.
+    // finding_info.check_id exists in some versions — use it when present.
+    // ------------------------------------------------------------------
+    const rawUid  = item.finding_info?.uid || '';
+    const checkId = item.finding_info?.check_id
+                 || item.unmapped?.check_id
+                 || deriveCheckId(rawUid)
+                 || item.finding_info?.title
+                 || 'unknown';
+
+    const title = item.finding_info?.title || item.title || checkId;
+
+    // ------------------------------------------------------------------
+    // STATUS — primary field is status_code in real Prowler OCSF output
+    // status = "New" (OCSF lifecycle), status_code = "PASS"/"FAIL"
+    // ------------------------------------------------------------------
+    const status = normalizeStatus(
+      item.status_code
+      || item.unmapped?.status_code
+      || item.unmapped?.check_result
+      || item.status_id
+      || item.status
+    );
+
+    // severity_id is numeric OCSF; severity is human string — prefer string
+    const severity = normalizeSeverity(item.severity || item.severity_id);
+
+    const cloud   = detectCloud(item);
+    const service = extractService(item);
+    const sub     = extractSubscription(item);
+    const rg      = extractResourceGroup(item);
+
+    // ------------------------------------------------------------------
+    // RISK & REMEDIATION
+    // Real sample: risk_details at ROOT level (not finding_info.desc).
+    // finding_info.desc is the short technical description of the control.
+    // We want risk_details as "Risk" and finding_info.desc as description fallback.
+    // ------------------------------------------------------------------
+    const risk        = item.risk_details
+                     || item.unmapped?.risk_details
+                     || item.finding_info?.desc
+                     || '';
+    const description = item.finding_info?.desc || '';
+    const remediation = item.remediation?.desc
+                     || item.unmapped?.remediation_text
+                     || (typeof item.remediation === 'string' ? item.remediation : '')
+                     || '';
+    const remUrls = Array.isArray(item.remediation?.references)
+                  ? item.remediation.references
+                  : (item.remediation?.references ? [item.remediation.references] : []);
+    const addUrls = Array.isArray(item.unmapped?.additional_urls)
+                  ? item.unmapped.additional_urls
+                  : [];
+
+    // ------------------------------------------------------------------
+    // CONTROLS — in real output they live in unmapped.compliance (object)
+    // not in item.compliance (which may not exist)
+    // ------------------------------------------------------------------
+    const controls = extractControls(item);
+
+    // ------------------------------------------------------------------
+    // ASSET — extract resourceId for portal deep-link
+    // ------------------------------------------------------------------
+    const assetName  = extractAssetName(item);
+    const assetUid   = item.resources?.[0]?.uid || assetName;
+    const resourceId = item.resources?.[0]?.data?.metadata?.resource_id
+                    || item.resources?.[0]?.uid
+                    || '';
+
+    // Build portal link using cloud.org.name (tenant domain) + resource_id
+    const orgName    = item.cloud?.org?.name || '';
+    const portalLink = buildPortalLinkFromParts(cloud, orgName, resourceId);
+
+    // ------------------------------------------------------------------
+    // ACCUMULATE
+    // ------------------------------------------------------------------
+    if (!map.has(checkId)) {
+      map.set(checkId, {
+        id: checkId,
+        title,
+        severity,
+        cloud,
+        service,
+        description,
+        risk,
+        remediation,
+        remUrls,
+        addUrls,
+        controls,
+        assets: [],
+        subscriptions: new Set(),
+        resourceGroups: new Set(),
+        failCount: 0,
+        passCount: 0
+      });
+    }
+
+    const f = map.get(checkId);
+
+    if (!f.risk && risk)                       f.risk = risk;
+    if (!f.description && description)         f.description = description;
+    if (!f.remediation && remediation)         f.remediation = remediation;
+    if (!f.remUrls.length && remUrls.length)   f.remUrls = remUrls;
+    if (!f.addUrls.length && addUrls.length)   f.addUrls = addUrls;
+    if (!f.controls.length && controls.length) f.controls = controls;
+    if (sub) f.subscriptions.add(sub);
+    if (rg)  f.resourceGroups.add(rg);
+
+    if (status === 'PASS') f.passCount++;
+    else                   f.failCount++;
+
+    f.assets.push({
+      name: assetName,
+      uid:  assetUid,
+      resourceId,
+      portalLink,
+      status,
+      subscription: sub,
+      resourceGroup: rg,
+      region: item.cloud?.region || item.resources?.[0]?.region || item.unmapped?.region || ''
+    });
+  }
+
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 };
+  return Array.from(map.values())
+    .map(f => ({
+      ...f,
+      subscriptions: Array.from(f.subscriptions),
+      resourceGroups: Array.from(f.resourceGroups)
+    }))
+    .sort((a, b) => (sevOrder[a.severity] ?? 5) - (sevOrder[b.severity] ?? 5) || b.failCount - a.failCount);
+}
+
+/**
+ * Derive stable check ID from per-asset Prowler UID.
+ *
+ * Pattern: prowler-{provider}-{check_name}-{account_or_sub}-{region}-{resource...}
+ *
+ * The check_name segment uses underscores only (no dashes).
+ * The account/subscription segment that follows is either:
+ *   - AWS:   12-digit number
+ *   - Azure: 8-4-4-4-12 UUID  (first group is 8 hex chars)
+ *   - GCP:   project name (mixed)
+ *
+ * Strategy: match "prowler-{provider}-" then consume chars until we hit
+ * either a UUID-like block or a pure-digit block (account ID), which marks
+ * the start of the per-asset suffix.
+ */
+function deriveCheckId(uid) {
+  if (!uid) return '';
+
+  // Match: prowler-{provider}-{check_name}
+  // check_name = sequence of word chars and underscores (no dashes)
+  // Stop before: UUID segment (8 hex) OR 12-digit AWS account OR end
+  const m = uid.match(/^(prowler-(?:aws|azure|gcp|kubernetes)-[a-z][a-z0-9_]*)/i);
+  if (m) return m[1].toLowerCase();
+
+  // Fallback: first 3 dash-segments
+  const parts = uid.split('-');
+  return parts.slice(0, 3).join('-').toLowerCase();
+}
+
+function buildPortalLinkFromParts(cloud, orgName, resourceId) {
+  if (cloud === 'Azure' && resourceId) {
+    const tenant = encodeURIComponent(orgName || '');
+    return `https://portal.azure.com/#@${tenant}/resource${resourceId}`;
+  }
+  return null;
+}
+
+function normalizeSeverity(s) {
+  if (s === null || s === undefined) return 'informational';
+  const v = String(s).toLowerCase().trim();
+  // Numeric OCSF severity_id: 1=Info,2=Low,3=Medium,4=High,5=Critical
+  if (v === '1') return 'informational';
+  if (v === '2') return 'low';
+  if (v === '3') return 'medium';
+  if (v === '4') return 'high';
+  if (v === '5') return 'critical';
+  if (v.startsWith('info'))  return 'informational';
+  if (v.startsWith('low'))   return 'low';
+  if (v.startsWith('med'))   return 'medium';
+  if (v.startsWith('high'))  return 'high';
+  if (v.startsWith('crit'))  return 'critical';
+  return 'informational';
+}
+
+/**
+ * FIX 1 — Robust status normalisation.
+ * Prowler status_code values: "PASS", "FAIL", "MANUAL", "MUTED"
+ * OCSF status_id: 1 = Pass, 2 = Fail
+ * We treat MANUAL and MUTED as FAIL for display purposes (conservative).
+ */
+function normalizeStatus(s) {
+  if (s === null || s === undefined) return 'FAIL';
+  const v = String(s).toUpperCase().trim();
+  if (v === 'PASS' || v === 'PASSED' || v === '1' || v === 'TRUE') return 'PASS';
+  // Everything else (FAIL, FAILED, MANUAL, MUTED, 2, etc.) → FAIL
+  return 'FAIL';
+}
+
+function detectCloud(item) {
+  // Real Prowler OCSF: cloud.provider = "azure" | "aws" | "gcp"  (lowercase string)
+  const provider = String(item.cloud?.provider || '').toLowerCase();
+  if (provider === 'aws')   return 'AWS';
+  if (provider === 'azure') return 'Azure';
+  if (provider === 'gcp')   return 'GCP';
+
+  // unmapped.provider is also set in real output
+  const up = String(item.unmapped?.provider || '').toLowerCase();
+  if (up === 'aws')   return 'AWS';
+  if (up === 'azure') return 'Azure';
+  if (up === 'gcp')   return 'GCP';
+
+  // Last resort: prefix of finding_info.uid
+  const uid = String(item.finding_info?.uid || '').toLowerCase();
+  if (uid.startsWith('prowler-aws'))   return 'AWS';
+  if (uid.startsWith('prowler-azure')) return 'Azure';
+  if (uid.startsWith('prowler-gcp'))   return 'GCP';
+
+  return 'Unknown';
+}
+
+function extractService(item) {
+  // From real sample: metadata.product.name = "Prowler" (tool, NOT service).
+  // resources[0].type = "microsoft.web/sites/config" — strip to provider/service segment.
+  // unmapped.service_name may exist in some checks.
+  const rawType = item.resources?.[0]?.type || '';
+  const serviceFromType = rawType
+    ? rawType.split('/').slice(0, 2).join('/') // e.g. "microsoft.web/sites"
+    : '';
+  return item.unmapped?.service_name
+      || item.unmapped?.resource_type
+      || serviceFromType
+      || item.cloud?.service
+      || '';
+}
+
+function extractSubscription(item) {
+  // Real sample: cloud.account.name = "SUB-XXXXX", cloud.account.uid = "<guid>"
+  // Return name (human-readable) with uid fallback
+  return item.cloud?.account?.name
+      || item.cloud?.account?.uid
+      || item.unmapped?.account_id
+      || item.unmapped?.subscription_id
+      || item.unmapped?.project_id
+      || '';
+}
+
+function extractResourceGroup(item) {
+  // Real sample: resources[0].group.name = "app" (WRONG — that's a label, not RG).
+  // Real RG is embedded in resources[0].data.metadata.resource_id:
+  //   /subscriptions/.../resourceGroups/rg-YYYYYY/providers/...
+  // Parse it out. Fall back to unmapped fields.
+  const resourceId = item.resources?.[0]?.data?.metadata?.resource_id || '';
+  const rgMatch = resourceId.match(/resourceGroups\/([^/]+)/i);
+  if (rgMatch) return rgMatch[1];
+
+  return item.unmapped?.resource_group
+      || item.unmapped?.resource_group_name
+      || item.cloud?.resource_group
+      || '';
+}
+
+function extractAssetName(item) {
+  if (item.resources && item.resources.length > 0) {
+    const r = item.resources[0];
+    // Prefer the nested metadata name (most accurate in real output)
+    return r.data?.metadata?.name || r.name || r.uid || 'Unknown';
+  }
+  return item.unmapped?.resource_name || 'Unknown';
+}
+
+/**
+ * Build a cloud-provider portal link for an asset.
+ * Azure: https://portal.azure.com/#@{tenant_domain}/resource{resource_id}
+ * AWS/GCP: no generic deep-link available, return null.
+ */
+function buildPortalLink(item, asset) {
+  const provider = String(item.cloud?.provider || '').toLowerCase();
+  if (provider === 'azure') {
+    const tenantDomain = item.cloud?.org?.name || item.unmapped?.tenant_uid || '';
+    const resourceId   = asset.resourceId || '';
+    if (resourceId) {
+      return `https://portal.azure.com/#@${encodeURIComponent(tenantDomain)}/resource${resourceId}`;
+    }
+  }
+  // AWS console deep-link could be added here per service in the future
+  return null;
+}
+
+function extractControls(item) {
+  const controls = [];
+
+  // Real Prowler OCSF: compliance lives in unmapped.compliance as an object
+  // { "CIS-2.0": ["9.4"], "PCI-4.0": ["1.2.8.14", ...], ... }
+  const compSource = item.unmapped?.compliance || item.compliance || null;
+
+  if (compSource && typeof compSource === 'object') {
+    for (const [framework, ids] of Object.entries(compSource)) {
+      if (Array.isArray(ids)) {
+        ids.forEach(id => controls.push(`${framework}: ${id}`));
+      } else if (typeof ids === 'string') {
+        controls.push(`${framework}: ${ids}`);
+      }
+    }
+  }
+
+  return [...new Set(controls)].filter(Boolean);
+}
+
+// =========================================================
+// FILTER OPTIONS
+// =========================================================
+function buildFilterOptions() {
+  const clouds = new Set(), subs = new Set(), rgs = new Set(), services = new Set();
+  for (const f of rawFindings) {
+    if (f.cloud)   clouds.add(f.cloud);
+    if (f.service) services.add(f.service);
+    f.subscriptions.forEach(s => subs.add(s));
+    f.resourceGroups.forEach(r => rgs.add(r));
+  }
+  populateSelect('f-cloud',        Array.from(clouds).sort());
+  populateSelect('f-subscription', Array.from(subs).sort());
+  populateSelect('f-rg',           Array.from(rgs).sort());
+  populateSelect('f-service',      Array.from(services).sort());
+}
+
+function populateSelect(id, opts) {
+  const el = document.getElementById(id);
+  const cur = el.value;
+  while (el.options.length > 1) el.remove(1);
+  for (const o of opts) {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    el.appendChild(opt);
+  }
+  if (cur) el.value = cur;
+}
+
+// =========================================================
+// FILTERS
+// =========================================================
+function applyFilters() {
+  const search   = document.getElementById('f-search').value.toLowerCase();
+  const status   = document.getElementById('f-status').value;
+  const severity = document.getElementById('f-severity').value;
+  const analysis = document.getElementById('f-analysis').value;
+  const cloud    = document.getElementById('f-cloud').value;
+  const sub      = document.getElementById('f-subscription').value;
+  const rg       = document.getElementById('f-rg').value;
+  const service  = document.getElementById('f-service').value;
+
+  filteredFindings = rawFindings.filter(f => {
+    const aStatus = analysisStatuses[f.id] || '';
+
+    // Analysis status filter
+    if (analysis) {
+      if (analysis === 'none' && aStatus) return false;
+      if (analysis !== 'none' && aStatus !== analysis) return false;
+    }
+    // Cloud
+    if (cloud && f.cloud !== cloud) return false;
+    // Severity
+    if (severity && f.severity !== severity) return false;
+    // Service
+    if (service && f.service !== service) return false;
+    // Subscription
+    if (sub && !f.subscriptions.includes(sub)) return false;
+    // Resource group
+    if (rg && !f.resourceGroups.includes(rg)) return false;
+    // Status (PASS/FAIL)
+    if (status === 'FAIL' && f.failCount === 0) return false;
+    if (status === 'PASS' && f.passCount === 0) return false;
+    // Search
+    if (search) {
+      const haystack = [
+        f.title, f.id, f.service, f.cloud,
+        f.risk, f.remediation,
+        ...f.subscriptions, ...f.resourceGroups,
+        ...f.assets.map(a => a.name + ' ' + a.uid)
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('results-count').textContent =
+    `${filteredFindings.length} finding${filteredFindings.length !== 1 ? 's' : ''} displayed`;
+
+  // FIX 2 — stats and charts always reflect the current filtered view
+  computeStats();
+  renderFindings();
+}
+
+function clearFilters() {
+  ['f-search','f-status','f-severity','f-analysis','f-cloud','f-subscription','f-rg','f-service']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el.tagName === 'INPUT') el.value = '';
+      else el.selectedIndex = 0;
+    });
+  applyFilters();
+}
+
+// =========================================================
+// STATS  — always computed from the currently filtered set
+// =========================================================
+function computeStats() {
+  // Use filteredFindings when available (after first filter pass), else rawFindings
+  const source = filteredFindings.length > 0 || rawFindings.length === 0
+    ? filteredFindings
+    : rawFindings;
+
+  let failed = 0, passed = 0, assets = 0, critical = 0, high = 0, toReport = 0;
+  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0, informational: 0 };
+
+  for (const f of source) {
+    failed += f.failCount;
+    passed += f.passCount;
+    assets += f.assets.length;
+    if (f.severity === 'critical') critical++;
+    if (f.severity === 'high') high++;
+    if (f.failCount > 0) sevCounts[f.severity] = (sevCounts[f.severity] || 0) + 1;
+    if ((analysisStatuses[f.id] || '') === 'to-report') toReport++;
+  }
+
+  document.getElementById('stat-total').textContent     = source.length;
+  document.getElementById('stat-failed').textContent    = failed;
+  document.getElementById('stat-passed').textContent    = passed;
+  document.getElementById('stat-assets').textContent    = assets;
+  document.getElementById('stat-critical').textContent  = critical;
+  document.getElementById('stat-high').textContent      = high;
+  document.getElementById('stat-to-report').textContent = toReport;
+
+  renderCharts(sevCounts, failed, passed);
+}
+
+function renderCharts(sevCounts, failed, passed) {
+  // Severity bar
+  const ctxSev = document.getElementById('chart-sev');
+  if (chartSev) chartSev.destroy();
+  chartSev = new Chart(ctxSev, {
+    type: 'bar',
+    data: {
+      labels: ['Critical','High','Medium','Low','Info'],
+      datasets: [{
+        data: [
+          sevCounts.critical || 0,
+          sevCounts.high || 0,
+          sevCounts.medium || 0,
+          sevCounts.low || 0,
+          sevCounts.informational || 0
+        ],
+        backgroundColor: ['#CC0501','#DF3D03','#F9A009','#FFCB0D','#53AA33'],
+        borderWidth: 0,
+        borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' } },
+        y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' }, beginAtZero: true }
+      }
+    }
+  });
+
+  // Pass/Fail pie
+  const ctxPF = document.getElementById('chart-pf');
+  if (chartPF) chartPF.destroy();
+  chartPF = new Chart(ctxPF, {
+    type: 'doughnut',
+    data: {
+      labels: ['Failed','Passed'],
+      datasets: [{
+        data: [failed, passed],
+        backgroundColor: ['#CA3E47','#53AA33'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#888', font: { size: 10 }, padding: 12 } }
+      }
+    }
+  });
+}
+
+function toggleCharts() {
+  const s = document.getElementById('charts-section');
+  const i = document.getElementById('charts-toggle-icon');
+  s.classList.toggle('open');
+  i.textContent = s.classList.contains('open') ? '▲' : '▼';
+}
+
+// =========================================================
+// RENDER FINDINGS
+// =========================================================
+function renderFindings() {
+  const el = document.getElementById('findings-list');
+  if (!filteredFindings.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🔍</div>No findings match current filters</div>';
+    return;
+  }
+  el.innerHTML = filteredFindings.map(f => renderFindingCard(f)).join('');
+}
+
+function renderFindingCard(f) {
+  const aStatus = analysisStatuses[f.id] || '';
+  const statusClass = aStatus ? `status-${aStatus}` : '';
+  const sevClass = `sev-${f.severity}`;
+
+  const failBadge = f.failCount > 0
+    ? `<span class="tag tag-failed">${f.failCount} FAIL</span>` : '';
+  const passBadge = f.passCount > 0
+    ? `<span class="tag tag-passed">${f.passCount} PASS</span>` : '';
+
+  const serviceTag = f.service
+    ? `<span class="tag tag-service">${esc(f.service)}</span>` : '';
+  const cloudTag = f.cloud
+    ? `<span class="tag tag-cloud">${esc(f.cloud)}</span>` : '';
+
+  const selectedStatus = s => aStatus === s ? 'selected' : '';
+  const statusSelectClass = aStatus ? `s-${aStatus}` : '';
+
+  return `
+<div class="finding-card ${statusClass}" id="fc-${esc(f.id)}" data-id="${esc(f.id)}">
+  <div class="finding-header" onclick="toggleCard('${esc(f.id)}')">
+    <span class="expand-icon">▶</span>
+    <span class="sev-badge ${sevClass}">${f.severity}</span>
+    <span class="finding-title">${esc(f.title)}</span>
+    <div class="finding-meta">
+      ${cloudTag}
+      ${serviceTag}
+      ${failBadge}
+      ${passBadge}
+      <span class="tag tag-assets">${f.assets.length} asset${f.assets.length !== 1 ? 's' : ''}</span>
+      <select class="status-select ${statusSelectClass}" data-id="${esc(f.id)}"
+              onchange="setStatus('${esc(f.id)}', this)"
+              onclick="event.stopPropagation()">
+        <option value="">— Unset —</option>
+        <option value="to-report"      ${selectedStatus('to-report')}>To Report</option>
+        <option value="flagged"        ${selectedStatus('flagged')}>Flagged</option>
+        <option value="false-positive" ${selectedStatus('false-positive')}>False Positive</option>
+        <option value="reported"       ${selectedStatus('reported')}>Reported</option>
+      </select>
+    </div>
+  </div>
+  <div class="finding-body" id="fb-${esc(f.id)}">
+    <div class="finding-body-tabs">
+      <div class="body-tab active" onclick="switchTab('${esc(f.id)}', 'assets', this)">Assets</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'risk', this)">Risk</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'remediation', this)">Remediation</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'controls', this)">Controls (${f.controls.length})</div>
+    </div>
+
+    <div class="tab-panel active" id="tp-${esc(f.id)}-assets">
+      <div class="assets-header">
+        <h4>${f.assets.length} affected asset${f.assets.length !== 1 ? 's' : ''}</h4>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}')">📋 Copy Assets TSV</button>
+      </div>
+      ${renderAssetsGrid(f)}
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-risk">
+      <div class="section-label">Risk Details</div>
+      <div class="md-block">${renderMD(f.risk)}</div>
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-remediation">
+      <div class="section-label">Remediation Guidance</div>
+      <div class="md-block">${renderMD(f.remediation)}</div>
+      ${renderReferences(f)}
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-controls">
+      <div class="section-label">Benchmark Controls & Recommendations</div>
+      ${f.controls.length
+        ? `<div class="controls-list">${f.controls.map(c => `<span class="control-badge">${esc(c)}</span>`).join('')}</div>`
+        : '<div style="color:var(--text-dim);font-size:12px">No compliance controls mapped</div>'
+      }
+    </div>
+  </div>
+</div>`;
+}
+
+function renderAssetsGrid(f) {
+  if (!f.assets.length) return '<div style="color:var(--text-dim);font-size:12px">No assets</div>';
+  // For assets with portal links, always use 1 column so the link is readable
+  const hasLinks = f.assets.some(a => a.portalLink);
+  const cols = hasLinks ? 1 : Math.min(4, Math.max(1, Math.ceil(Math.sqrt(f.assets.length))));
+
+  return `<div class="assets-grid" id="ag-${esc(f.id)}">` +
+    chunkArray(f.assets, cols).map(row =>
+      `<div class="asset-row" style="grid-template-columns:repeat(${cols},1fr)">` +
+      row.map(a => {
+        const linkHtml = a.portalLink
+          ? ` <a href="${esc(a.portalLink)}" target="_blank" rel="noopener" class="asset-portal-link" title="Open in Azure Portal" onclick="event.stopPropagation()">↗</a>`
+          : '';
+        const rgHtml = a.resourceGroup
+          ? `<span class="asset-rg">${esc(a.resourceGroup)}</span>` : '';
+        const regionHtml = a.region
+          ? `<span class="asset-region">[${esc(a.region)}]</span>` : '';
+        return `<div class="asset-cell status-${a.status.toLowerCase()}" title="${esc(a.uid)}">
+          <span class="asset-name">${esc(a.name)}</span>${rgHtml}${regionHtml}${linkHtml}
+        </div>`;
+      }).join('') +
+      `</div>`
+    ).join('') +
+    `</div>`;
+}
+
+function renderMD(text) {
+  if (!text) return '<span style="color:var(--text-dim);font-size:12px">No information available</span>';
+  try {
+    return DOMPurify.sanitize(marked.parse(text));
+  } catch {
+    return esc(text).replace(/\n/g, '<br>');
+  }
+}
+
+function renderReferences(f) {
+  const urls = [...(f.remUrls || []), ...(f.addUrls || [])].filter(Boolean);
+  if (!urls.length) return '';
+  return `
+    <div class="references-block">
+      <div class="section-label">References & Additional URLs</div>
+      ${urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join('')}
+    </div>`;
+}
+
+// =========================================================
+// CARD INTERACTION
+// =========================================================
+function toggleCard(id) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  card.classList.toggle('open');
+}
+
+function switchTab(id, tab, el) {
+  // Deactivate all tabs and panels for this card
+  const card = document.getElementById(`fc-${id}`);
+  card.querySelectorAll('.body-tab').forEach(t => t.classList.remove('active'));
+  card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const panel = document.getElementById(`tp-${id}-${tab}`);
+  if (panel) panel.classList.add('active');
+}
+
+// =========================================================
+// ANALYSIS STATUS
+// =========================================================
+function setStatus(id, selectEl) {
+  const value = selectEl.value;
+  analysisStatuses[id] = value;
+
+  // Update card styling
+  const card = document.querySelector(`[data-id="${id}"]`);
+  card.className = card.className.replace(/status-\S+/g, '').trim();
+  if (value) card.classList.add(`status-${value}`);
+
+  // Update select styling
+  selectEl.className = selectEl.className.replace(/s-\S+/g, '').trim();
+  selectEl.classList.add('status-select');
+  if (value) selectEl.classList.add(`s-${value}`);
+
+  // Update to-report stat
+  computeStats();
+
+  // Schedule save
+  scheduleSave({ statuses: analysisStatuses });
+}
+
+// =========================================================
+// AUTO-SAVE
+// =========================================================
+function scheduleSave(extraData = {}, withSnapshot = true) {
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(() => doSave(extraData, withSnapshot), 800);
+}
+
+async function doSave(extraData = {}, withSnapshot = true) {
+  if (!currentProjectId) return;
+  try {
+    await api('POST', `/api/project/${currentProjectId}/state`, {
+      statuses: analysisStatuses,
+      ...extraData,
+      _snapshot: withSnapshot
+    });
+    showSaved();
+  } catch (e) {
+    console.warn('Auto-save failed', e);
+  }
+}
+
+// =========================================================
+// HISTORY
+// =========================================================
+async function openHistory() {
+  document.getElementById('history-modal').classList.add('open');
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">Loading...</div>';
+
+  const snapshots = await api('GET', `/api/project/${currentProjectId}/history`);
+  if (!snapshots.length) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">No history yet</div>';
+    return;
+  }
+
+  list.innerHTML = snapshots.map(s => {
+    // Format timestamp from filename like "2025-05-28T14-32-00-000Z"
+    const ts = s.filename.replace('.json', '').replace(/T/, ' ').replace(/(\d{4}-\d{2}-\d{2}) (\d{2})-(\d{2})-(\d{2}).*/, '$1 $2:$3:$4');
+    return `
+      <div class="history-item">
+        <span class="hist-ts">${ts}</span>
+        <button class="btn small" onclick="restoreSnapshot('${s.filename}')">Restore</button>
+      </div>`;
+  }).join('');
+}
+
+async function restoreSnapshot(filename) {
+  if (!confirm(`Restore this snapshot? Current state will be saved before restoring.`)) return;
+  const result = await api('POST', `/api/project/${currentProjectId}/history/${filename}/restore`);
+  analysisStatuses = result.state?.statuses || {};
+  computeStats();
+  renderFindings();
+  closeHistory();
+  toast('Snapshot restored');
+}
+
+function closeHistory() {
+  document.getElementById('history-modal').classList.remove('open');
+}
+
+// =========================================================
+// TSV COPY
+// =========================================================
+function copyFindingsTSV() {
+  const headers = ['ID', 'Title', 'Severity', 'Cloud', 'Service', 'Fail Count', 'Pass Count', 'Assets', 'Subscriptions', 'Resource Groups', 'Analysis Status'];
+  const rows = filteredFindings.map(f => [
+    f.id,
+    f.title,
+    f.severity,
+    f.cloud,
+    f.service,
+    f.failCount,
+    f.passCount,
+    f.assets.length,
+    f.subscriptions.join(', '),
+    f.resourceGroups.join(', '),
+    analysisStatuses[f.id] || ''
+  ]);
+  const tsv = [headers, ...rows].map(r => r.map(c => String(c ?? '').replace(/\t/g, ' ')).join('\t')).join('\n');
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${filteredFindings.length} findings as TSV`));
+}
+
+function copyAssetsTSV(id) {
+  const finding = rawFindings.find(f => f.id === id);
+  if (!finding) return;
+
+  const assets = finding.assets;
+  const cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(assets.length))));
+  const rows = chunkArray(assets.map(a => a.name), cols);
+  // Pad rows to same length
+  const tsv = rows.map(r => {
+    while (r.length < cols) r.push('');
+    return r.map(c => String(c).replace(/\t/g, ' ')).join('\t');
+  }).join('\n');
+
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length} assets as ${cols}-column TSV`));
+}
+
+// =========================================================
+// UTILITIES
+// =========================================================
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function chunkArray(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// =========================================================
+// MARKED CONFIG
+// =========================================================
+marked.setOptions({ breaks: true, gfm: true });
+
+// =========================================================
+// INIT
+// =========================================================
+loadProjectList();
+</script>
+</body>
+</html>

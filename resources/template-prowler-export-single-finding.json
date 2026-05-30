@@ -1,0 +1,233 @@
+[{
+    "message": "Clients are not required to present a certificate for app 'app-XXXXX' in subscription 'SUB-XXXXX (56cce737-8fa4-44ab-ae54-529cacc1f8d8)'.",
+    "metadata": {
+        "event_code": "app_client_certificates_on",
+        "product": {
+            "name": "Prowler",
+            "uid": "prowler",
+            "vendor_name": "Prowler",
+            "version": "5.26.1"
+        },
+        "profiles": [
+            "cloud",
+            "datetime"
+        ],
+        "tenant_uid": "6f6d5588-a3b0-4b45-a1c1-59ccaf5ff36d",
+        "version": "1.5.0"
+    },
+    "severity_id": 3,
+    "severity": "Medium",
+    "status": "New",
+    "status_code": "FAIL",
+    "status_detail": "Clients are not required to present a certificate for app 'app-XXXXX' in subscription 'SUB-XXXXX (56cce737-8fa4-44ab-ae54-529cacc1f8d8)'.",
+    "status_id": 1,
+    "unmapped": {
+        "related_url": "",
+        "categories": [
+            "identity-access"
+        ],
+        "depends_on": [],
+        "related_to": [],
+        "additional_urls": [
+            "https://learn.microsoft.com/en-us/security/benchmark/azure/security-controls-v3-identity-management#im-4-authenticate-server-and-services",
+            "https://learn.microsoft.com/en-us/azure/app-service/app-service-web-configure-tls-mutual-auth"
+        ],
+        "notes": "Utilizing and maintaining client certificates will require additional work to obtain and manage replacement and key rotation.",
+        "compliance": {
+            "CIS-2.0": [
+                "9.4"
+            ],
+            "ENS-RD2022": [
+                "op.acc.5.r3.az.kv.1",
+                "op.acc.6.r3.az.kv.1"
+            ],
+            "FedRAMP-20x-KSI-Low-25.05C": [
+                "ksi-svc"
+            ],
+            "PCI-4.0": [
+                "1.2.8.14",
+                "1.2.8.15",
+                "1.3.1.16",
+                "1.3.1.17",
+                "1.3.2.16",
+                "1.3.2.17",
+                "1.4.2.15",
+                "1.4.2.16",
+                "1.5.1.14",
+                "1.5.1.15",
+                "2.2.7.10",
+                "3.5.1.1.5",
+                "3.5.1.1.6",
+                "3.5.1.3.12",
+                "3.5.1.3.13",
+                "3.6.1.2.5",
+                "3.6.1.2.6",
+                "3.6.1.3.5",
+                "3.6.1.3.6",
+                "3.6.1.4.5",
+                "3.6.1.4.6",
+                "3.6.1.5",
+                "3.6.1.6",
+                "3.7.1.6",
+                "3.7.1.7",
+                "3.7.2.5",
+                "3.7.2.6",
+                "3.7.4.6",
+                "3.7.4.7",
+                "3.7.6.5",
+                "3.7.6.6",
+                "3.7.7.5",
+                "3.7.7.6",
+                "4.2.1.1.14",
+                "4.2.1.1.15",
+                "4.2.1.10",
+                "8.3.2.29",
+                "A1.1.3.14",
+                "A1.1.3.15"
+            ],
+            "CCC-v2025.10": [
+                "CCC.Core.CN01.AR08"
+            ],
+            "MITRE-ATTACK": [
+                "T1040"
+            ],
+            "NIS2": [
+                "5.1.2.a",
+                "6.2.1",
+                "6.2.2.b",
+                "6.2.2.c",
+                "9.2.c.ii"
+            ]
+        },
+        "scan_id": "6b205e6c-3a82-4dd1-aa91-c12bedd69ad2",
+        "provider_uid": "56cce737-8fa4-44ab-ae54-529cacc1f8d8",
+        "provider": "azure"
+    },
+    "activity_name": "Create",
+    "activity_id": 1,
+    "finding_info": {
+        "created_time": 1778725989,
+        "created_time_dt": "2026-05-14T02:33:09.550326",
+        "desc": "**Azure App Service apps** enforce **mutual TLS** when `client certificate mode` is set to `Required`, meaning every inbound request must present a valid client certificate that the app can validate.",
+        "title": "Web app requires incoming client certificates",
+        "types": [],
+        "uid": "prowler-azure-app_client_certificates_on-56cce737-8fa4-44ab-ae54-529cacc1f8d8-North Europe-app-XXXXX"
+    },
+    "resources": [
+        {
+            "cloud_partition": "AzureCloud",
+            "region": "North Europe",
+            "data": {
+                "details": "",
+                "metadata": {
+                    "resource_id": "/subscriptions/56cce737-8fa4-44ab-ae54-529cacc1f8d8/resourceGroups/rg-YYYYYY/providers/Microsoft.Web/sites/app-XXXXX",
+                    "name": "app-XXXXX",
+                    "configurations": {
+                        "id": "/subscriptions/56cce737-8fa4-44ab-ae54-529cacc1f8d8/resourceGroups/rg-YYYYYY/providers/Microsoft.Web/sites/app-XXXXX/config/web",
+                        "name": "app-XXXXX",
+                        "linux_fx_version": "",
+                        "java_version": null,
+                        "php_version": "5.6",
+                        "python_version": "",
+                        "http20_enabled": true,
+                        "ftps_state": "Disabled",
+                        "min_tls_version": "1.3"
+                    },
+                    "identity": {
+                        "principal_id": "b2940cf0-39fb-4cc0-bd84-2daffcc1aeef",
+                        "tenant_id": "6f6d5588-a3b0-4b45-a1c1-59ccaf5ff36d",
+                        "type": "SystemAssigned"
+                    },
+                    "location": "North Europe",
+                    "client_cert_mode": "Ignore",
+                    "auth_enabled": false,
+                    "https_only": true,
+                    "monitor_diagnostic_settings": [
+                        {
+                            "id": "/subscriptions/56cce737-8fa4-44ab-ae54-529cacc1f8d8/resourcegroups/rg-YYYYYY/providers/microsoft.web/sites/app-XXXXX/providers/microsoft.insights/diagnosticSettings/diag-app-XXXXX",
+                            "storage_account_id": null,
+                            "storage_account_name": null,
+                            "logs": [
+                                {
+                                    "category": "AppServiceHTTPLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServiceConsoleLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServiceAppLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServiceAuditLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServiceIPSecAuditLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServicePlatformLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                },
+                                {
+                                    "category": "AppServiceAuthenticationLogs",
+                                    "category_group": null,
+                                    "enabled": true
+                                }
+                            ],
+                            "name": "diag-app-XXXXX",
+                            "workspace_id": "/subscriptions/56cce737-8fa4-44ab-ae54-529cacc1f8d8/resourceGroups/rg-YYYYYY/providers/Microsoft.OperationalInsights/workspaces/law-XXXXXXX"
+                        }
+                    ],
+                    "kind": "app"
+                }
+            },
+            "group": {
+                "name": "app"
+            },
+            "labels": [],
+            "name": "app-XXXXX",
+            "type": "microsoft.web/sites/config",
+            "uid": "/subscriptions/56cce737-8fa4-44ab-ae54-529cacc1f8d8/resourceGroups/rg-YYYYYY/providers/Microsoft.Web/sites/app-XXXXX"
+        }
+    ],
+    "category_name": "Findings",
+    "category_uid": 2,
+    "class_name": "Detection Finding",
+    "class_uid": 2004,
+    "cloud": {
+        "account": {
+            "name": "SUB-XXXXX",
+            "type": "Azure AD Account",
+            "type_id": 6,
+            "uid": "56cce737-8fa4-44ab-ae54-529cacc1f8d8",
+            "labels": []
+        },
+        "org": {
+            "name": "toto.com",
+            "uid": "6f6d5588-a3b0-4b45-a1c1-59ccaf5ff36d"
+        },
+        "provider": "azure",
+        "region": "North Europe"
+    },
+    "remediation": {
+        "desc": "Set `client certificate mode` to `Required` and validate client certs in application logic (issuer, validity, revocation).\n\nEnforce HTTPS only, avoid broad exclusion paths, and manage certs via a trusted CA with rotation and revocation. Apply **least privilege** and **zero trust**, layering with private access or IP restrictions *as needed*.",
+        "references": [
+            "https://hub.prowler.com/check/app_client_certificates_on"
+        ]
+    },
+    "risk_details": "Without **mTLS**, clients aren't cryptographically authenticated at the transport layer. Adversaries can reach endpoints using spoofed sources or stolen tokens, leading to unauthorized data access (confidentiality), request tampering (integrity), and automated abuse that degrades service (availability).",
+    "time": 1778725989,
+    "time_dt": "2026-05-14T02:33:09.550326",
+    "type_uid": 200401,
+    "type_name": "Detection Finding: Create"
+}]
