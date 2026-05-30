@@ -19,19 +19,23 @@
   --red:   #CA3E47;
   --red2:  #A72E36;
   --accent: #0B7CB5;
+  --accent2: #095f8a;
 
   --sev-none:     #53AA33;
   --sev-low:      #FFCB0D;
   --sev-medium:   #F9A009;
   --sev-high:     #DF3D03;
   --sev-critical: #CC0501;
-  --sev-fp:       #BFBFBF;
 
-  --status-to-report:    #CA3E47;
+  --status-confirmed:    #CA3E47;
   --status-flagged:      #F9A009;
   --status-false-pos:    #BFBFBF;
   --status-reported:     #53AA33;
   --status-none:         #525252;
+
+  --comp-fail: #CA3E47;
+  --comp-pass: #53AA33;
+  --comp-na:   #525252;
 
   --bg:       #2a2a2a;
   --surface:  #313131;
@@ -47,19 +51,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
 
-html, body {
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   SCROLLBAR
-   ========================================================= */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -83,60 +76,54 @@ header {
   z-index: 100;
   flex-shrink: 0;
 }
-
 .header-left { display: flex; align-items: center; gap: 16px; }
-
-.logo {
-  font-family: var(--font-code);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--red);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
+.logo { font-family: var(--font-code); font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 2px; text-transform: uppercase; }
 .logo span { color: var(--grey1); }
-
-.project-name {
-  font-size: 12px;
-  color: var(--text-dim);
-  font-family: var(--font-code);
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+.project-name { font-size: 12px; color: var(--text-dim); font-family: var(--font-code); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .header-right { display: flex; align-items: center; gap: 10px; }
-
-.save-indicator {
-  font-size: 11px;
-  color: var(--sev-none);
-  font-family: var(--font-code);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
+.save-indicator { font-size: 11px; color: var(--sev-none); font-family: var(--font-code); opacity: 0; transition: opacity 0.3s; }
 .save-indicator.visible { opacity: 1; }
 
 main { flex: 1; padding: 20px 24px; }
 
 /* =========================================================
+   VIEW TABS
+   ========================================================= */
+.view-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin: -20px -24px 20px;
+  padding: 0 24px;
+  background: var(--surface);
+  position: sticky;
+  top: 52px;
+  z-index: 50;
+}
+.view-tab {
+  padding: 12px 22px;
+  font-size: 11px;
+  font-family: var(--font-code);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.view-tab:hover { color: var(--text); }
+.view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* =========================================================
    BUTTONS
    ========================================================= */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  color: var(--text);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: all 0.15s;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text); font-family: var(--font-ui); font-size: 12px;
+  cursor: pointer; border-radius: 3px; transition: all 0.15s; white-space: nowrap;
 }
 .btn:hover { background: var(--surface3); border-color: var(--grey1); }
 .btn.primary { background: var(--red); border-color: var(--red2); color: #fff; }
@@ -149,553 +136,435 @@ main { flex: 1; padding: 20px 24px; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* =========================================================
-   LANDING / PROJECT LIST
+   LANDING
    ========================================================= */
-#landing { max-width: 860px; margin: 40px auto; }
-
-.landing-title {
-  font-family: var(--font-code);
-  font-size: 13px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 24px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
+.landing-title { font-family: var(--font-code); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px; }
 .upload-zone {
-  border: 2px dashed var(--border);
-  border-radius: 4px;
-  padding: 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 32px;
-  background: var(--surface);
+  border: 2px dashed var(--border); border-radius: 4px; padding: 40px; text-align: center;
+  cursor: pointer; transition: all 0.2s; margin-bottom: 24px;
 }
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: var(--red);
-  background: var(--surface2);
-}
-.upload-zone .icon { font-size: 32px; margin-bottom: 12px; }
-.upload-zone h3 { font-size: 14px; color: var(--text); margin-bottom: 6px; }
-.upload-zone p { font-size: 12px; color: var(--text-dim); }
-
-.project-list { display: flex; flex-direction: column; gap: 6px; }
-
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(11,124,181,0.05); }
+.upload-zone .icon { font-size: 32px; margin-bottom: 10px; }
+.upload-zone h3 { color: var(--text); margin-bottom: 6px; }
+.upload-zone p { color: var(--text-dim); font-size: 12px; }
+.project-list { display: flex; flex-direction: column; gap: 8px; }
 .project-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; transition: border-color 0.15s;
 }
-.project-item:hover { border-color: var(--red); background: var(--surface2); }
-.project-item .proj-name { flex: 1; font-size: 13px; font-weight: 600; }
-.project-item .proj-meta { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); }
-.project-item .proj-actions { display: flex; gap: 6px; }
+.project-item.selected { border-color: var(--accent); background: rgba(11,124,181,0.06); }
+.project-item-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.project-item input[type=checkbox] { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+.project-bulk-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+}
+.project-bulk-left { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); }
+.project-bulk-actions { display: flex; gap: 6px; }
+.project-item:hover { border-color: var(--accent); }
+.proj-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.proj-meta { font-size: 11px; color: var(--text-dim); }
+.proj-actions { display: flex; gap: 6px; }
+.empty-state { text-align: center; padding: 40px; color: var(--text-dim); }
+.empty-state .icon { font-size: 32px; margin-bottom: 10px; }
 
 /* =========================================================
-   STATS BAR
+   MULTI-SELECT FILTER
+   ========================================================= */
+.ms-wrap { position: relative; display: inline-block; }
+.ms-trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; font-size: 12px; font-family: var(--font-ui);
+  color: var(--text); white-space: nowrap; min-width: 80px; transition: border-color 0.15s;
+  user-select: none;
+}
+.ms-trigger:hover { border-color: var(--grey1); }
+.ms-trigger.has-selection { border-color: var(--accent); color: var(--accent); }
+.ms-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; border-radius: 10px;
+  padding: 0 5px; font-size: 10px; min-width: 16px; height: 16px; line-height: 1;
+}
+.ms-caret { font-size: 9px; color: var(--text-dim); margin-left: auto; }
+.ms-dropdown {
+  display: none; position: absolute; top: calc(100% + 3px); left: 0; z-index: 400;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  min-width: 180px; max-height: 260px; overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.ms-dropdown.open { display: block; }
+.ms-dropdown-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-bottom: 1px solid var(--border);
+  font-size: 11px; color: var(--text-dim); background: var(--surface2);
+  position: sticky; top: 0;
+}
+.ms-clear-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 11px; padding: 0; }
+.ms-clear-btn:hover { text-decoration: underline; }
+.ms-dropdown label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; cursor: pointer; font-size: 12px; color: var(--text);
+}
+.ms-dropdown label:hover { background: var(--surface2); }
+.ms-dropdown input[type=checkbox] { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+.ms-options-container { /* dynamic options injected here */ }
+
+/* =========================================================
+   STATS SECTION
    ========================================================= */
 #stats-section { margin-bottom: 16px; }
-
 .stats-top {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 12px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 10px 20px;
+  flex-wrap: wrap; gap: 8px;
 }
-
-.stat-item { text-align: center; }
-.stat-item .stat-value {
-  font-family: var(--font-code);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--red);
-  line-height: 1;
-}
-.stat-item .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
-
-.stats-divider { width: 1px; height: 40px; background: var(--border); }
-
-.charts-toggle {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-dim);
-  cursor: pointer;
-  user-select: none;
-}
+.stat-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+.stat-value { font-size: 22px; font-weight: bold; font-family: var(--font-code); }
+.stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.stats-divider { width: 1px; height: 36px; background: var(--border); margin: 0 8px; }
+.charts-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 12px; }
 .charts-toggle:hover { color: var(--text); }
-
-.charts-section {
-  display: none;
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 3px 3px;
-}
-.charts-section.open { display: flex; gap: 24px; flex-wrap: wrap; }
-
-.chart-wrap {
-  flex: 1;
-  min-width: 200px;
-  max-width: 340px;
-}
-.chart-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-  font-family: var(--font-code);
-}
+.charts-section { display: none; border: 1px solid var(--border); border-top: none; border-radius: 0 0 3px 3px; padding: 10px 14px; gap: 16px; background: var(--surface); max-height: 185px; align-items: flex-start; }
+.charts-section.open { display: flex; }
+.chart-wrap { flex: 1; min-width: 160px; max-height: 165px; position: relative; }
+.chart-wrap canvas { max-height: 140px !important; }
+.chart-title { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 
 /* =========================================================
-   FILTERS
+   FILTERS SECTION
    ========================================================= */
-#filters-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-}
-
-.filters-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filter-group { display: flex; flex-direction: column; gap: 3px; }
+#filters-section { margin-bottom: 12px; }
+.filters-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-
-.filter-select, .filter-input {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  padding: 5px 8px;
-  border-radius: 3px;
-  outline: none;
-  transition: border-color 0.15s;
+.filter-input {
+  padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px;
+  min-width: 200px; transition: border-color 0.15s;
 }
-.filter-select:focus, .filter-input:focus { border-color: var(--red); }
-.filter-input { min-width: 220px; }
-
-.filters-actions {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.results-count {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-family: var(--font-code);
-  padding: 5px 0;
-  align-self: flex-end;
-}
+.filter-input:focus { outline: none; border-color: var(--accent); }
+.findings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.findings-header-left { display: flex; align-items: center; gap: 12px; }
+.results-count { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); }
 
 /* =========================================================
-   FINDINGS TABLE HEADER
-   ========================================================= */
-.findings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.findings-header-left { display: flex; align-items: center; gap: 10px; }
-
-/* =========================================================
-   FINDING CARD
+   FINDING CARDS
    ========================================================= */
 .finding-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  margin-bottom: 6px;
-  overflow: hidden;
-  transition: border-color 0.15s;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s;
 }
-.finding-card:hover { border-color: var(--grey2); }
-.finding-card.status-to-report { border-left: 3px solid var(--status-to-report); }
-.finding-card.status-flagged    { border-left: 3px solid var(--status-flagged); }
+.finding-card.status-confirmed { border-left: 3px solid var(--status-confirmed); }
+.finding-card.status-flagged { border-left: 3px solid var(--status-flagged); }
 .finding-card.status-false-positive { border-left: 3px solid var(--status-false-pos); }
-.finding-card.status-reported   { border-left: 3px solid var(--status-reported); }
+.finding-card.status-reported { border-left: 3px solid var(--status-reported); }
 
 .finding-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  user-select: none;
-  min-height: 46px;
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  cursor: pointer; user-select: none;
 }
 .finding-header:hover { background: var(--surface2); }
+.expand-icon { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.finding-card.open .expand-icon { transform: rotate(90deg); }
+.finding-title { font-size: 13px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.finding-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
 
 .sev-badge {
-  flex-shrink: 0;
-  font-family: var(--font-code);
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 3px 7px;
-  border-radius: 2px;
-  min-width: 62px;
-  text-align: center;
-  color: #111;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 2px 8px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  font-weight: bold; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0;
 }
-.sev-informational, .sev-none { background: var(--sev-none); }
-.sev-low    { background: var(--sev-low); }
-.sev-medium { background: var(--sev-medium); }
-.sev-high   { background: var(--sev-high); color: #fff; }
-.sev-critical { background: var(--sev-critical); color: #fff; }
-
-.finding-title {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.finding-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
+.sev-badge.sev-critical { background: var(--sev-critical); color: #fff; }
+.sev-badge.sev-high     { background: var(--sev-high); color: #fff; }
+.sev-badge.sev-medium   { background: var(--sev-medium); color: #1a1a1a; }
+.sev-badge.sev-low      { background: var(--sev-low); color: #1a1a1a; }
+.sev-badge.sev-informational { background: var(--sev-none); color: #1a1a1a; }
 
 .tag {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  border: 1px solid;
-  font-family: var(--font-code);
-  white-space: nowrap;
+  display: inline-flex; align-items: center; padding: 2px 7px;
+  border-radius: 2px; font-size: 10px; font-family: var(--font-code);
 }
-.tag-service { color: var(--accent); border-color: var(--accent); background: rgba(11,124,181,0.1); }
-.tag-cloud   { color: var(--grey1); border-color: var(--border); background: var(--surface3); }
-.tag-assets  { color: var(--text-dim); border-color: var(--border); }
-.tag-failed  { color: var(--red); border-color: var(--red); background: rgba(202,62,71,0.1); }
-.tag-passed  { color: var(--sev-none); border-color: var(--sev-none); background: rgba(83,170,51,0.1); }
+.tag-failed { background: rgba(202,62,71,0.2); color: #ff6b73; border: 1px solid rgba(202,62,71,0.4); }
+.tag-passed { background: rgba(83,170,51,0.2); color: #7dd966; border: 1px solid rgba(83,170,51,0.4); }
+.tag-assets { background: var(--surface3); color: var(--text-dim); }
+.tag-cloud  { background: rgba(11,124,181,0.15); color: #5bbce4; }
+.tag-service { background: var(--surface3); color: var(--text-dim); }
 
 .status-select {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 3px;
-  border: 1px solid var(--border);
-  background: var(--surface3);
-  color: var(--text);
-  cursor: pointer;
-  outline: none;
-  min-width: 110px;
+  padding: 3px 6px; background: var(--surface3); border: 1px solid var(--border);
+  color: var(--text); font-size: 11px; border-radius: 2px; cursor: pointer;
 }
-.status-select:focus { border-color: var(--red); }
-.status-select.s-to-report    { border-color: var(--status-to-report); color: var(--status-to-report); }
-.status-select.s-flagged      { border-color: var(--status-flagged); color: var(--status-flagged); }
+.status-select.s-confirmed    { border-color: var(--status-confirmed); color: var(--status-confirmed); }
+.status-select.s-flagged       { border-color: var(--status-flagged); color: var(--status-flagged); }
 .status-select.s-false-positive { border-color: var(--status-false-pos); color: var(--status-false-pos); }
-.status-select.s-reported     { border-color: var(--status-reported); color: var(--status-reported); }
+.status-select.s-reported      { border-color: var(--status-reported); color: var(--status-reported); }
 
-.expand-icon {
-  color: var(--text-dim);
-  font-size: 12px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
-  width: 16px;
-  text-align: center;
-}
-.finding-card.open .expand-icon { transform: rotate(90deg); }
-
-/* =========================================================
-   FINDING BODY
-   ========================================================= */
-.finding-body {
-  display: none;
-  padding: 0 14px 14px;
-  border-top: 1px solid var(--border);
-}
+.finding-body { display: none; border-top: 1px solid var(--border); }
 .finding-card.open .finding-body { display: block; }
-
-.finding-body-tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 12px;
-  margin-top: 12px;
-  border-bottom: 1px solid var(--border);
-}
+.finding-body-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); overflow-x: auto; }
 .body-tab {
-  padding: 6px 14px;
-  font-size: 11px;
-  font-family: var(--font-code);
-  color: var(--text-dim);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.15s;
+  padding: 8px 14px; font-size: 11px; font-family: var(--font-code); letter-spacing: 0.5px;
+  color: var(--text-dim); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+  transition: color 0.15s;
 }
 .body-tab:hover { color: var(--text); }
-.body-tab.active { color: var(--red); border-bottom-color: var(--red); }
-
-.tab-panel { display: none; }
+.body-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel { display: none; padding: 14px; }
 .tab-panel.active { display: block; }
 
-/* Assets panel */
-.assets-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.assets-header h4 { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-code); }
-
-.assets-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.asset-row {
-  display: grid;
-  gap: 4px;
-  font-size: 11px;
-  font-family: var(--font-code);
-}
+/* =========================================================
+   ASSETS GRID
+   ========================================================= */
+.assets-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.assets-header h4 { font-size: 12px; color: var(--text-dim); font-family: var(--font-code); }
+.details-subsection + .details-subsection,
+.non-compliant-controls { margin-top: 18px; }
+.non-compliant-controls { padding-top: 0; border-top: none; }
+#comp-stats-section { margin-bottom: 16px; }
+#comp-stats-section .stats-top { border-radius: 3px 3px 0 0; }
+.comp-charts-visible { display: flex !important; border-top: none; border-radius: 0 0 3px 3px; }
+.assets-grid { display: flex; flex-direction: column; gap: 4px; }
+.asset-row { display: grid; gap: 4px; }
 .asset-cell {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 4px 8px;
-  border-radius: 2px;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 5px 10px; background: var(--surface2); border-radius: 2px; border: 1px solid var(--border);
+  font-size: 12px; display: flex; align-items: center; gap: 6px; overflow: hidden;
 }
-.asset-cell.status-failed { border-left: 2px solid var(--red); }
-.asset-cell.status-passed { border-left: 2px solid var(--sev-none); }
+.asset-cell.status-fail { border-color: rgba(202,62,71,0.4); background: rgba(202,62,71,0.08); }
+.asset-cell.status-pass { border-color: rgba(83,170,51,0.3); background: rgba(83,170,51,0.06); }
+.asset-name { font-family: var(--font-code); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.asset-rg { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+.asset-region { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+.asset-portal-link { color: var(--accent); font-size: 11px; text-decoration: none; flex-shrink: 0; }
+.asset-portal-link:hover { text-decoration: underline; }
 
-.asset-name { color: var(--text); }
-.asset-rg   { font-size: 10px; color: var(--text-dim); margin-left: 8px; }
-.asset-rg::before { content: '📁 '; }
-.asset-region { font-size: 10px; color: var(--text-dim); margin-left: 6px; }
-.asset-portal-link {
-  margin-left: 8px;
-  color: var(--accent);
-  font-size: 11px;
-  text-decoration: none;
-  opacity: 0.7;
-  transition: opacity 0.15s;
-  font-family: var(--font-code);
-}
-.asset-portal-link:hover { opacity: 1; text-decoration: underline; }
-
-/* Risk / Remediation panels */
+/* =========================================================
+   MARKDOWN BLOCK
+   ========================================================= */
 .md-block {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 14px 16px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  line-height: 1.6;
-  margin-bottom: 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+  padding: 12px 14px; font-size: 13px; line-height: 1.7; max-height: 320px; overflow-y: auto;
 }
-.md-block h1, .md-block h2, .md-block h3 { color: var(--grey1); margin: 8px 0 4px; font-size: 13px; }
-.md-block p { margin: 4px 0; color: var(--text); }
-.md-block ul, .md-block ol { padding-left: 20px; color: var(--text); }
-.md-block li { margin: 2px 0; }
-.md-block code {
-  font-family: var(--font-code);
-  font-size: 10px;
-  background: var(--surface3);
-  padding: 1px 5px;
-  border-radius: 2px;
-  color: var(--grey1);
-}
-.md-block pre {
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  padding: 10px 12px;
-  overflow-x: auto;
-  margin: 6px 0;
-}
-.md-block pre code { background: none; padding: 0; font-size: 10px; }
-.md-block a { color: var(--accent); }
+.md-block h1,.md-block h2,.md-block h3 { color: var(--text); margin: 8px 0 4px; font-size: 14px; }
+.md-block p { margin-bottom: 8px; }
+.md-block code { background: var(--surface2); padding: 1px 5px; border-radius: 2px; font-family: var(--font-code); font-size: 11px; color: #e8b4a0; }
+.md-block pre { background: var(--surface2); padding: 10px; border-radius: 3px; overflow-x: auto; margin: 8px 0; }
+.md-block pre code { background: none; padding: 0; }
+.md-block ul,.md-block ol { padding-left: 20px; margin-bottom: 8px; }
 .md-block strong { color: var(--grey1); }
-.md-block blockquote { border-left: 3px solid var(--red); padding-left: 10px; color: var(--text-dim); margin: 4px 0; }
+.md-block a { color: var(--accent); }
 
-.section-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  font-family: var(--font-code);
-  margin-bottom: 6px;
-}
+.references-block { margin-top: 10px; }
+.references-block a { display: block; font-size: 11px; color: var(--accent); margin-top: 4px; word-break: break-all; }
+.section-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-family: var(--font-code); }
 
-.references-block {
-  margin-top: 10px;
-  padding: 10px 12px;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-}
-.references-block .section-label { margin-bottom: 6px; }
-.references-block a {
-  display: block;
-  font-size: 11px;
-  font-family: var(--font-code);
-  color: var(--accent);
-  text-decoration: none;
-  margin: 2px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.references-block a:hover { text-decoration: underline; }
-
-/* Controls panel */
-.controls-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-height: 160px;
-  overflow-y: auto;
-}
+/* Controls */
+.controls-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .control-badge {
-  font-family: var(--font-code);
-  font-size: 10px;
-  padding: 2px 7px;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  color: var(--text-dim);
+  padding: 2px 8px; background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 10px; font-size: 10px; font-family: var(--font-code); color: var(--text-dim);
 }
+.control-badge.preferred { border-color: var(--accent); color: var(--accent); background: rgba(11,124,181,0.1); }
+
+/* =========================================================
+   IMPORT MODAL
+   ========================================================= */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 560px; max-height: 90vh; display: flex; flex-direction: column; }
+.modal-large { width: 700px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.modal-header h2 { font-family: var(--font-code); font-size: 13px; letter-spacing: 2px; color: var(--text); }
+.modal-body { flex: 1; overflow-y: auto; padding: 18px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 7px 10px; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-ui); font-size: 13px; border-radius: 3px;
+}
+.form-input:focus { outline: none; border-color: var(--accent); }
+
+.import-bm-search { width: 100%; padding: 7px 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px; margin-bottom: 10px; }
+.import-bm-search:focus { outline: none; border-color: var(--accent); }
+.import-bm-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; }
+.import-bm-group { border-bottom: 1px solid var(--border); }
+.import-bm-group:last-child { border-bottom: none; }
+.import-bm-group-header {
+  padding: 8px 12px; font-size: 11px; font-family: var(--font-code);
+  text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);
+  cursor: pointer; background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+}
+.import-bm-group-header:hover { color: var(--text); }
+.import-bm-group-body { display: none; }
+.import-bm-group-body.open { display: block; }
+.import-bm-item {
+  display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+  cursor: pointer; border-bottom: 1px solid var(--border);
+}
+.import-bm-item:last-child { border-bottom: none; }
+.import-bm-item:hover { background: var(--surface2); }
+.import-bm-item input { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+.import-bm-name { font-size: 12px; flex: 1; }
+.import-bm-meta { font-size: 10px; color: var(--text-dim); font-family: var(--font-code); white-space: nowrap; }
+.import-bm-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
 
 /* =========================================================
    HISTORY MODAL
    ========================================================= */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  display: none;
-}
-.modal-overlay.open { display: flex; }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface2); border-radius: 3px; }
+.hist-ts { font-family: var(--font-code); font-size: 12px; color: var(--text-dim); }
 
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  width: 540px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* =========================================================
+   COMPLIANCE VIEW
+   ========================================================= */
+.comp-toolbar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;
+  padding: 0 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
 }
+.comp-toolbar-group { display: flex; flex-direction: column; gap: 5px; }
+.comp-toolbar-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-code); }
+.comp-benchmark-select {
+  padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px;
+  min-width: 260px; max-width: 400px;
+}
+.comp-profile-btns { display: flex; gap: 4px; }
+.comp-profile-btn {
+  padding: 4px 12px; font-size: 11px; font-family: var(--font-code);
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer; border-radius: 3px; transition: all 0.15s;
+}
+.comp-profile-btn:hover { border-color: var(--grey1); color: var(--text); }
+.comp-profile-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-.modal-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.modal-header h2 { font-size: 13px; font-family: var(--font-code); letter-spacing: 1px; color: var(--grey1); }
-.modal-body { padding: 14px 18px; overflow-y: auto; flex: 1; }
-.modal-footer { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.impact-subsection { margin-bottom: 10px; }
+.impact-subsection:last-child { margin-bottom: 0; }
 
-.history-list { display: flex; flex-direction: column; gap: 4px; }
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  font-family: var(--font-code);
-  font-size: 11px;
-  color: var(--text-dim);
+.comp-section { margin-bottom: 6px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.comp-section-header {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+  background: var(--surface); cursor: pointer; user-select: none;
 }
-.history-item:hover { border-color: var(--grey2); }
-.history-item .hist-ts { color: var(--text); }
+.comp-section-header:hover { background: var(--surface2); }
+.comp-section-toggle { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.comp-section.open .comp-section-toggle { transform: rotate(90deg); }
+.comp-section-title { font-size: 12px; font-family: var(--font-code); flex: 1; }
+.comp-section-counts { display: flex; gap: 8px; font-size: 11px; font-family: var(--font-code); flex-shrink: 0; }
+.comp-section-body { display: none; }
+.comp-section.open .comp-section-body { display: block; }
+
+.comp-subsection { border-top: 1px solid var(--border); }
+.comp-subsection-header {
+  display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 26px;
+  font-size: 11px; color: var(--text-dim); font-family: var(--font-code);
+  background: var(--surface2); cursor: pointer; user-select: none;
+}
+.comp-subsection-header:hover { color: var(--text); }
+.comp-subsection-toggle { font-size: 9px; transition: transform 0.15s; }
+.comp-subsection.open .comp-subsection-toggle { transform: rotate(90deg); }
+.comp-subsection-body { display: none; }
+.comp-subsection.open .comp-subsection-body { display: block; }
+
+.comp-req { }
+.comp-req-row {
+  display: flex; align-items: center; gap: 9px; padding: 7px 14px 7px 34px;
+  border-top: 1px solid var(--border); cursor: pointer; font-size: 12px;
+  transition: background 0.1s;
+}
+.comp-req-row:hover { background: var(--surface2); }
+.comp-req.open .comp-req-row { background: var(--surface2); }
+.comp-status-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 1px 6px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  font-weight: bold; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; min-width: 38px;
+}
+.comp-status-badge.fail { background: var(--comp-fail); color: #fff; }
+.comp-status-badge.pass { background: var(--comp-pass); color: #fff; }
+.comp-status-badge.na { background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border); }
+.comp-req-id { font-family: var(--font-code); font-size: 10px; color: var(--text-dim); flex-shrink: 0; min-width: 48px; }
+.comp-req-desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.comp-req-counts { display: flex; gap: 6px; flex-shrink: 0; font-family: var(--font-code); font-size: 11px; }
+.comp-req-count-fail { color: var(--comp-fail); }
+.comp-req-count-pass { color: var(--comp-pass); }
+.comp-req-detail {
+  display: none; padding: 10px 14px 10px 34px;
+  background: var(--bg); border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.comp-req.open .comp-req-detail { display: block; }
+.comp-detail-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-family: var(--font-code); }
+.comp-detail-checks { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.comp-check-id { background: var(--surface3); padding: 2px 6px; border-radius: 2px; font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
+.comp-check-id a { color: var(--accent); text-decoration: none; }
+.comp-check-id a:hover { text-decoration: underline; }
+.comp-check-block { margin-top: 8px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.comp-check-block-hdr { padding: 6px 10px; background: var(--surface2); font-family: var(--font-code); font-size: 11px; display: flex; align-items: center; gap: 8px; }
+.comp-check-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); overflow-x: auto; }
+.comp-check-tab {
+  padding: 6px 10px; font-size: 10px; font-family: var(--font-code); color: var(--text-dim);
+  cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+}
+.comp-check-tab:hover { color: var(--text); }
+.comp-check-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.comp-check-panel { display: none; padding: 10px; font-size: 12px; }
+.comp-check-panel.active { display: block; }
+.remediation-procedure { margin-top: 10px; }
+.remediation-procedure-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-family: var(--font-code); }
+.comp-linked-findings { display: flex; flex-direction: column; gap: 4px; }
+.comp-linked-finding { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--surface2); border-radius: 2px; font-size: 11px; }
+.comp-linked-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* =========================================================
+   REPORTING VIEW
+   ========================================================= */
+.report-view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.report-count { font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
+.report-finding { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+.report-finding.status-confirmed { border-left: 3px solid var(--status-confirmed); }
+.report-finding.status-reported  { border-left: 3px solid var(--status-reported); }
+.report-finding-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+  cursor: pointer; user-select: none;
+}
+.report-finding-hdr:hover { background: var(--surface2); }
+.report-expand-icon { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.report-finding.open .report-expand-icon { transform: rotate(90deg); }
+.report-finding-title { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.report-finding-body { display: none; border-top: 1px solid var(--border); }
+.report-finding.open .report-finding-body { display: block; }
+.report-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.report-section:last-child { border-bottom: none; }
+.report-section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.report-section-label { font-size: 10px; font-family: var(--font-code); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.analysis-status-tag {
+  padding: 2px 8px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+}
+.analysis-status-tag.status-confirmed  { color: var(--status-confirmed); border: 1px solid var(--status-confirmed); }
+.analysis-status-tag.status-reported   { color: var(--status-reported); border: 1px solid var(--status-reported); }
+.other-controls-details { margin-top: 8px; }
+.other-controls-details summary { font-size: 11px; color: var(--text-dim); cursor: pointer; padding: 3px 0; }
+.other-controls-details .controls-list { margin-top: 6px; }
 
 /* =========================================================
    TOAST
    ========================================================= */
 #toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--sev-none);
-  color: var(--text);
-  font-size: 12px;
-  padding: 10px 16px;
-  border-radius: 3px;
-  font-family: var(--font-code);
-  z-index: 300;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: var(--surface3); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 18px; border-radius: 4px; font-size: 12px; font-family: var(--font-code);
+  opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 9999; pointer-events: none;
 }
-#toast.show { opacity: 1; }
-#toast.error { border-left-color: var(--red); }
-
-/* =========================================================
-   MISC
-   ========================================================= */
-.empty-state {
-  text-align: center;
-  padding: 48px;
-  color: var(--text-dim);
-  font-size: 12px;
-}
-.empty-state .icon { font-size: 32px; margin-bottom: 10px; }
-
-.sep { height: 1px; background: var(--border); margin: 16px 0; }
-
-.inline-code {
-  font-family: var(--font-code);
-  font-size: 11px;
-  background: var(--surface3);
-  padding: 2px 6px;
-  border-radius: 2px;
-}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { border-color: var(--red); color: var(--red); }
 </style>
 </head>
 <body>
@@ -707,6 +576,7 @@ main { flex: 1; padding: 20px 24px; }
     </div>
     <div class="header-right">
       <span class="save-indicator" id="save-indicator">✓ SAVED</span>
+      <button class="btn small" id="btn-settings" style="display:none" onclick="openSettings()">⚙ Settings</button>
       <button class="btn small" id="btn-history" style="display:none" onclick="openHistory()">⟳ History</button>
       <button class="btn small" id="btn-back" style="display:none" onclick="goHome()">← Projects</button>
       <button class="btn small primary" id="btn-new" onclick="goHome()">+ New Project</button>
@@ -714,10 +584,9 @@ main { flex: 1; padding: 20px 24px; }
   </header>
 
   <main>
-    <!-- LANDING -->
+    <!-- ── LANDING ──────────────────────────────────────── -->
     <div id="landing">
       <div class="landing-title">Projects</div>
-
       <div class="upload-zone" id="upload-zone"
            ondragover="handleDragOver(event)"
            ondragleave="handleDragLeave(event)"
@@ -729,8 +598,17 @@ main { flex: 1; padding: 20px 24px; }
         <p style="margin-top:6px;font-size:11px;color:var(--red)">AWS · Azure · GCP</p>
       </div>
       <input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileSelect(event)">
-
       <div id="project-list-wrap">
+        <div id="project-bulk-bar" class="project-bulk-bar" style="display:none">
+          <div class="project-bulk-left">
+            <span id="project-selected-count">0 selected</span>
+            <button class="btn small" onclick="selectAllProjects()">Select all</button>
+            <button class="btn small" onclick="clearProjectSelection()">Clear</button>
+          </div>
+          <div class="project-bulk-actions">
+            <button class="btn small danger" onclick="deleteSelectedProjects()">Delete selected</button>
+          </div>
+        </div>
         <div class="landing-title" style="font-size:11px">Recent Projects</div>
         <div id="project-list" class="project-list">
           <div class="empty-state"><div class="icon">📋</div>No projects yet</div>
@@ -738,145 +616,276 @@ main { flex: 1; padding: 20px 24px; }
       </div>
     </div>
 
-    <!-- REVIEW VIEW -->
+    <!-- ── REVIEW CONTAINER ─────────────────────────────── -->
     <div id="review" style="display:none">
-      <!-- Stats -->
-      <div id="stats-section">
-        <div class="stats-top">
-          <div class="stat-item">
-            <div class="stat-value" id="stat-total">0</div>
-            <div class="stat-label">Findings</div>
+      <div class="view-tabs">
+        <button class="view-tab active" data-view="analysis"   onclick="switchView('analysis')">Analysis</button>
+        <button class="view-tab"        data-view="compliance" onclick="switchView('compliance')">Compliance</button>
+        <button class="view-tab"        data-view="reporting"  onclick="switchView('reporting')">Reporting</button>
+      </div>
+
+      <!-- ── ANALYSIS VIEW ── -->
+      <div id="analysis-view">
+        <div id="stats-section">
+          <div class="stats-top">
+            <div class="stat-item">
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-label">Findings</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-failed" style="color:var(--red)">0</div>
+              <div class="stat-label">Failed</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-passed" style="color:var(--sev-none)">0</div>
+              <div class="stat-label">Passed</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-assets">0</div>
+              <div class="stat-label">Assets</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-critical" style="color:var(--sev-critical)">0</div>
+              <div class="stat-label">Critical</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-high" style="color:var(--sev-high)">0</div>
+              <div class="stat-label">High</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-confirmed" style="color:var(--status-confirmed)">0</div>
+              <div class="stat-label">Confirmed</div>
+            </div>
+            <div class="charts-toggle" onclick="toggleCharts()">
+              <span id="charts-toggle-icon">▼</span> Charts
+            </div>
           </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-failed" style="color:var(--red)">0</div>
-            <div class="stat-label">Failed</div>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-passed" style="color:var(--sev-none)">0</div>
-            <div class="stat-label">Passed</div>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-assets">0</div>
-            <div class="stat-label">Assets</div>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-critical" style="color:var(--sev-critical)">0</div>
-            <div class="stat-label">Critical</div>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-high" style="color:var(--sev-high)">0</div>
-            <div class="stat-label">High</div>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stat-item">
-            <div class="stat-value" id="stat-to-report" style="color:var(--status-to-report)">0</div>
-            <div class="stat-label">To Report</div>
-          </div>
-          <div class="charts-toggle" onclick="toggleCharts()">
-            <span id="charts-toggle-icon">▼</span> Charts
+          <div class="charts-section" id="charts-section">
+            <div class="chart-wrap">
+              <div class="chart-title">Failed findings by severity</div>
+              <canvas id="chart-sev" height="140"></canvas>
+            </div>
+            <div class="chart-wrap">
+              <div class="chart-title">Pass / Fail distribution</div>
+              <canvas id="chart-pf" height="140"></canvas>
+            </div>
           </div>
         </div>
-        <div class="charts-section" id="charts-section">
-          <div class="chart-wrap">
-            <div class="chart-title">Failed findings by severity</div>
-            <canvas id="chart-sev" height="180"></canvas>
+
+        <div id="filters-section">
+          <div class="filters-row">
+            <!-- Text search -->
+            <div class="filter-group">
+              <div class="filter-label">Search</div>
+              <input type="text" class="filter-input" id="f-search" placeholder="Title, asset, description…" oninput="applyFilters()">
+            </div>
+            <!-- Status -->
+            <div class="filter-group">
+              <div class="filter-label">Status</div>
+              <div class="ms-wrap" id="ms-status">
+                <button class="ms-trigger" id="ms-status-trigger" type="button" onclick="toggleMs('status',event)">
+                  Status <span class="ms-badge" id="ms-status-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-status-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Status</span><button class="ms-clear-btn" onclick="msClearFilter('status',event)">Clear</button></div>
+                  <label><input type="checkbox" value="FAIL" onchange="msChanged('status')"> Failed</label>
+                  <label><input type="checkbox" value="PASS" onchange="msChanged('status')"> Passed</label>
+                </div>
+              </div>
+            </div>
+            <!-- Severity -->
+            <div class="filter-group">
+              <div class="filter-label">Severity</div>
+              <div class="ms-wrap" id="ms-severity">
+                <button class="ms-trigger" id="ms-severity-trigger" type="button" onclick="toggleMs('severity',event)">
+                  Severity <span class="ms-badge" id="ms-severity-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-severity-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Severity</span><button class="ms-clear-btn" onclick="msClearFilter('severity',event)">Clear</button></div>
+                  <label><input type="checkbox" value="critical"      onchange="msChanged('severity')"> Critical</label>
+                  <label><input type="checkbox" value="high"          onchange="msChanged('severity')"> High</label>
+                  <label><input type="checkbox" value="medium"        onchange="msChanged('severity')"> Medium</label>
+                  <label><input type="checkbox" value="low"           onchange="msChanged('severity')"> Low</label>
+                  <label><input type="checkbox" value="informational" onchange="msChanged('severity')"> Informational</label>
+                </div>
+              </div>
+            </div>
+            <!-- Analysis Status -->
+            <div class="filter-group">
+              <div class="filter-label">Analysis</div>
+              <div class="ms-wrap" id="ms-analysis">
+                <button class="ms-trigger" id="ms-analysis-trigger" type="button" onclick="toggleMs('analysis',event)">
+                  Analysis <span class="ms-badge" id="ms-analysis-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-analysis-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Analysis</span><button class="ms-clear-btn" onclick="msClearFilter('analysis',event)">Clear</button></div>
+                  <label><input type="checkbox" value="confirmed"      onchange="msChanged('analysis')"> Confirmed</label>
+                  <label><input type="checkbox" value="flagged"        onchange="msChanged('analysis')"> Flagged</label>
+                  <label><input type="checkbox" value="false-positive" onchange="msChanged('analysis')"> False Positive</label>
+                  <label><input type="checkbox" value="reported"       onchange="msChanged('analysis')"> Reported</label>
+                  <label><input type="checkbox" value="none"           onchange="msChanged('analysis')"> Unset</label>
+                </div>
+              </div>
+            </div>
+            <!-- Cloud (dynamic) -->
+            <div class="filter-group">
+              <div class="filter-label">Cloud</div>
+              <div class="ms-wrap" id="ms-cloud">
+                <button class="ms-trigger" id="ms-cloud-trigger" type="button" onclick="toggleMs('cloud',event)">
+                  Cloud <span class="ms-badge" id="ms-cloud-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-cloud-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Cloud</span><button class="ms-clear-btn" onclick="msClearFilter('cloud',event)">Clear</button></div>
+                  <div class="ms-options-container" id="ms-cloud-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Subscription -->
+            <div class="filter-group">
+              <div class="filter-label">Subscription / Account</div>
+              <div class="ms-wrap" id="ms-subscription">
+                <button class="ms-trigger" id="ms-subscription-trigger" type="button" onclick="toggleMs('subscription',event)">
+                  Account <span class="ms-badge" id="ms-subscription-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-subscription-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Account</span><button class="ms-clear-btn" onclick="msClearFilter('subscription',event)">Clear</button></div>
+                  <div class="ms-options-container" id="ms-subscription-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Resource Group -->
+            <div class="filter-group">
+              <div class="filter-label">Resource Group</div>
+              <div class="ms-wrap" id="ms-rg">
+                <button class="ms-trigger" id="ms-rg-trigger" type="button" onclick="toggleMs('rg',event)">
+                  Res. Group <span class="ms-badge" id="ms-rg-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-rg-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Resource Group</span><button class="ms-clear-btn" onclick="msClearFilter('rg',event)">Clear</button></div>
+                  <div class="ms-options-container" id="ms-rg-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Service -->
+            <div class="filter-group">
+              <div class="filter-label">Service</div>
+              <div class="ms-wrap" id="ms-service">
+                <button class="ms-trigger" id="ms-service-trigger" type="button" onclick="toggleMs('service',event)">
+                  Service <span class="ms-badge" id="ms-service-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                </button>
+                <div class="ms-dropdown" id="ms-service-dropdown">
+                  <div class="ms-dropdown-hdr"><span>Service</span><button class="ms-clear-btn" onclick="msClearFilter('service',event)">Clear</button></div>
+                  <div class="ms-options-container" id="ms-service-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Clear all -->
+            <div class="filter-group" style="align-self:flex-end">
+              <button class="btn small" onclick="clearAllFilters()">✕ Clear all</button>
+            </div>
           </div>
-          <div class="chart-wrap">
-            <div class="chart-title">Pass / Fail distribution</div>
-            <canvas id="chart-pf" height="180"></canvas>
+        </div>
+
+        <div class="findings-header">
+          <div class="findings-header-left">
+            <span class="results-count" id="results-count"></span>
           </div>
+          <button class="btn small accent" onclick="copyFindingsTSV()" title="Copy filtered findings as TSV for Excel">📋 Copy TSV</button>
+        </div>
+
+        <div id="findings-list"></div>
+      </div>
+
+      <!-- ── COMPLIANCE VIEW ── -->
+      <div id="compliance-view" style="display:none">
+        <div class="comp-toolbar">
+          <div class="comp-toolbar-group">
+            <div class="comp-toolbar-label">Benchmark</div>
+            <select class="comp-benchmark-select" id="comp-benchmark-select" onchange="onCompBenchmarkChange(this.value)">
+              <option value="">— Select benchmark —</option>
+            </select>
+          </div>
+          <div class="comp-toolbar-group" id="comp-profile-filter-wrap" style="display:none">
+            <div class="comp-toolbar-label" id="comp-profile-label">Profile</div>
+            <div class="comp-profile-btns" id="comp-profile-btns"></div>
+          </div>
+        </div>
+        <div id="comp-stats"></div>
+        <div id="comp-requirements">
+          <div class="empty-state"><div class="icon">📋</div>Select a benchmark to view compliance status</div>
         </div>
       </div>
 
-      <!-- Filters -->
-      <div id="filters-section">
-        <div class="filters-row">
-          <div class="filter-group">
-            <div class="filter-label">Search</div>
-            <input type="text" class="filter-input" id="f-search" placeholder="Title, asset, description..." oninput="applyFilters()">
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Status</div>
-            <select class="filter-select" id="f-status" onchange="applyFilters()">
-              <option value="">All</option>
-              <option value="FAIL">Failed</option>
-              <option value="PASS">Passed</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Severity</div>
-            <select class="filter-select" id="f-severity" onchange="applyFilters()">
-              <option value="">All</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-              <option value="informational">Informational</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Analysis</div>
-            <select class="filter-select" id="f-analysis" onchange="applyFilters()">
-              <option value="">All</option>
-              <option value="to-report">To Report</option>
-              <option value="flagged">Flagged</option>
-              <option value="false-positive">False Positive</option>
-              <option value="reported">Reported</option>
-              <option value="none">Unset</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Cloud</div>
-            <select class="filter-select" id="f-cloud" onchange="applyFilters()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Subscription / Account</div>
-            <select class="filter-select" id="f-subscription" onchange="applyFilters()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Resource Group</div>
-            <select class="filter-select" id="f-rg" onchange="applyFilters()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <div class="filter-label">Service</div>
-            <select class="filter-select" id="f-service" onchange="applyFilters()">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="filter-group" style="align-self:flex-end">
-            <button class="btn small" onclick="clearFilters()">✕ Clear</button>
-          </div>
+      <!-- ── REPORTING VIEW ── -->
+      <div id="reporting-view" style="display:none">
+        <div class="report-view-header">
+          <span class="report-count" id="report-count"></span>
         </div>
+        <div id="report-findings"></div>
       </div>
-
-      <!-- Findings list header -->
-      <div class="findings-header">
-        <div class="findings-header-left">
-          <span class="results-count" id="results-count"></span>
-        </div>
-        <button class="btn small accent" onclick="copyFindingsTSV()" title="Copy filtered findings as TSV for Excel">
-          📋 Copy TSV
-        </button>
-      </div>
-
-      <!-- Findings -->
-      <div id="findings-list"></div>
     </div>
   </main>
 </div>
 
-<!-- History Modal -->
+<!-- ── IMPORT MODAL ──────────────────────────────────────── -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2>CREATE PROJECT</h2>
+      <button class="btn small" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Project Name</label>
+        <input type="text" class="form-input" id="import-project-name" placeholder="Project name…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Benchmarks <span style="font-size:10px;color:var(--text-dim);text-transform:none;letter-spacing:0">(optional — used as defaults across all views)</span></label>
+        <div class="import-bm-hint">Select the compliance frameworks relevant to this assessment.</div>
+        <input type="text" class="import-bm-search" id="import-bm-search" placeholder="Filter benchmarks…" oninput="filterImportBenchmarks(this.value)">
+        <div class="import-bm-list" id="import-benchmark-list">
+          <div class="empty-state" style="padding:20px">Loading benchmarks…</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn small" onclick="closeImportModal()">Cancel</button>
+      <button class="btn small primary" onclick="submitImport()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ────────────────────────────────────── -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2>PROJECT SETTINGS</h2>
+      <button class="btn small" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Preferred Benchmarks</label>
+        <div class="import-bm-hint">Select the compliance frameworks used as defaults for Compliance and Reporting views.</div>
+        <input type="text" class="import-bm-search" id="settings-bm-search" placeholder="Filter benchmarks…" oninput="filterSettingsBenchmarks(this.value)">
+        <div class="import-bm-list" id="settings-benchmark-list">
+          <div class="empty-state" style="padding:20px">Loading benchmarks…</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn small" onclick="closeSettings()">Cancel</button>
+      <button class="btn small primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── HISTORY MODAL ─────────────────────────────────────── -->
 <div class="modal-overlay" id="history-modal">
   <div class="modal">
     <div class="modal-header">
@@ -892,23 +901,100 @@ main { flex: 1; padding: 20px 24px; }
   </div>
 </div>
 
-<!-- Toast -->
+<!-- ── TOAST ─────────────────────────────────────────────── -->
 <div id="toast"></div>
 
 <script>
 // =========================================================
 // STATE
 // =========================================================
-let currentProjectId = null;
-let rawFindings = [];         // consolidated findings
-let filteredFindings = [];    // after filters
-let analysisStatuses = {};    // { findingId: 'to-report'|'flagged'|'false-positive'|'reported'|'' }
-let saveDebounceTimer = null;
+let currentProjectId   = null;
+let rawFindings        = [];
+let filteredFindings   = [];
+let analysisStatuses   = {};
+let preferredBenchmarks = [];
+let saveDebounceTimer  = null;
+let currentView        = 'analysis';
 let chartSev = null;
-let chartPF = null;
+let chartPF  = null;
+let chartCompStatus = null;
+let chartCompSections = null;
+
+// Benchmark catalog
+let availableBenchmarks  = [];
+let benchmarkCache       = new Map();
+let loadedBenchmark      = null;
+let complianceBenchmarkId = '';
+let complianceProfileFilter = '';
+let checkNameMap         = new Map();
+let checkMetadataIndex   = {};
+
+// Import flow
+let pendingFile = null;
+let selectedProjectIds = new Set();
+let landingProjects = [];
+
+// Multi-select: track which dropdown is open
+let openMsId = null;
 
 // =========================================================
-// TOAST
+// UTILITIES
+// =========================================================
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function chunkArray(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function computeTsvGridColumns(count) {
+  if (count <= 0) return 1;
+  if (count === 1) return 1;
+  if (count <= 4) return count;
+  let bestCols = 2;
+  let bestRows = Infinity;
+  let bestEmpty = Infinity;
+  for (let cols = 2; cols <= Math.min(4, count); cols++) {
+    const rows = Math.ceil(count / cols);
+    const empty = rows * cols - count;
+    if (
+      rows < bestRows ||
+      (rows === bestRows && empty < bestEmpty) ||
+      (rows === bestRows && empty === bestEmpty && cols > bestCols)
+    ) {
+      bestRows = rows;
+      bestEmpty = empty;
+      bestCols = cols;
+    }
+  }
+  return bestCols;
+}
+
+function buildListTsv(header, values) {
+  const items = (values || []).map(v => String(v ?? '').replace(/\t/g, ' '));
+  if (!items.length) return header;
+  const cols = computeTsvGridColumns(items.length);
+  const headerRow = [header, ...Array(cols - 1).fill('')].join('\t');
+  const rows = chunkArray(items, cols).map(r => {
+    while (r.length < cols) r.push('');
+    return r.join('\t');
+  });
+  return [headerRow, ...rows].join('\n');
+}
+
+function renderMD(text) {
+  if (!text) return '<span style="color:var(--text-dim);font-size:12px">No information available</span>';
+  try { return DOMPurify.sanitize(marked.parse(text)); }
+  catch { return esc(text).replace(/\n/g,'<br>'); }
+}
+marked.setOptions({ breaks: true, gfm: true });
+
+// =========================================================
+// TOAST / SAVE INDICATOR
 // =========================================================
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
@@ -917,10 +1003,6 @@ function toast(msg, type = 'ok') {
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.className = ''; }, 2500);
 }
-
-// =========================================================
-// SAVE INDICATOR
-// =========================================================
 function showSaved() {
   const el = document.getElementById('save-indicator');
   el.classList.add('visible');
@@ -929,7 +1011,7 @@ function showSaved() {
 }
 
 // =========================================================
-// API HELPERS
+// API
 // =========================================================
 async function api(method, url, body) {
   const opts = { method, headers: {} };
@@ -940,8 +1022,274 @@ async function api(method, url, body) {
     opts.body = body;
   }
   const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`API ${url} failed: ${r.status}`);
+  if (!r.ok) throw new Error(`API ${url} → ${r.status}`);
   return r.json();
+}
+
+// =========================================================
+// BENCHMARK CATALOG
+// =========================================================
+async function loadAvailableBenchmarks() {
+  if (availableBenchmarks.length > 0) return;
+  try {
+    availableBenchmarks = await api('GET', '/api/compliance/benchmarks');
+  } catch(e) {
+    availableBenchmarks = [];
+    console.warn('Could not load benchmark catalog:', e);
+  }
+}
+
+// =========================================================
+// CHECK METADATA (Prowler check metadata only)
+// =========================================================
+async function loadCheckMetadata() {
+  if (Object.keys(checkMetadataIndex).length > 0) return;
+  try {
+    checkMetadataIndex = await api('GET', '/api/check-metadata');
+  } catch(e) {
+    checkMetadataIndex = {};
+    console.warn('Could not load check metadata:', e);
+  }
+}
+
+function getShortCheckId(id) {
+  if (!id) return '';
+  const m = String(id).match(/^prowler-(?:aws|azure|gcp|kubernetes|oraclecloud|alibabacloud)-(.+)$/i);
+  return m ? m[1].toLowerCase() : String(id).toLowerCase();
+}
+
+function lookupCheckMetadata(idOrShort) {
+  if (!idOrShort) return null;
+  const raw = String(idOrShort).toLowerCase();
+  return checkMetadataIndex[raw] || checkMetadataIndex[getShortCheckId(raw)] || null;
+}
+
+function normalizeProwlerUrl(url) {
+  if (!url) return '';
+  return String(url).replace(/hub\.prowler\.Procom/i, 'hub.prowler.com');
+}
+
+function buildRemediationFromMeta(meta, fallback = '') {
+  if (!meta?.Remediation) return fallback || '';
+  const parts = [];
+  const rec = meta.Remediation.Recommendation?.Text;
+  if (rec) parts.push(rec);
+  const code = meta.Remediation.Code || {};
+  for (const [label, val] of Object.entries(code)) {
+    if (val) parts.push(`### ${label}\n\n${val}`);
+  }
+  if (!parts.length && fallback) parts.push(fallback);
+  return parts.join('\n\n');
+}
+
+function getResourceShortName(f) {
+  const rt = f.resourceType || f.metadata?.ResourceType || '';
+  if (!rt) return 'Assets';
+  const parts = rt.split('/').filter(Boolean);
+  if (parts.length >= 2 && parts[parts.length - 1].toLowerCase() === 'config') {
+    return parts[parts.length - 2];
+  }
+  const last = parts[parts.length - 1] || rt;
+  const dotParts = last.split('.');
+  return dotParts[dotParts.length - 1] || last;
+}
+
+function getProwlerCheckUrl(checkName) {
+  const meta = lookupCheckMetadata(checkName);
+  const url = normalizeProwlerUrl(meta?.Remediation?.Recommendation?.Url);
+  if (url) return url;
+  return `https://hub.prowler.com/check/${encodeURIComponent(getShortCheckId(checkName))}`;
+}
+
+function renderRemediationBlock(f) {
+  return `<div class="md-block">${renderMD(f.remediation)}</div>${renderReferences(f)}`;
+}
+
+function renderDetailsBlock(f, includeNonCompliant = false) {
+  const bg = f.details || f.description || '';
+  const obs = (f.observations || []).filter(Boolean);
+  let html = `
+    <div class="details-subsection">
+      <div class="section-label">Background</div>
+      <div class="md-block">${renderMD(bg)}</div>
+    </div>`;
+  if (obs.length) {
+    html += `
+    <div class="details-subsection">
+      <div class="section-label">Observation</div>
+      <div class="md-block">${obs.map(o => renderMD(o)).join('<hr style="border-color:var(--border);margin:8px 0">')}</div>
+    </div>`;
+  }
+  if (includeNonCompliant) {
+    const nc = getNonCompliantControlsMarkdown(f);
+    if (nc) {
+      html += `
+      <div class="non-compliant-controls">
+        <div class="section-label">Non-Compliant Controls</div>
+        <div class="md-block">${renderMD(nc)}</div>
+      </div>`;
+    }
+  }
+  return html;
+}
+
+function getDetailsCopyText(f, includeNonCompliant = false) {
+  const parts = [];
+  const bg = f.details || f.description;
+  if (bg) parts.push('## Background\n\n' + bg);
+  const obs = (f.observations || []).filter(Boolean);
+  if (obs.length) parts.push('## Observation\n\n' + obs.join('\n\n'));
+  if (includeNonCompliant) {
+    const nc = getNonCompliantControlsMarkdown(f);
+    if (nc) parts.push(nc);
+  }
+  return parts.join('\n\n');
+}
+
+function getBenchmarkDisplayName(bmId) {
+  const meta = availableBenchmarks.find(b => b.id === bmId);
+  const bm = benchmarkCache.get(bmId);
+  if (meta) return `${meta.name}${meta.version ? ' v' + meta.version : ''}`;
+  if (bm?.Name) return `${bm.Name}${bm.Version ? ' v' + bm.Version : ''}`;
+  return bmId;
+}
+
+async function ensurePreferredBenchmarksLoaded() {
+  await loadAvailableBenchmarks();
+  for (const id of preferredBenchmarks) {
+    if (!benchmarkCache.has(id)) {
+      try {
+        const data = await api('GET', `/api/compliance/benchmark/${id}`);
+        benchmarkCache.set(id, data);
+      } catch { /* skip unavailable benchmark */ }
+    }
+  }
+}
+
+function getNonCompliantControlsMarkdown(f) {
+  if (!preferredBenchmarks.length || f.failCount === 0) return '';
+  const shortId = getShortCheckId(f.id);
+  const blocks = [];
+  for (const bmId of preferredBenchmarks) {
+    const bm = benchmarkCache.get(bmId);
+    if (!bm?.Requirements) continue;
+    const reqs = bm.Requirements.filter(req =>
+      (req.Checks || []).some(c => c.toLowerCase() === shortId)
+    );
+    if (!reqs.length) continue;
+    const fullName = getBenchmarkDisplayName(bmId);
+    const lines = reqs.map(r => `- ${r.Id} - ${r.Description}`);
+    blocks.push(`The environment was found not aligned with the following recommendations/controls from the ${fullName} benchmark:\n${lines.join('\n')}`);
+  }
+  return blocks.join('\n\n');
+}
+
+function renderImpactPanel(meta, cisImpact, isCis) {
+  const prowlerImpact = meta?.Risk || '';
+  const cis = isCis && cisImpact ? cisImpact : '';
+  if (!prowlerImpact && !cis) {
+    return '<span style="color:var(--text-dim);font-size:12px">No impact statement available</span>';
+  }
+  let html = '';
+  if (prowlerImpact) {
+    html += `<div class="impact-subsection"><div class="section-label">Prowler Check Impact</div><div class="md-block">${renderMD(prowlerImpact)}</div></div>`;
+  }
+  if (cis) {
+    html += `<div class="impact-subsection"><div class="section-label">CIS Benchmark Impact</div><div class="md-block">${renderMD(cis)}</div></div>`;
+  }
+  return html;
+}
+
+function enrichFindingsWithMetadata(findings) {
+  for (const f of findings) {
+    const meta = lookupCheckMetadata(f.id) || lookupCheckMetadata(getShortCheckId(f.id));
+    if (!meta) continue;
+    f.metadata = meta;
+    f.shortCheckId = meta.CheckID || getShortCheckId(f.id);
+    f.title = meta.CheckTitle || f.title;
+    f.details = meta.Description || f.description || '';
+    f.impact = meta.Risk || f.risk || '';
+    f.resourceType = meta.ResourceType || '';
+    if (meta.Severity) f.severity = normalizeSeverity(meta.Severity);
+    if (meta.ServiceName) f.service = meta.ServiceName;
+    f.prowlerUrl = getProwlerCheckUrl(f.shortCheckId);
+    const metaUrls = [...(meta.AdditionalURLs || []), meta.RelatedUrl, normalizeProwlerUrl(meta.Remediation?.Recommendation?.Url)].filter(Boolean);
+    f.remUrls = [...new Set([...metaUrls, ...(f.remUrls || [])])];
+    f.remediation = buildRemediationFromMeta(meta, f.remediation);
+  }
+}
+
+function renderCompCheckBlock(checkName, reqContext) {
+  const meta = lookupCheckMetadata(checkName);
+  const url = getProwlerCheckUrl(checkName);
+  const uid = `comp-${esc(reqContext.id)}-${esc(checkName)}`;
+  const isCis = reqContext.isCis;
+  const cisImpact = reqContext.cisImpact || '';
+
+  const tabs = ['details', 'impact', 'remediation'];
+  const tabLabels = { details: 'Details', impact: 'Impact', remediation: 'Remediation' };
+
+  const panels = {
+    details: meta?.Description || '<span style="color:var(--text-dim);font-size:12px">No check description available</span>',
+    impact: renderImpactPanel(meta, cisImpact, isCis),
+    remediation: buildRemediationFromMeta(meta, '') || '<span style="color:var(--text-dim);font-size:12px">No remediation available</span>'
+  };
+
+  return `
+    <div class="comp-check-block">
+      <div class="comp-check-block-hdr">
+        <code class="comp-check-id"><a href="${esc(url)}" target="_blank" rel="noopener">${esc(checkName)}</a></code>
+        ${meta?.CheckTitle ? `<span style="color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(meta.CheckTitle)}</span>` : ''}
+      </div>
+      <div class="comp-check-tabs">
+        ${tabs.map((t, i) => `<div class="comp-check-tab${i === 0 ? ' active' : ''}" onclick="switchCompCheckTab('${uid}','${t}',this)">${tabLabels[t]}</div>`).join('')}
+      </div>
+      ${tabs.map((t, i) => `<div class="comp-check-panel${i === 0 ? ' active' : ''}" id="${uid}-${t}">${t === 'impact' ? panels[t] : `<div class="md-block">${renderMD(panels[t])}</div>`}</div>`).join('')}
+    </div>`;
+}
+
+function switchCompCheckTab(uid, tab, el) {
+  const block = el.closest('.comp-check-block');
+  block.querySelectorAll('.comp-check-tab').forEach(t => t.classList.remove('active'));
+  block.querySelectorAll('.comp-check-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`${uid}-${tab}`)?.classList.add('active');
+}
+
+function renderBenchmarkCheckboxList(container, search, checkboxClass, selectedIds = []) {
+  if (!availableBenchmarks.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:20px">No benchmarks available</div>';
+    return;
+  }
+  const selectedSet = new Set(selectedIds);
+  const q = search.toLowerCase();
+  const byProvider = new Map();
+  for (const b of availableBenchmarks) {
+    if (q && !b.name.toLowerCase().includes(q) && !b.framework.toLowerCase().includes(q) && !b.provider.toLowerCase().includes(q)) continue;
+    const prov = b.provider || 'Other';
+    if (!byProvider.has(prov)) byProvider.set(prov, []);
+    byProvider.get(prov).push(b);
+  }
+  if (!byProvider.size) {
+    container.innerHTML = '<div class="empty-state" style="padding:16px">No benchmarks match filter</div>';
+    return;
+  }
+  container.innerHTML = [...byProvider.entries()]
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([prov, bms]) => `
+      <div class="import-bm-group">
+        <div class="import-bm-group-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <span>${esc(prov)}</span><span style="color:var(--text-dim)">${bms.length}</span>
+        </div>
+        <div class="import-bm-group-body${!q ? '' : ' open'}">
+          ${bms.map(b => `
+            <label class="import-bm-item">
+              <input type="checkbox" class="${checkboxClass}" value="${esc(b.id)}"${selectedSet.has(b.id) ? ' checked' : ''}>
+              <span class="import-bm-name">${esc(b.name)}</span>
+              <span class="import-bm-meta">${esc(b.framework)} ${esc(b.version)} · ${b.requirementsCount} req</span>
+            </label>`).join('')}
+        </div>
+      </div>`).join('');
 }
 
 // =========================================================
@@ -949,66 +1297,190 @@ async function api(method, url, body) {
 // =========================================================
 async function loadProjectList() {
   try {
-    const projects = await api('GET', '/api/projects');
-    renderProjectList(projects);
-  } catch (e) {
-    console.error('Failed to load projects', e);
-  }
+    landingProjects = await api('GET', '/api/projects');
+    renderProjectList(landingProjects);
+  } catch(e) { console.error('Failed to load projects', e); }
+}
+
+function updateProjectBulkBar() {
+  const bar = document.getElementById('project-bulk-bar');
+  const countEl = document.getElementById('project-selected-count');
+  if (!bar || !countEl) return;
+  bar.style.display = landingProjects.length ? '' : 'none';
+  countEl.textContent = `${selectedProjectIds.size} selected`;
+}
+
+function toggleProjectSelection(id, checked) {
+  if (checked) selectedProjectIds.add(id);
+  else selectedProjectIds.delete(id);
+  updateProjectBulkBar();
+  renderProjectList(landingProjects);
+}
+
+function selectAllProjects() {
+  landingProjects.forEach(p => selectedProjectIds.add(p.id));
+  updateProjectBulkBar();
+  renderProjectList(landingProjects);
+}
+
+function clearProjectSelection() {
+  selectedProjectIds.clear();
+  updateProjectBulkBar();
+  renderProjectList(landingProjects);
 }
 
 function renderProjectList(projects) {
+  landingProjects = projects;
   const el = document.getElementById('project-list');
+  updateProjectBulkBar();
   if (!projects.length) {
     el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No projects yet</div>';
     return;
   }
   el.innerHTML = projects.map(p => `
-    <div class="project-item" onclick="openProject('${p.id}')">
-      <div>
-        <div class="proj-name">${esc(p.name)}</div>
-        <div class="proj-meta">${p.findingCount || '?'} findings · Updated ${p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'unknown'}</div>
+    <div class="project-item${selectedProjectIds.has(p.id) ? ' selected' : ''}" onclick="openProject('${p.id}')">
+      <div class="project-item-main">
+        <input type="checkbox" ${selectedProjectIds.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleProjectSelection('${p.id}', this.checked)">
+        <div>
+          <div class="proj-name">${esc(p.name)}</div>
+          <div class="proj-meta">${p.findingCount || '?'} findings · Updated ${p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'unknown'}</div>
+        </div>
       </div>
       <div class="proj-actions" onclick="event.stopPropagation()">
         <button class="btn small danger" onclick="deleteProject('${p.id}')">🗑</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function deleteProject(id) {
   if (!confirm('Delete this project? This cannot be undone.')) return;
   await api('DELETE', `/api/project/${id}`);
+  selectedProjectIds.delete(id);
   toast('Project deleted');
   loadProjectList();
 }
 
+async function deleteSelectedProjects() {
+  if (!selectedProjectIds.size) return;
+  if (!confirm(`Delete ${selectedProjectIds.size} selected project(s)? This cannot be undone.`)) return;
+  const ids = [...selectedProjectIds];
+  for (const id of ids) {
+    await api('DELETE', `/api/project/${id}`);
+  }
+  selectedProjectIds.clear();
+  toast(`Deleted ${ids.length} project(s)`);
+  loadProjectList();
+}
+
 // =========================================================
-// FILE UPLOAD
+// PROJECT SETTINGS
+// =========================================================
+async function openSettings() {
+  if (!currentProjectId) return;
+  await loadAvailableBenchmarks();
+  document.getElementById('settings-bm-search').value = '';
+  renderSettingsBenchmarkList('');
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+function renderSettingsBenchmarkList(search) {
+  renderBenchmarkCheckboxList(
+    document.getElementById('settings-benchmark-list'),
+    search,
+    'settings-bm-checkbox',
+    preferredBenchmarks
+  );
+}
+
+function filterSettingsBenchmarks(search) {
+  renderSettingsBenchmarkList(search);
+}
+
+async function saveSettings() {
+  preferredBenchmarks = [...document.querySelectorAll('.settings-bm-checkbox:checked')].map(c => c.value);
+  scheduleSave({ preferredBenchmarks });
+  if (preferredBenchmarks.length && !preferredBenchmarks.includes(complianceBenchmarkId)) {
+    complianceBenchmarkId = preferredBenchmarks[0];
+    loadedBenchmark = null;
+  }
+  populateCompBenchmarkSelector();
+  if (currentView === 'compliance') await initComplianceView();
+  if (currentView === 'reporting') {
+    await ensurePreferredBenchmarksLoaded();
+    renderReportingView();
+  }
+  closeSettings();
+  toast('Project settings saved');
+}
+
+// =========================================================
+// FILE UPLOAD → IMPORT MODAL
 // =========================================================
 function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
-function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function handleDragLeave()  { document.getElementById('upload-zone').classList.remove('drag-over'); }
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('upload-zone').classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
-  if (file) processFile(file);
+  if (file) openImportModal(file);
 }
 function handleFileSelect(e) {
   const file = e.target.files[0];
-  if (file) processFile(file);
+  if (file) openImportModal(file);
   e.target.value = '';
 }
 
-async function processFile(file) {
-  toast('Uploading and processing...');
+async function openImportModal(file) {
+  pendingFile = file;
+  document.getElementById('import-project-name').value =
+    file.name.replace(/\.json$/i,'').replace(/^prowler-output[-_]/,'');
+  document.getElementById('import-bm-search').value = '';
+
+  document.getElementById('import-modal').classList.add('open');
+
+  // Load catalog in background and render list
+  await loadAvailableBenchmarks();
+  renderImportBenchmarkList('');
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('open');
+  pendingFile = null;
+}
+
+function renderImportBenchmarkList(search) {
+  renderBenchmarkCheckboxList(
+    document.getElementById('import-benchmark-list'),
+    search,
+    'import-bm-checkbox',
+    []
+  );
+}
+
+function filterImportBenchmarks(search) {
+  renderImportBenchmarkList(search);
+}
+
+async function submitImport() {
+  if (!pendingFile) return;
+  const file = pendingFile;
+  const name = document.getElementById('import-project-name').value.trim() || file.name;
+  const preferred = [...document.querySelectorAll('.import-bm-checkbox:checked')].map(c => c.value);
+  toast('Uploading…');
+  closeImportModal();
   try {
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('name', file.name.replace('.json', ''));
+    fd.append('name', name);
+    fd.append('preferredBenchmarks', JSON.stringify(preferred));
     const result = await api('POST', '/api/project', fd);
     await openProject(result.id);
-  } catch (e) {
-    toast('Failed to upload: ' + e.message, 'error');
+  } catch(e) {
+    toast('Upload failed: ' + e.message, 'error');
   }
 }
 
@@ -1018,261 +1490,174 @@ async function processFile(file) {
 async function openProject(id) {
   try {
     currentProjectId = id;
-    toast('Loading project...');
+    toast('Loading project…');
 
-    // Load raw JSON and state in parallel
     const [rawResp, state] = await Promise.all([
       fetch(`/api/project/${id}/raw`).then(r => r.json()),
-      api('GET', `/api/project/${id}/state`)
+      api('GET', `/api/project/${id}/state`),
+      loadCheckMetadata()
     ]);
 
-    analysisStatuses = state.statuses || {};
+    analysisStatuses   = state.statuses || {};
+    preferredBenchmarks = state.preferredBenchmarks || [];
 
-    // Parse OCSF findings
-    rawFindings = consolidateFindings(rawResp);
-    // Initialise filteredFindings to full set so stats are correct before first filter
+    rawFindings      = consolidateFindings(rawResp);
+    enrichFindingsWithMetadata(rawFindings);
     filteredFindings = [...rawFindings];
+    ensurePreferredBenchmarksLoaded();
 
-    // Update state with finding count
     scheduleSave({ findingCount: rawFindings.length }, false);
 
-    // Update UI
     document.getElementById('header-project-name').textContent = state.name || id;
+    document.getElementById('btn-settings').style.display = '';
     document.getElementById('btn-history').style.display = '';
     document.getElementById('btn-back').style.display = '';
     document.getElementById('btn-new').style.display = 'none';
-
     document.getElementById('landing').style.display = 'none';
     document.getElementById('review').style.display = 'block';
 
+    // Reset per-project view state
+    currentView              = 'analysis';
+    loadedBenchmark          = null;
+    complianceBenchmarkId    = preferredBenchmarks[0] || '';
+    complianceProfileFilter  = '';
+
+    // Pre-build check name map for compliance correlation
+    buildCheckNameMap();
+
+    switchView('analysis');
     buildFilterOptions();
-    // applyFilters calls computeStats + renderFindings internally
     applyFilters();
 
     toast('Project loaded');
-  } catch (e) {
+  } catch(e) {
     toast('Failed to open project: ' + e.message, 'error');
     console.error(e);
   }
 }
 
 function goHome() {
-  currentProjectId = null;
-  rawFindings = [];
-  filteredFindings = [];
-  analysisStatuses = {};
+  currentProjectId     = null;
+  rawFindings          = [];
+  filteredFindings     = [];
+  analysisStatuses     = {};
+  preferredBenchmarks  = [];
+  loadedBenchmark      = null;
+  complianceBenchmarkId = '';
 
   document.getElementById('landing').style.display = '';
-  document.getElementById('review').style.display = 'none';
+  document.getElementById('review').style.display  = 'none';
+  document.getElementById('btn-settings').style.display = 'none';
   document.getElementById('btn-history').style.display = 'none';
-  document.getElementById('btn-back').style.display = 'none';
-  document.getElementById('btn-new').style.display = '';
+  document.getElementById('btn-back').style.display    = 'none';
+  document.getElementById('btn-new').style.display     = '';
   document.getElementById('header-project-name').textContent = '';
 
   if (chartSev) { chartSev.destroy(); chartSev = null; }
   if (chartPF)  { chartPF.destroy();  chartPF  = null; }
+  if (chartCompStatus) { chartCompStatus.destroy(); chartCompStatus = null; }
+  if (chartCompSections) { chartCompSections.destroy(); chartCompSections = null; }
 
   loadProjectList();
 }
 
 // =========================================================
-// OCSF PARSING & CONSOLIDATION
+// VIEW NAVIGATION
+// =========================================================
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === view));
+  document.getElementById('analysis-view').style.display   = view === 'analysis'   ? '' : 'none';
+  document.getElementById('compliance-view').style.display = view === 'compliance' ? '' : 'none';
+  document.getElementById('reporting-view').style.display  = view === 'reporting'  ? '' : 'none';
+
+  if (view === 'compliance') initComplianceView();
+  if (view === 'reporting') {
+    ensurePreferredBenchmarksLoaded().then(() => renderReportingView());
+  }
+}
+
+// =========================================================
+// OCSF PARSING & CONSOLIDATION (unchanged core logic)
 // =========================================================
 function consolidateFindings(data) {
   let items = Array.isArray(data) ? data : (data.findings || data.results || Object.values(data)[0] || []);
   if (!Array.isArray(items)) items = [];
 
-  if (items.length > 0) {
-    console.debug('[Prowler Reviewer] First raw item sample:', JSON.stringify(items[0], null, 2).slice(0, 2000));
-  }
-
   const map = new Map();
-
   for (const item of items) {
-    // ------------------------------------------------------------------
-    // CONSOLIDATION KEY
-    // finding_info.uid pattern:
-    //   prowler-azure-app_client_certificates_on-<sub_guid>-<Region Name>-<resource>
-    //   prowler-aws-s3_bucket_encryption-<account>-<region>-<bucket>
-    // Stable key = everything up to (but not including) the account/subscription segment.
-    // finding_info.check_id exists in some versions — use it when present.
-    // ------------------------------------------------------------------
     const rawUid  = item.finding_info?.uid || '';
     const checkId = item.finding_info?.check_id
                  || item.unmapped?.check_id
+                 || item.metadata?.event_code
                  || deriveCheckId(rawUid)
                  || item.finding_info?.title
                  || 'unknown';
 
-    const title = item.finding_info?.title || item.title || checkId;
-
-    // ------------------------------------------------------------------
-    // STATUS — primary field is status_code in real Prowler OCSF output
-    // status = "New" (OCSF lifecycle), status_code = "PASS"/"FAIL"
-    // ------------------------------------------------------------------
-    const status = normalizeStatus(
-      item.status_code
-      || item.unmapped?.status_code
-      || item.unmapped?.check_result
-      || item.status_id
-      || item.status
-    );
-
-    // severity_id is numeric OCSF; severity is human string — prefer string
-    const severity = normalizeSeverity(item.severity || item.severity_id);
-
-    const cloud   = detectCloud(item);
-    const service = extractService(item);
-    const sub     = extractSubscription(item);
-    const rg      = extractResourceGroup(item);
-
-    // ------------------------------------------------------------------
-    // RISK & REMEDIATION
-    // Real sample: risk_details at ROOT level (not finding_info.desc).
-    // finding_info.desc is the short technical description of the control.
-    // We want risk_details as "Risk" and finding_info.desc as description fallback.
-    // ------------------------------------------------------------------
-    const risk        = item.risk_details
-                     || item.unmapped?.risk_details
-                     || item.finding_info?.desc
-                     || '';
+    const observation = item.status_detail || item.unmapped?.status_detail || '';
+    const title       = item.finding_info?.title || item.title || checkId;
+    const status      = normalizeStatus(item.status_code || item.unmapped?.status_code || item.unmapped?.check_result || item.status_id || item.status);
+    const severity    = normalizeSeverity(item.severity || item.severity_id);
+    const cloud       = detectCloud(item);
+    const service     = extractService(item);
+    const sub         = extractSubscription(item);
+    const rg          = extractResourceGroup(item);
+    const risk        = item.risk_details || item.unmapped?.risk_details || item.finding_info?.desc || '';
     const description = item.finding_info?.desc || '';
-    const remediation = item.remediation?.desc
-                     || item.unmapped?.remediation_text
-                     || (typeof item.remediation === 'string' ? item.remediation : '')
-                     || '';
-    const remUrls = Array.isArray(item.remediation?.references)
-                  ? item.remediation.references
-                  : (item.remediation?.references ? [item.remediation.references] : []);
-    const addUrls = Array.isArray(item.unmapped?.additional_urls)
-                  ? item.unmapped.additional_urls
-                  : [];
+    const remediation = item.remediation?.desc || item.unmapped?.remediation_text || (typeof item.remediation === 'string' ? item.remediation : '') || '';
+    const remUrls     = Array.isArray(item.remediation?.references) ? item.remediation.references : (item.remediation?.references ? [item.remediation.references] : []);
+    const addUrls     = Array.isArray(item.unmapped?.additional_urls) ? item.unmapped.additional_urls : [];
+    const controls    = extractControls(item);
+    const assetName   = extractAssetName(item);
+    const assetUid    = item.resources?.[0]?.uid || assetName;
+    const resourceId  = item.resources?.[0]?.data?.metadata?.resource_id || item.resources?.[0]?.uid || '';
+    const orgName     = item.cloud?.org?.name || '';
+    const portalLink  = buildPortalLinkFromParts(cloud, orgName, resourceId);
 
-    // ------------------------------------------------------------------
-    // CONTROLS — in real output they live in unmapped.compliance (object)
-    // not in item.compliance (which may not exist)
-    // ------------------------------------------------------------------
-    const controls = extractControls(item);
-
-    // ------------------------------------------------------------------
-    // ASSET — extract resourceId for portal deep-link
-    // ------------------------------------------------------------------
-    const assetName  = extractAssetName(item);
-    const assetUid   = item.resources?.[0]?.uid || assetName;
-    const resourceId = item.resources?.[0]?.data?.metadata?.resource_id
-                    || item.resources?.[0]?.uid
-                    || '';
-
-    // Build portal link using cloud.org.name (tenant domain) + resource_id
-    const orgName    = item.cloud?.org?.name || '';
-    const portalLink = buildPortalLinkFromParts(cloud, orgName, resourceId);
-
-    // ------------------------------------------------------------------
-    // ACCUMULATE
-    // ------------------------------------------------------------------
     if (!map.has(checkId)) {
-      map.set(checkId, {
-        id: checkId,
-        title,
-        severity,
-        cloud,
-        service,
-        description,
-        risk,
-        remediation,
-        remUrls,
-        addUrls,
-        controls,
-        assets: [],
-        subscriptions: new Set(),
-        resourceGroups: new Set(),
-        failCount: 0,
-        passCount: 0
-      });
+      map.set(checkId, { id: checkId, title, severity, cloud, service, description, risk, remediation, remUrls, addUrls, controls, observations: new Set(), assets: [], subscriptions: new Set(), resourceGroups: new Set(), failCount: 0, passCount: 0 });
     }
-
     const f = map.get(checkId);
-
     if (!f.risk && risk)                       f.risk = risk;
     if (!f.description && description)         f.description = description;
     if (!f.remediation && remediation)         f.remediation = remediation;
     if (!f.remUrls.length && remUrls.length)   f.remUrls = remUrls;
     if (!f.addUrls.length && addUrls.length)   f.addUrls = addUrls;
     if (!f.controls.length && controls.length) f.controls = controls;
+    if (observation) f.observations.add(observation);
     if (sub) f.subscriptions.add(sub);
     if (rg)  f.resourceGroups.add(rg);
-
-    if (status === 'PASS') f.passCount++;
-    else                   f.failCount++;
-
-    f.assets.push({
-      name: assetName,
-      uid:  assetUid,
-      resourceId,
-      portalLink,
-      status,
-      subscription: sub,
-      resourceGroup: rg,
-      region: item.cloud?.region || item.resources?.[0]?.region || item.unmapped?.region || ''
-    });
+    if (status === 'PASS') f.passCount++; else f.failCount++;
+    f.assets.push({ name: assetName, uid: assetUid, resourceId, portalLink, status, subscription: sub, resourceGroup: rg, region: item.cloud?.region || item.resources?.[0]?.region || item.unmapped?.region || '' });
   }
 
-  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 };
+  const sevOrder = { critical:0, high:1, medium:2, low:3, informational:4 };
   return Array.from(map.values())
-    .map(f => ({
-      ...f,
-      subscriptions: Array.from(f.subscriptions),
-      resourceGroups: Array.from(f.resourceGroups)
-    }))
+    .map(f => ({ ...f, observations: [...f.observations], subscriptions: [...f.subscriptions], resourceGroups: [...f.resourceGroups] }))
     .sort((a, b) => (sevOrder[a.severity] ?? 5) - (sevOrder[b.severity] ?? 5) || b.failCount - a.failCount);
 }
 
-/**
- * Derive stable check ID from per-asset Prowler UID.
- *
- * Pattern: prowler-{provider}-{check_name}-{account_or_sub}-{region}-{resource...}
- *
- * The check_name segment uses underscores only (no dashes).
- * The account/subscription segment that follows is either:
- *   - AWS:   12-digit number
- *   - Azure: 8-4-4-4-12 UUID  (first group is 8 hex chars)
- *   - GCP:   project name (mixed)
- *
- * Strategy: match "prowler-{provider}-" then consume chars until we hit
- * either a UUID-like block or a pure-digit block (account ID), which marks
- * the start of the per-asset suffix.
- */
 function deriveCheckId(uid) {
   if (!uid) return '';
-
-  // Match: prowler-{provider}-{check_name}
-  // check_name = sequence of word chars and underscores (no dashes)
-  // Stop before: UUID segment (8 hex) OR 12-digit AWS account OR end
-  const m = uid.match(/^(prowler-(?:aws|azure|gcp|kubernetes)-[a-z][a-z0-9_]*)/i);
+  const m = uid.match(/^(prowler-(?:aws|azure|gcp|kubernetes|oraclecloud|alibabacloud)-[a-z][a-z0-9_]*)/i);
   if (m) return m[1].toLowerCase();
-
-  // Fallback: first 3 dash-segments
-  const parts = uid.split('-');
-  return parts.slice(0, 3).join('-').toLowerCase();
+  return uid.split('-').slice(0, 3).join('-').toLowerCase();
 }
 
 function buildPortalLinkFromParts(cloud, orgName, resourceId) {
   if (cloud === 'Azure' && resourceId) {
-    const tenant = encodeURIComponent(orgName || '');
-    return `https://portal.azure.com/#@${tenant}/resource${resourceId}`;
+    return `https://portal.azure.com/#@${encodeURIComponent(orgName || '')}/resource${resourceId}`;
   }
   return null;
 }
 
 function normalizeSeverity(s) {
-  if (s === null || s === undefined) return 'informational';
+  if (s == null) return 'informational';
   const v = String(s).toLowerCase().trim();
-  // Numeric OCSF severity_id: 1=Info,2=Low,3=Medium,4=High,5=Critical
-  if (v === '1') return 'informational';
-  if (v === '2') return 'low';
-  if (v === '3') return 'medium';
-  if (v === '4') return 'high';
-  if (v === '5') return 'critical';
+  if (v==='1') return 'informational'; if (v==='2') return 'low';
+  if (v==='3') return 'medium';        if (v==='4') return 'high';
+  if (v==='5') return 'critical';
   if (v.startsWith('info'))  return 'informational';
   if (v.startsWith('low'))   return 'low';
   if (v.startsWith('med'))   return 'medium';
@@ -1281,133 +1666,130 @@ function normalizeSeverity(s) {
   return 'informational';
 }
 
-/**
- * FIX 1 — Robust status normalisation.
- * Prowler status_code values: "PASS", "FAIL", "MANUAL", "MUTED"
- * OCSF status_id: 1 = Pass, 2 = Fail
- * We treat MANUAL and MUTED as FAIL for display purposes (conservative).
- */
 function normalizeStatus(s) {
-  if (s === null || s === undefined) return 'FAIL';
+  if (s == null) return 'FAIL';
   const v = String(s).toUpperCase().trim();
-  if (v === 'PASS' || v === 'PASSED' || v === '1' || v === 'TRUE') return 'PASS';
-  // Everything else (FAIL, FAILED, MANUAL, MUTED, 2, etc.) → FAIL
+  if (v==='PASS'||v==='PASSED'||v==='1'||v==='TRUE') return 'PASS';
   return 'FAIL';
 }
 
 function detectCloud(item) {
-  // Real Prowler OCSF: cloud.provider = "azure" | "aws" | "gcp"  (lowercase string)
-  const provider = String(item.cloud?.provider || '').toLowerCase();
-  if (provider === 'aws')   return 'AWS';
-  if (provider === 'azure') return 'Azure';
-  if (provider === 'gcp')   return 'GCP';
-
-  // unmapped.provider is also set in real output
+  const p = String(item.cloud?.provider || '').toLowerCase();
+  if (p==='aws') return 'AWS'; if (p==='azure') return 'Azure'; if (p==='gcp') return 'GCP';
   const up = String(item.unmapped?.provider || '').toLowerCase();
-  if (up === 'aws')   return 'AWS';
-  if (up === 'azure') return 'Azure';
-  if (up === 'gcp')   return 'GCP';
-
-  // Last resort: prefix of finding_info.uid
+  if (up==='aws') return 'AWS'; if (up==='azure') return 'Azure'; if (up==='gcp') return 'GCP';
   const uid = String(item.finding_info?.uid || '').toLowerCase();
   if (uid.startsWith('prowler-aws'))   return 'AWS';
   if (uid.startsWith('prowler-azure')) return 'Azure';
   if (uid.startsWith('prowler-gcp'))   return 'GCP';
-
   return 'Unknown';
 }
 
 function extractService(item) {
-  // From real sample: metadata.product.name = "Prowler" (tool, NOT service).
-  // resources[0].type = "microsoft.web/sites/config" — strip to provider/service segment.
-  // unmapped.service_name may exist in some checks.
   const rawType = item.resources?.[0]?.type || '';
-  const serviceFromType = rawType
-    ? rawType.split('/').slice(0, 2).join('/') // e.g. "microsoft.web/sites"
-    : '';
-  return item.unmapped?.service_name
-      || item.unmapped?.resource_type
-      || serviceFromType
-      || item.cloud?.service
-      || '';
+  const fromType = rawType ? rawType.split('/').slice(0,2).join('/') : '';
+  return item.unmapped?.service_name || item.unmapped?.resource_type || fromType || item.cloud?.service || '';
 }
 
 function extractSubscription(item) {
-  // Real sample: cloud.account.name = "SUB-XXXXX", cloud.account.uid = "<guid>"
-  // Return name (human-readable) with uid fallback
-  return item.cloud?.account?.name
-      || item.cloud?.account?.uid
-      || item.unmapped?.account_id
-      || item.unmapped?.subscription_id
-      || item.unmapped?.project_id
-      || '';
+  return item.cloud?.account?.name || item.cloud?.account?.uid || item.unmapped?.account_id || item.unmapped?.subscription_id || item.unmapped?.project_id || '';
 }
 
 function extractResourceGroup(item) {
-  // Real sample: resources[0].group.name = "app" (WRONG — that's a label, not RG).
-  // Real RG is embedded in resources[0].data.metadata.resource_id:
-  //   /subscriptions/.../resourceGroups/rg-YYYYYY/providers/...
-  // Parse it out. Fall back to unmapped fields.
   const resourceId = item.resources?.[0]?.data?.metadata?.resource_id || '';
-  const rgMatch = resourceId.match(/resourceGroups\/([^/]+)/i);
-  if (rgMatch) return rgMatch[1];
-
-  return item.unmapped?.resource_group
-      || item.unmapped?.resource_group_name
-      || item.cloud?.resource_group
-      || '';
+  const m = resourceId.match(/resourceGroups\/([^/]+)/i);
+  if (m) return m[1];
+  return item.unmapped?.resource_group || item.unmapped?.resource_group_name || item.cloud?.resource_group || '';
 }
 
 function extractAssetName(item) {
-  if (item.resources && item.resources.length > 0) {
+  if (item.resources?.length) {
     const r = item.resources[0];
-    // Prefer the nested metadata name (most accurate in real output)
     return r.data?.metadata?.name || r.name || r.uid || 'Unknown';
   }
   return item.unmapped?.resource_name || 'Unknown';
 }
 
-/**
- * Build a cloud-provider portal link for an asset.
- * Azure: https://portal.azure.com/#@{tenant_domain}/resource{resource_id}
- * AWS/GCP: no generic deep-link available, return null.
- */
-function buildPortalLink(item, asset) {
-  const provider = String(item.cloud?.provider || '').toLowerCase();
-  if (provider === 'azure') {
-    const tenantDomain = item.cloud?.org?.name || item.unmapped?.tenant_uid || '';
-    const resourceId   = asset.resourceId || '';
-    if (resourceId) {
-      return `https://portal.azure.com/#@${encodeURIComponent(tenantDomain)}/resource${resourceId}`;
-    }
-  }
-  // AWS console deep-link could be added here per service in the future
-  return null;
-}
-
 function extractControls(item) {
   const controls = [];
-
-  // Real Prowler OCSF: compliance lives in unmapped.compliance as an object
-  // { "CIS-2.0": ["9.4"], "PCI-4.0": ["1.2.8.14", ...], ... }
-  const compSource = item.unmapped?.compliance || item.compliance || null;
-
-  if (compSource && typeof compSource === 'object') {
-    for (const [framework, ids] of Object.entries(compSource)) {
-      if (Array.isArray(ids)) {
-        ids.forEach(id => controls.push(`${framework}: ${id}`));
-      } else if (typeof ids === 'string') {
-        controls.push(`${framework}: ${ids}`);
-      }
+  const src = item.unmapped?.compliance || item.compliance || null;
+  if (src && typeof src === 'object') {
+    for (const [fw, ids] of Object.entries(src)) {
+      if (Array.isArray(ids)) ids.forEach(id => controls.push(`${fw}: ${id}`));
+      else if (typeof ids === 'string') controls.push(`${fw}: ${ids}`);
     }
   }
-
   return [...new Set(controls)].filter(Boolean);
 }
 
 // =========================================================
-// FILTER OPTIONS
+// MULTI-SELECT FILTERS
 // =========================================================
+document.addEventListener('click', e => {
+  if (openMsId && !e.target.closest(`#ms-${openMsId}`)) {
+    document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
+    openMsId = null;
+  }
+});
+
+function toggleMs(id, event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById(`ms-${id}-dropdown`);
+  const isOpen = dropdown.classList.contains('open');
+  // Close any other open dropdown
+  if (openMsId && openMsId !== id) {
+    document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
+  }
+  dropdown.classList.toggle('open', !isOpen);
+  openMsId = !isOpen ? id : null;
+}
+
+function msGetSelected(id) {
+  return [...document.querySelectorAll(`#ms-${id}-dropdown input[type=checkbox]:checked`)].map(c => c.value);
+}
+
+function msChanged(id) {
+  const selected = msGetSelected(id);
+  const badge   = document.getElementById(`ms-${id}-badge`);
+  const trigger = document.getElementById(`ms-${id}-trigger`);
+  if (selected.length > 0) {
+    badge.textContent = selected.length;
+    badge.style.display = '';
+    trigger.classList.add('has-selection');
+  } else {
+    badge.style.display = 'none';
+    trigger.classList.remove('has-selection');
+  }
+  applyFilters();
+}
+
+function msClearFilterSilent(id) {
+  document.querySelectorAll(`#ms-${id}-dropdown input[type=checkbox]`).forEach(c => c.checked = false);
+  const badge = document.getElementById(`ms-${id}-badge`);
+  if (badge) badge.style.display = 'none';
+  document.getElementById(`ms-${id}-trigger`)?.classList.remove('has-selection');
+}
+
+function msClearFilter(id, event) {
+  if (event) event.stopPropagation();
+  msClearFilterSilent(id);
+  applyFilters();
+}
+
+function clearAllFilters() {
+  ['status','severity','analysis','cloud','subscription','rg','service'].forEach(msClearFilterSilent);
+  document.getElementById('f-search').value = '';
+  applyFilters();
+}
+
+function populateMsOptions(id, options) {
+  const container = document.getElementById(`ms-${id}-options`);
+  if (!container) return;
+  container.innerHTML = options.map(o => `
+    <label><input type="checkbox" value="${esc(o)}" onchange="msChanged('${id}')"> ${esc(o)}</label>
+  `).join('');
+}
+
 function buildFilterOptions() {
   const clouds = new Set(), subs = new Set(), rgs = new Set(), services = new Set();
   for (const f of rawFindings) {
@@ -1416,172 +1798,103 @@ function buildFilterOptions() {
     f.subscriptions.forEach(s => subs.add(s));
     f.resourceGroups.forEach(r => rgs.add(r));
   }
-  populateSelect('f-cloud',        Array.from(clouds).sort());
-  populateSelect('f-subscription', Array.from(subs).sort());
-  populateSelect('f-rg',           Array.from(rgs).sort());
-  populateSelect('f-service',      Array.from(services).sort());
-}
-
-function populateSelect(id, opts) {
-  const el = document.getElementById(id);
-  const cur = el.value;
-  while (el.options.length > 1) el.remove(1);
-  for (const o of opts) {
-    const opt = document.createElement('option');
-    opt.value = o; opt.textContent = o;
-    el.appendChild(opt);
-  }
-  if (cur) el.value = cur;
+  populateMsOptions('cloud',        [...clouds].sort());
+  populateMsOptions('subscription', [...subs].sort());
+  populateMsOptions('rg',           [...rgs].sort());
+  populateMsOptions('service',      [...services].sort());
 }
 
 // =========================================================
-// FILTERS
+// ANALYSIS VIEW — FILTERS
 // =========================================================
 function applyFilters() {
-  const search   = document.getElementById('f-search').value.toLowerCase();
-  const status   = document.getElementById('f-status').value;
-  const severity = document.getElementById('f-severity').value;
-  const analysis = document.getElementById('f-analysis').value;
-  const cloud    = document.getElementById('f-cloud').value;
-  const sub      = document.getElementById('f-subscription').value;
-  const rg       = document.getElementById('f-rg').value;
-  const service  = document.getElementById('f-service').value;
+  const search      = (document.getElementById('f-search')?.value || '').toLowerCase();
+  const selStatus   = msGetSelected('status');
+  const selSeverity = msGetSelected('severity');
+  const selAnalysis = msGetSelected('analysis');
+  const selCloud    = msGetSelected('cloud');
+  const selSub      = msGetSelected('subscription');
+  const selRg       = msGetSelected('rg');
+  const selService  = msGetSelected('service');
 
   filteredFindings = rawFindings.filter(f => {
     const aStatus = analysisStatuses[f.id] || '';
 
-    // Analysis status filter
-    if (analysis) {
-      if (analysis === 'none' && aStatus) return false;
-      if (analysis !== 'none' && aStatus !== analysis) return false;
+    if (selAnalysis.length > 0) {
+      const eff = aStatus || 'none';
+      if (!selAnalysis.includes(eff)) return false;
     }
-    // Cloud
-    if (cloud && f.cloud !== cloud) return false;
-    // Severity
-    if (severity && f.severity !== severity) return false;
-    // Service
-    if (service && f.service !== service) return false;
-    // Subscription
-    if (sub && !f.subscriptions.includes(sub)) return false;
-    // Resource group
-    if (rg && !f.resourceGroups.includes(rg)) return false;
-    // Status (PASS/FAIL)
-    if (status === 'FAIL' && f.failCount === 0) return false;
-    if (status === 'PASS' && f.passCount === 0) return false;
-    // Search
+    if (selStatus.length > 0 && selStatus.length < 2) {
+      if (selStatus.includes('FAIL') && f.failCount === 0) return false;
+      if (selStatus.includes('PASS') && f.passCount === 0) return false;
+    }
+    if (selSeverity.length > 0 && !selSeverity.includes(f.severity)) return false;
+    if (selCloud.length    > 0 && !selCloud.includes(f.cloud))    return false;
+    if (selService.length  > 0 && !selService.includes(f.service)) return false;
+    if (selSub.length      > 0 && !f.subscriptions.some(s => selSub.includes(s))) return false;
+    if (selRg.length       > 0 && !f.resourceGroups.some(r => selRg.includes(r))) return false;
     if (search) {
-      const haystack = [
-        f.title, f.id, f.service, f.cloud,
-        f.risk, f.remediation,
-        ...f.subscriptions, ...f.resourceGroups,
-        ...f.assets.map(a => a.name + ' ' + a.uid)
+      const hay = [f.title, f.id, f.service, f.cloud, f.details, f.impact, f.remediation,
+        ...f.subscriptions, ...f.resourceGroups, ...f.assets.map(a => a.name+' '+a.uid)
       ].join(' ').toLowerCase();
-      if (!haystack.includes(search)) return false;
+      if (!hay.includes(search)) return false;
     }
     return true;
   });
 
-  document.getElementById('results-count').textContent =
-    `${filteredFindings.length} finding${filteredFindings.length !== 1 ? 's' : ''} displayed`;
+  const countEl = document.getElementById('results-count');
+  if (countEl) countEl.textContent = `${filteredFindings.length} finding${filteredFindings.length !== 1 ? 's' : ''} displayed`;
 
-  // FIX 2 — stats and charts always reflect the current filtered view
   computeStats();
   renderFindings();
 }
 
-function clearFilters() {
-  ['f-search','f-status','f-severity','f-analysis','f-cloud','f-subscription','f-rg','f-service']
-    .forEach(id => {
-      const el = document.getElementById(id);
-      if (el.tagName === 'INPUT') el.value = '';
-      else el.selectedIndex = 0;
-    });
-  applyFilters();
-}
-
 // =========================================================
-// STATS  — always computed from the currently filtered set
+// ANALYSIS VIEW — STATS
 // =========================================================
 function computeStats() {
-  // Use filteredFindings when available (after first filter pass), else rawFindings
-  const source = filteredFindings.length > 0 || rawFindings.length === 0
-    ? filteredFindings
-    : rawFindings;
+  const src = filteredFindings.length > 0 || rawFindings.length === 0 ? filteredFindings : rawFindings;
+  let failed=0, passed=0, assets=0, critical=0, high=0, confirmed=0;
+  const sevCounts = { critical:0, high:0, medium:0, low:0, informational:0 };
 
-  let failed = 0, passed = 0, assets = 0, critical = 0, high = 0, toReport = 0;
-  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0, informational: 0 };
-
-  for (const f of source) {
-    failed += f.failCount;
-    passed += f.passCount;
-    assets += f.assets.length;
-    if (f.severity === 'critical') critical++;
-    if (f.severity === 'high') high++;
-    if (f.failCount > 0) sevCounts[f.severity] = (sevCounts[f.severity] || 0) + 1;
-    if ((analysisStatuses[f.id] || '') === 'to-report') toReport++;
+  for (const f of src) {
+    failed += f.failCount; passed += f.passCount; assets += f.assets.length;
+    if (f.severity==='critical') critical++;
+    if (f.severity==='high') high++;
+    if (f.failCount > 0) sevCounts[f.severity] = (sevCounts[f.severity]||0)+1;
+    if ((analysisStatuses[f.id]||'')==='confirmed') confirmed++;
   }
 
-  document.getElementById('stat-total').textContent     = source.length;
-  document.getElementById('stat-failed').textContent    = failed;
-  document.getElementById('stat-passed').textContent    = passed;
-  document.getElementById('stat-assets').textContent    = assets;
-  document.getElementById('stat-critical').textContent  = critical;
-  document.getElementById('stat-high').textContent      = high;
-  document.getElementById('stat-to-report').textContent = toReport;
-
+  document.getElementById('stat-total').textContent    = src.length;
+  document.getElementById('stat-failed').textContent   = failed;
+  document.getElementById('stat-passed').textContent   = passed;
+  document.getElementById('stat-assets').textContent   = assets;
+  document.getElementById('stat-critical').textContent = critical;
+  document.getElementById('stat-high').textContent     = high;
+  document.getElementById('stat-confirmed').textContent = confirmed;
   renderCharts(sevCounts, failed, passed);
 }
 
 function renderCharts(sevCounts, failed, passed) {
-  // Severity bar
   const ctxSev = document.getElementById('chart-sev');
   if (chartSev) chartSev.destroy();
   chartSev = new Chart(ctxSev, {
     type: 'bar',
     data: {
       labels: ['Critical','High','Medium','Low','Info'],
-      datasets: [{
-        data: [
-          sevCounts.critical || 0,
-          sevCounts.high || 0,
-          sevCounts.medium || 0,
-          sevCounts.low || 0,
-          sevCounts.informational || 0
-        ],
-        backgroundColor: ['#CC0501','#DF3D03','#F9A009','#FFCB0D','#53AA33'],
-        borderWidth: 0,
-        borderRadius: 2
-      }]
+      datasets: [{ data: [sevCounts.critical||0, sevCounts.high||0, sevCounts.medium||0, sevCounts.low||0, sevCounts.informational||0],
+        backgroundColor: ['#CC0501','#DF3D03','#F9A009','#FFCB0D','#53AA33'], borderWidth:0, borderRadius:2 }]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' } },
-        y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' }, beginAtZero: true }
-      }
-    }
+    options: { responsive:true, maintainAspectRatio:true, aspectRatio:2.5, plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#424242'}}, y:{ticks:{color:'#888',font:{size:10}},grid:{color:'#424242'},beginAtZero:true} } }
   });
 
-  // Pass/Fail pie
   const ctxPF = document.getElementById('chart-pf');
   if (chartPF) chartPF.destroy();
   chartPF = new Chart(ctxPF, {
     type: 'doughnut',
-    data: {
-      labels: ['Failed','Passed'],
-      datasets: [{
-        data: [failed, passed],
-        backgroundColor: ['#CA3E47','#53AA33'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#888', font: { size: 10 }, padding: 12 } }
-      }
-    }
+    data: { labels:['Failed','Passed'], datasets:[{ data:[failed, passed], backgroundColor:['#CA3E47','#53AA33'], borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:true, aspectRatio:1.8, plugins:{ legend:{position:'bottom',labels:{color:'#888',font:{size:10},padding:8}} } }
   });
 }
 
@@ -1592,8 +1905,49 @@ function toggleCharts() {
   i.textContent = s.classList.contains('open') ? '▲' : '▼';
 }
 
+function renderComplianceCharts(totalFail, totalPass, totalNA, results) {
+  const ctxStatus = document.getElementById('chart-comp-status');
+  if (chartCompStatus) chartCompStatus.destroy();
+  if (ctxStatus) {
+    chartCompStatus = new Chart(ctxStatus, {
+      type: 'doughnut',
+      data: {
+        labels: ['Failed', 'Passed', 'N/A'],
+        datasets: [{ data: [totalFail, totalPass, totalNA], backgroundColor: ['#CA3E47', '#53AA33', '#525252'], borderWidth: 0 }]
+      },
+      options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.8, plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10 }, padding: 8 } } } }
+    });
+  }
+
+  const sectionFails = new Map();
+  for (const r of results) {
+    if (r.status !== 'fail') continue;
+    sectionFails.set(r.section, (sectionFails.get(r.section) || 0) + 1);
+  }
+  const topSections = [...sectionFails.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const ctxSections = document.getElementById('chart-comp-sections');
+  if (chartCompSections) chartCompSections.destroy();
+  if (ctxSections) {
+    chartCompSections = new Chart(ctxSections, {
+      type: 'bar',
+      data: {
+        labels: topSections.length ? topSections.map(([s]) => s.length > 24 ? s.slice(0, 24) + '…' : s) : ['No failures'],
+        datasets: [{ data: topSections.length ? topSections.map(([, c]) => c) : [0], backgroundColor: '#CA3E47', borderWidth: 0, borderRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true, aspectRatio: 2.2,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#888', font: { size: 9 } }, grid: { color: '#424242' } },
+          y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+}
+
 // =========================================================
-// RENDER FINDINGS
+// ANALYSIS VIEW — FINDINGS RENDER
 // =========================================================
 function renderFindings() {
   const el = document.getElementById('findings-list');
@@ -1605,22 +1959,14 @@ function renderFindings() {
 }
 
 function renderFindingCard(f) {
-  const aStatus = analysisStatuses[f.id] || '';
-  const statusClass = aStatus ? `status-${aStatus}` : '';
-  const sevClass = `sev-${f.severity}`;
+  const aStatus      = analysisStatuses[f.id] || '';
+  const statusClass  = aStatus ? `status-${aStatus}` : '';
+  const sevClass     = `sev-${f.severity}`;
+  const failedAssets = f.assets.filter(a => a.status === 'FAIL');
+  const passedAssets = f.assets.filter(a => a.status === 'PASS');
 
-  const failBadge = f.failCount > 0
-    ? `<span class="tag tag-failed">${f.failCount} FAIL</span>` : '';
-  const passBadge = f.passCount > 0
-    ? `<span class="tag tag-passed">${f.passCount} PASS</span>` : '';
-
-  const serviceTag = f.service
-    ? `<span class="tag tag-service">${esc(f.service)}</span>` : '';
-  const cloudTag = f.cloud
-    ? `<span class="tag tag-cloud">${esc(f.cloud)}</span>` : '';
-
-  const selectedStatus = s => aStatus === s ? 'selected' : '';
-  const statusSelectClass = aStatus ? `s-${aStatus}` : '';
+  const selStatus = s => aStatus === s ? 'selected' : '';
+  const ssClass   = aStatus ? `s-${aStatus}` : '';
 
   return `
 <div class="finding-card ${statusClass}" id="fc-${esc(f.id)}" data-id="${esc(f.id)}">
@@ -1629,167 +1975,576 @@ function renderFindingCard(f) {
     <span class="sev-badge ${sevClass}">${f.severity}</span>
     <span class="finding-title">${esc(f.title)}</span>
     <div class="finding-meta">
-      ${cloudTag}
-      ${serviceTag}
-      ${failBadge}
-      ${passBadge}
-      <span class="tag tag-assets">${f.assets.length} asset${f.assets.length !== 1 ? 's' : ''}</span>
-      <select class="status-select ${statusSelectClass}" data-id="${esc(f.id)}"
-              onchange="setStatus('${esc(f.id)}', this)"
-              onclick="event.stopPropagation()">
+      ${f.cloud   ? `<span class="tag tag-cloud">${esc(f.cloud)}</span>` : ''}
+      ${f.service ? `<span class="tag tag-service">${esc(f.service)}</span>` : ''}
+      ${failedAssets.length ? `<span class="tag tag-failed">${failedAssets.length} FAIL</span>` : ''}
+      ${passedAssets.length ? `<span class="tag tag-passed">${passedAssets.length} PASS</span>` : ''}
+      <select class="status-select ${ssClass}" data-id="${esc(f.id)}"
+              onchange="setStatus('${esc(f.id)}', this)" onclick="event.stopPropagation()">
         <option value="">— Unset —</option>
-        <option value="to-report"      ${selectedStatus('to-report')}>To Report</option>
-        <option value="flagged"        ${selectedStatus('flagged')}>Flagged</option>
-        <option value="false-positive" ${selectedStatus('false-positive')}>False Positive</option>
-        <option value="reported"       ${selectedStatus('reported')}>Reported</option>
+        <option value="confirmed"      ${selStatus('confirmed')}>Confirmed</option>
+        <option value="flagged"        ${selStatus('flagged')}>Flagged</option>
+        <option value="false-positive" ${selStatus('false-positive')}>False Positive</option>
+        <option value="reported"       ${selStatus('reported')}>Reported</option>
       </select>
     </div>
   </div>
   <div class="finding-body" id="fb-${esc(f.id)}">
     <div class="finding-body-tabs">
-      <div class="body-tab active" onclick="switchTab('${esc(f.id)}', 'assets', this)">Assets</div>
-      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'risk', this)">Risk</div>
-      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'remediation', this)">Remediation</div>
-      <div class="body-tab" onclick="switchTab('${esc(f.id)}', 'controls', this)">Controls (${f.controls.length})</div>
+      <div class="body-tab active" onclick="switchTab('${esc(f.id)}','failed',this)">Failed (${failedAssets.length})</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','passed',this)">Passed (${passedAssets.length})</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','details',this)">Details</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','impact',this)">Impact</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','remediation',this)">Remediation</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','controls',this)">Controls (${f.controls.length})</div>
     </div>
 
-    <div class="tab-panel active" id="tp-${esc(f.id)}-assets">
+    <div class="tab-panel active" id="tp-${esc(f.id)}-failed">
       <div class="assets-header">
-        <h4>${f.assets.length} affected asset${f.assets.length !== 1 ? 's' : ''}</h4>
-        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}')">📋 Copy Assets TSV</button>
+        <h4>${failedAssets.length} failed asset${failedAssets.length !== 1 ? 's' : ''}</h4>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','FAIL')">📋 Copy TSV</button>
       </div>
-      ${renderAssetsGrid(f)}
+      ${renderAssetsGrid(failedAssets)}
     </div>
 
-    <div class="tab-panel" id="tp-${esc(f.id)}-risk">
-      <div class="section-label">Risk Details</div>
-      <div class="md-block">${renderMD(f.risk)}</div>
+    <div class="tab-panel" id="tp-${esc(f.id)}-passed">
+      <div class="assets-header">
+        <h4>${passedAssets.length} passed asset${passedAssets.length !== 1 ? 's' : ''}</h4>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','PASS')">📋 Copy TSV</button>
+      </div>
+      ${renderAssetsGrid(passedAssets)}
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-details">
+      <div class="assets-header">
+        <h4>Finding Details</h4>
+        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}', false)">📋 Copy</button>
+      </div>
+      ${renderDetailsBlock(f)}
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-impact">
+      <div class="assets-header">
+        <h4>Impact</h4>
+        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">📋 Copy</button>
+      </div>
+      <div class="md-block">${renderMD(f.impact || f.risk)}</div>
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-remediation">
-      <div class="section-label">Remediation Guidance</div>
-      <div class="md-block">${renderMD(f.remediation)}</div>
-      ${renderReferences(f)}
+      <div class="assets-header">
+        <h4>Remediation Guidance</h4>
+        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">📋 Copy</button>
+      </div>
+      ${renderRemediationBlock(f)}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-controls">
-      <div class="section-label">Benchmark Controls & Recommendations</div>
+      <div class="assets-header">
+        <h4>Benchmark Controls &amp; Recommendations</h4>
+        <button class="btn small accent" onclick="copyControlsTSV('${esc(f.id)}')">📋 Copy TSV</button>
+      </div>
       ${f.controls.length
         ? `<div class="controls-list">${f.controls.map(c => `<span class="control-badge">${esc(c)}</span>`).join('')}</div>`
-        : '<div style="color:var(--text-dim);font-size:12px">No compliance controls mapped</div>'
-      }
+        : '<div style="color:var(--text-dim);font-size:12px">No compliance controls mapped</div>'}
     </div>
   </div>
 </div>`;
 }
 
-function renderAssetsGrid(f) {
-  if (!f.assets.length) return '<div style="color:var(--text-dim);font-size:12px">No assets</div>';
-  // For assets with portal links, always use 1 column so the link is readable
-  const hasLinks = f.assets.some(a => a.portalLink);
-  const cols = hasLinks ? 1 : Math.min(4, Math.max(1, Math.ceil(Math.sqrt(f.assets.length))));
-
-  return `<div class="assets-grid" id="ag-${esc(f.id)}">` +
-    chunkArray(f.assets, cols).map(row =>
+function renderAssetsGrid(assets) {
+  if (!assets.length) return '<div style="color:var(--text-dim);font-size:12px">No assets</div>';
+  const hasLinks = assets.some(a => a.portalLink);
+  const cols = hasLinks ? 1 : Math.min(4, Math.max(1, Math.ceil(Math.sqrt(assets.length))));
+  return `<div class="assets-grid">` +
+    chunkArray(assets, cols).map(row =>
       `<div class="asset-row" style="grid-template-columns:repeat(${cols},1fr)">` +
       row.map(a => {
-        const linkHtml = a.portalLink
-          ? ` <a href="${esc(a.portalLink)}" target="_blank" rel="noopener" class="asset-portal-link" title="Open in Azure Portal" onclick="event.stopPropagation()">↗</a>`
-          : '';
-        const rgHtml = a.resourceGroup
-          ? `<span class="asset-rg">${esc(a.resourceGroup)}</span>` : '';
-        const regionHtml = a.region
-          ? `<span class="asset-region">[${esc(a.region)}]</span>` : '';
-        return `<div class="asset-cell status-${a.status.toLowerCase()}" title="${esc(a.uid)}">
-          <span class="asset-name">${esc(a.name)}</span>${rgHtml}${regionHtml}${linkHtml}
-        </div>`;
-      }).join('') +
-      `</div>`
-    ).join('') +
-    `</div>`;
-}
-
-function renderMD(text) {
-  if (!text) return '<span style="color:var(--text-dim);font-size:12px">No information available</span>';
-  try {
-    return DOMPurify.sanitize(marked.parse(text));
-  } catch {
-    return esc(text).replace(/\n/g, '<br>');
-  }
+        const link   = a.portalLink ? ` <a href="${esc(a.portalLink)}" target="_blank" rel="noopener" class="asset-portal-link" onclick="event.stopPropagation()">↗</a>` : '';
+        const rg     = a.resourceGroup ? `<span class="asset-rg">${esc(a.resourceGroup)}</span>` : '';
+        const region = a.region ? `<span class="asset-region">[${esc(a.region)}]</span>` : '';
+        return `<div class="asset-cell status-${a.status.toLowerCase()}" title="${esc(a.uid)}"><span class="asset-name">${esc(a.name)}</span>${rg}${region}${link}</div>`;
+      }).join('') + `</div>`
+    ).join('') + `</div>`;
 }
 
 function renderReferences(f) {
-  const urls = [...(f.remUrls || []), ...(f.addUrls || [])].filter(Boolean);
+  const urls = [...(f.remUrls||[]), ...(f.addUrls||[])].filter(Boolean);
   if (!urls.length) return '';
-  return `
-    <div class="references-block">
-      <div class="section-label">References & Additional URLs</div>
-      ${urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join('')}
-    </div>`;
+  return `<div class="references-block"><div class="section-label">References &amp; Additional URLs</div>${urls.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join('')}</div>`;
 }
 
-// =========================================================
-// CARD INTERACTION
-// =========================================================
+// Card interaction
 function toggleCard(id) {
-  const card = document.querySelector(`[data-id="${id}"]`);
-  card.classList.toggle('open');
+  document.querySelector(`[data-id="${id}"]`).classList.toggle('open');
 }
-
 function switchTab(id, tab, el) {
-  // Deactivate all tabs and panels for this card
   const card = document.getElementById(`fc-${id}`);
   card.querySelectorAll('.body-tab').forEach(t => t.classList.remove('active'));
   card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  const panel = document.getElementById(`tp-${id}-${tab}`);
-  if (panel) panel.classList.add('active');
+  document.getElementById(`tp-${id}-${tab}`)?.classList.add('active');
 }
 
-// =========================================================
-// ANALYSIS STATUS
-// =========================================================
+// Analysis status
 function setStatus(id, selectEl) {
   const value = selectEl.value;
   analysisStatuses[id] = value;
-
-  // Update card styling
   const card = document.querySelector(`[data-id="${id}"]`);
-  card.className = card.className.replace(/status-\S+/g, '').trim();
+  card.className = card.className.replace(/status-\S+/g,'').trim();
   if (value) card.classList.add(`status-${value}`);
-
-  // Update select styling
-  selectEl.className = selectEl.className.replace(/s-\S+/g, '').trim();
+  selectEl.className = selectEl.className.replace(/s-\S+/g,'').trim();
   selectEl.classList.add('status-select');
   if (value) selectEl.classList.add(`s-${value}`);
-
-  // Update to-report stat
   computeStats();
-
-  // Schedule save
   scheduleSave({ statuses: analysisStatuses });
+  // Refresh reporting view if open so it reflects the change
+  if (currentView === 'reporting') renderReportingView();
+}
+
+// TSV copy
+function copyFindingsTSV() {
+  const headers = ['ID','Title','Severity','Cloud','Service','Fail Count','Pass Count','Assets','Subscriptions','Resource Groups','Analysis Status'];
+  const rows = filteredFindings.map(f => [f.id, f.title, f.severity, f.cloud, f.service, f.failCount, f.passCount, f.assets.length, f.subscriptions.join(', '), f.resourceGroups.join(', '), analysisStatuses[f.id]||'']);
+  const tsv = [headers,...rows].map(r=>r.map(c=>String(c??'').replace(/\t/g,' ')).join('\t')).join('\n');
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${filteredFindings.length} findings as TSV`));
+}
+
+function copyAssetsTSV(findingId, status) {
+  const f = rawFindings.find(f => f.id === findingId);
+  if (!f) return;
+  const assets = status ? f.assets.filter(a => a.status === status) : f.assets;
+  const header = `Affected ${getResourceShortName(f)}`;
+  const tsv = buildListTsv(header, assets.map(a => a.name));
+  const label = status === 'FAIL' ? 'failed' : status === 'PASS' ? 'passed' : '';
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length}${label?' '+label:''} assets as TSV`));
+}
+
+function copyControlsTSV(findingId) {
+  const f = rawFindings.find(f => f.id === findingId);
+  if (!f?.controls?.length) { toast('No controls available', 'error'); return; }
+  const tsv = buildListTsv('Control', f.controls);
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${f.controls.length} controls as TSV`));
 }
 
 // =========================================================
-// AUTO-SAVE
+// COMPLIANCE VIEW
 // =========================================================
-function scheduleSave(extraData = {}, withSnapshot = true) {
-  clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(() => doSave(extraData, withSnapshot), 800);
-}
-
-async function doSave(extraData = {}, withSnapshot = true) {
-  if (!currentProjectId) return;
-  try {
-    await api('POST', `/api/project/${currentProjectId}/state`, {
-      statuses: analysisStatuses,
-      ...extraData,
-      _snapshot: withSnapshot
-    });
-    showSaved();
-  } catch (e) {
-    console.warn('Auto-save failed', e);
+function buildCheckNameMap() {
+  checkNameMap = new Map();
+  for (const f of rawFindings) {
+    const shortName = getShortCheckId(f.id);
+    checkNameMap.set(shortName, f);
+    checkNameMap.set(f.id.toLowerCase(), f);
+    if (f.shortCheckId) checkNameMap.set(f.shortCheckId.toLowerCase(), f);
   }
+}
+
+function isCisBenchmark() {
+  if (!loadedBenchmark) return false;
+  const fw = String(loadedBenchmark.Framework || '').toUpperCase();
+  const id = String(complianceBenchmarkId || '').toLowerCase();
+  return fw.includes('CIS') || id.includes('cis');
+}
+
+async function initComplianceView() {
+  await loadAvailableBenchmarks();
+  populateCompBenchmarkSelector();
+  // Auto-load if a benchmark is already selected
+  if (complianceBenchmarkId && !loadedBenchmark) {
+    await loadComplianceBenchmark(complianceBenchmarkId);
+  } else if (loadedBenchmark) {
+    renderComplianceView();
+  }
+}
+
+function populateCompBenchmarkSelector() {
+  const sel = document.getElementById('comp-benchmark-select');
+  const preferredSet = new Set(preferredBenchmarks);
+  const preferred = availableBenchmarks.filter(b => preferredSet.has(b.id));
+  const others    = availableBenchmarks.filter(b => !preferredSet.has(b.id));
+
+  const mkOpt = b => {
+    const o = document.createElement('option');
+    o.value = b.id;
+    o.textContent = `${b.name}${b.version ? ' v'+b.version : ''}`;
+    return o;
+  };
+  sel.innerHTML = '<option value="">— Select benchmark —</option>';
+
+  if (preferred.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = 'Preferred';
+    preferred.forEach(b => grp.appendChild(mkOpt(b)));
+    sel.appendChild(grp);
+  }
+  if (others.length) {
+    const grp = document.createElement('optgroup');
+    grp.label = preferred.length ? 'Other Benchmarks' : 'All Benchmarks';
+    others.forEach(b => grp.appendChild(mkOpt(b)));
+    sel.appendChild(grp);
+  }
+
+  // Set current selection
+  if (complianceBenchmarkId) sel.value = complianceBenchmarkId;
+}
+
+async function onCompBenchmarkChange(id) {
+  complianceBenchmarkId = id;
+  complianceProfileFilter = '';
+  if (!id) {
+    loadedBenchmark = null;
+    if (chartCompStatus) { chartCompStatus.destroy(); chartCompStatus = null; }
+    if (chartCompSections) { chartCompSections.destroy(); chartCompSections = null; }
+    document.getElementById('comp-stats').innerHTML = '';
+    document.getElementById('comp-requirements').innerHTML = '<div class="empty-state"><div class="icon">📋</div>Select a benchmark to view compliance status</div>';
+    document.getElementById('comp-profile-filter-wrap').style.display = 'none';
+    return;
+  }
+  await loadComplianceBenchmark(id);
+}
+
+async function loadComplianceBenchmark(id) {
+  if (!benchmarkCache.has(id)) {
+    toast('Loading benchmark…');
+    try {
+      const data = await api('GET', `/api/compliance/benchmark/${id}`);
+      benchmarkCache.set(id, data);
+    } catch(e) {
+      toast('Failed to load benchmark', 'error');
+      return;
+    }
+  }
+  loadedBenchmark = benchmarkCache.get(id);
+  buildCompProfileFilter();
+  renderComplianceView();
+}
+
+function buildCompProfileFilter() {
+  if (!loadedBenchmark) return;
+  const values = new Set();
+  for (const req of loadedBenchmark.Requirements) {
+    const attr = req.Attributes?.[0] || {};
+    const v = attr.Profile || attr.Type || '';
+    if (v) values.add(v);
+  }
+  const wrap = document.getElementById('comp-profile-filter-wrap');
+  const btns = document.getElementById('comp-profile-btns');
+  if (!values.size) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const sorted = [...values].sort();
+  btns.innerHTML = ['All', ...sorted].map(v => {
+    const val = v === 'All' ? '' : v;
+    return `<button class="comp-profile-btn${val === complianceProfileFilter ? ' active' : ''}" onclick="setCompProfileFilter('${val}')">${esc(v)}</button>`;
+  }).join('');
+}
+
+function setCompProfileFilter(value) {
+  complianceProfileFilter = value;
+  buildCompProfileFilter();
+  renderComplianceView();
+}
+
+function getRequirementStatus(req) {
+  const checks = req.Checks || [];
+  if (!checks.length) return { status:'n/a', failCount:0, passCount:0, findings:[] };
+  const findings = [];
+  let failCount=0, passCount=0;
+  for (const name of checks) {
+    const f = checkNameMap.get(name.toLowerCase());
+    if (f) { findings.push(f); failCount += f.failCount; passCount += f.passCount; }
+  }
+  if (!findings.length) return { status:'n/a', failCount:0, passCount:0, findings:[] };
+  return { status: failCount > 0 ? 'fail' : 'pass', failCount, passCount, findings };
+}
+
+function renderComplianceView() {
+  if (!loadedBenchmark) return;
+  let reqs = loadedBenchmark.Requirements;
+  if (complianceProfileFilter) {
+    reqs = reqs.filter(req => {
+      const attr = req.Attributes?.[0] || {};
+      return (attr.Profile || attr.Type || '') === complianceProfileFilter;
+    });
+  }
+
+  let totalFail=0, totalPass=0, totalNA=0;
+  const isCis = isCisBenchmark();
+  const results = reqs.map(req => {
+    const attr = req.Attributes?.[0] || {};
+    const res  = getRequirementStatus(req);
+    if (res.status==='fail') totalFail++;
+    else if (res.status==='pass') totalPass++;
+    else totalNA++;
+    return {
+      id: req.Id,
+      description: req.Description,
+      section: attr.Section||'General',
+      subSection: attr.SubSection||'',
+      checks: req.Checks||[],
+      cisImpact: attr.ImpactStatement || '',
+      isCis,
+      ...res
+    };
+  });
+
+  // Stats + charts (Analysis-style layout)
+  document.getElementById('comp-stats').innerHTML = `
+    <div id="comp-stats-section">
+      <div class="stats-top">
+        <div class="stat-item">
+          <div class="stat-value">${results.length}</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--comp-fail)">${totalFail}</div>
+          <div class="stat-label">Failed</div>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--comp-pass)">${totalPass}</div>
+          <div class="stat-label">Passed</div>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--comp-na)">${totalNA}</div>
+          <div class="stat-label">N/A</div>
+        </div>
+      </div>
+      <div class="charts-section comp-charts-visible">
+        <div class="chart-wrap">
+          <div class="chart-title">Requirement status</div>
+          <canvas id="chart-comp-status" height="140"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Failed requirements by section</div>
+          <canvas id="chart-comp-sections" height="140"></canvas>
+        </div>
+      </div>
+    </div>`;
+
+  renderComplianceCharts(totalFail, totalPass, totalNA, results);
+
+  // Group by section > subSection
+  const sections = new Map();
+  for (const r of results) {
+    if (!sections.has(r.section)) sections.set(r.section, new Map());
+    const subs = sections.get(r.section);
+    if (!subs.has(r.subSection)) subs.set(r.subSection, []);
+    subs.get(r.subSection).push(r);
+  }
+
+  const reqsEl = document.getElementById('comp-requirements');
+  if (!results.length) {
+    reqsEl.innerHTML = '<div class="empty-state"><div class="icon">🔍</div>No requirements match current filter</div>';
+    return;
+  }
+
+  reqsEl.innerHTML = [...sections.entries()].map(([section, subsMap]) => {
+    const flat = [...subsMap.values()].flat();
+    const sFail = flat.filter(r=>r.status==='fail').length;
+    const sPass = flat.filter(r=>r.status==='pass').length;
+    const sNA   = flat.filter(r=>r.status==='n/a').length;
+    const isOpen = sFail > 0;
+
+    const subsHTML = [...subsMap.entries()].map(([sub, reqs]) => {
+      const reqRows = reqs.map(r => renderCompReqRow(r)).join('');
+      if (!sub) return reqRows;
+      return `
+        <div class="comp-subsection open">
+          <div class="comp-subsection-header" onclick="this.closest('.comp-subsection').classList.toggle('open')">
+            <span class="comp-subsection-toggle">▶</span><span>${esc(sub)}</span>
+          </div>
+          <div class="comp-subsection-body">${reqRows}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="comp-section${isOpen ? ' open' : ''}">
+        <div class="comp-section-header" onclick="this.closest('.comp-section').classList.toggle('open')">
+          <span class="comp-section-toggle">▶</span>
+          <span class="comp-section-title">${esc(section)}</span>
+          <div class="comp-section-counts">
+            ${sFail ? `<span class="comp-req-count-fail">${sFail} FAIL</span>` : ''}
+            ${sPass ? `<span class="comp-req-count-pass">${sPass} PASS</span>` : ''}
+            ${sNA   ? `<span style="color:var(--text-dim)">${sNA} N/A</span>` : ''}
+          </div>
+        </div>
+        <div class="comp-section-body">${subsHTML}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderCompReqRow(r) {
+  const statusLabel = r.status === 'n/a' ? 'N/A' : r.status.toUpperCase();
+  const counts = r.status !== 'n/a' ? `
+    ${r.failCount ? `<span class="comp-req-count-fail">${r.failCount}✗</span>` : ''}
+    ${r.passCount ? `<span class="comp-req-count-pass">${r.passCount}✓</span>` : ''}
+  ` : `<span style="color:var(--text-dim);font-size:10px">N/A</span>`;
+
+  const linked = r.findings.map(f => `
+    <div class="comp-linked-finding">
+      <span class="comp-linked-title">${esc(f.title)}</span>
+      ${f.failCount ? `<span class="comp-req-count-fail">${f.failCount} failed</span>` : ''}
+      ${f.passCount ? `<span class="comp-req-count-pass">${f.passCount} passed</span>` : ''}
+    </div>`).join('');
+
+  const checkBlocks = r.checks.length
+    ? r.checks.map(c => renderCompCheckBlock(c, { id: r.id, isCis: r.isCis, cisImpact: r.cisImpact })).join('')
+    : '';
+
+  const noData = r.status==='n/a' && !r.checks.length
+    ? '<div style="color:var(--text-dim);font-size:11px;margin-top:4px">Manual assessment required — no automated checks defined.</div>'
+    : '';
+
+  return `
+    <div class="comp-req">
+      <div class="comp-req-row" onclick="this.closest('.comp-req').classList.toggle('open')">
+        <span class="comp-status-badge ${r.status}">${statusLabel}</span>
+        <span class="comp-req-id">${esc(r.id)}</span>
+        <span class="comp-req-desc" title="${esc(r.description)}">${esc(r.description)}</span>
+        <div class="comp-req-counts">${counts}</div>
+        <span class="ms-caret" style="flex-shrink:0">▾</span>
+      </div>
+      <div class="comp-req-detail">
+        ${checkBlocks ? `<div class="comp-detail-label">Prowler Checks</div>${checkBlocks}` : ''}
+        ${linked ? `<div class="comp-detail-label" style="margin-top:8px">Linked Findings</div><div class="comp-linked-findings">${linked}</div>` : ''}
+        ${noData}
+      </div>
+    </div>`;
+}
+
+// =========================================================
+// REPORTING VIEW
+// =========================================================
+function renderReportingView() {
+  const confirmed = rawFindings.filter(f => {
+    const s = analysisStatuses[f.id] || '';
+    return s === 'confirmed' || s === 'reported';
+  });
+  const container = document.getElementById('report-findings');
+  const countEl   = document.getElementById('report-count');
+
+  if (!confirmed.length) {
+    countEl.textContent = '0 confirmed findings';
+    container.innerHTML = `<div class="empty-state"><div class="icon">📄</div>No confirmed findings yet.<br>Mark findings as "Confirmed" or "Reported" in the Analysis view.</div>`;
+    return;
+  }
+  countEl.textContent = `${confirmed.length} confirmed finding${confirmed.length !== 1 ? 's' : ''}`;
+  container.innerHTML = confirmed.map(f => renderReportFinding(f)).join('');
+}
+
+function getPreferredFrameworks() {
+  return new Set(
+    preferredBenchmarks
+      .map(bid => availableBenchmarks.find(ab => ab.id === bid))
+      .filter(Boolean)
+      .map(b => b.framework.toUpperCase())
+  );
+}
+
+function renderReportFinding(f) {
+  const aStatus      = analysisStatuses[f.id] || '';
+  const failedAssets = f.assets.filter(a => a.status === 'FAIL');
+  const preferredFws = getPreferredFrameworks();
+
+  const preferred = [], others = [];
+  for (const c of f.controls) {
+    const fw  = c.indexOf(': ') > -1 ? c.substring(0, c.indexOf(': ')) : '';
+    const pfx = fw.match(/^([A-Z][A-Z0-9]*)/i)?.[1]?.toUpperCase() || '';
+    (pfx && preferredFws.has(pfx) ? preferred : others).push(c);
+  }
+
+  const controlsHtml = `
+    <div class="controls-list">
+      ${preferred.length
+        ? preferred.map(c=>`<span class="control-badge preferred">${esc(c)}</span>`).join('')
+        : '<span style="color:var(--text-dim);font-size:11px">No preferred benchmark controls mapped</span>'}
+    </div>
+    ${others.length ? `
+      <details class="other-controls-details">
+        <summary>Other controls (${others.length})</summary>
+        <div class="controls-list">${others.map(c=>`<span class="control-badge">${esc(c)}</span>`).join('')}</div>
+      </details>` : ''}`;
+
+  return `
+<div class="report-finding status-${aStatus}" id="rf-${esc(f.id)}">
+  <div class="report-finding-hdr" onclick="this.closest('.report-finding').classList.toggle('open')">
+    <span class="report-expand-icon">▶</span>
+    <span class="sev-badge sev-${f.severity}">${f.severity}</span>
+    <span class="report-finding-title">${esc(f.title)}</span>
+    <select class="status-select ${aStatus ? 's-' + aStatus : ''}" onchange="setStatus('${esc(f.id)}', this)" onclick="event.stopPropagation()">
+      <option value="confirmed" ${aStatus === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+      <option value="reported" ${aStatus === 'reported' ? 'selected' : ''}>Reported</option>
+    </select>
+    <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${failedAssets.length} failed</span>
+  </div>
+  <div class="report-finding-body">
+    <div class="report-section">
+      <div class="report-section-hdr">
+        <div class="report-section-label">Details</div>
+        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}')">📋 Copy</button>
+      </div>
+      ${renderDetailsBlock(f, true)}
+    </div>
+    <div class="report-section">
+      <div class="report-section-hdr">
+        <div class="report-section-label">Impact</div>
+        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">📋 Copy</button>
+      </div>
+      <div class="md-block">${renderMD(f.impact || f.risk)}</div>
+    </div>
+    <div class="report-section">
+      <div class="report-section-hdr">
+        <div class="report-section-label">Remediation</div>
+        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">📋 Copy</button>
+      </div>
+      ${renderRemediationBlock(f)}
+    </div>
+    <div class="report-section">
+      <div class="report-section-hdr">
+        <div class="report-section-label">Affected Assets (${failedAssets.length} failed)</div>
+        <button class="btn small accent" onclick="copyFailedAssetsTSV('${esc(f.id)}')">📋 Copy TSV</button>
+      </div>
+      ${failedAssets.length
+        ? renderAssetsGrid(failedAssets)
+        : '<div style="color:var(--text-dim);font-size:12px">No failed assets</div>'}
+    </div>
+    <div class="report-section">
+      <div class="report-section-hdr">
+        <div class="report-section-label">Controls</div>
+      </div>
+      ${controlsHtml}
+    </div>
+  </div>
+</div>`;
+}
+
+function copyDetails(findingId, includeNonCompliant = true) {
+  const f = rawFindings.find(f => f.id === findingId);
+  const text = getDetailsCopyText(f, includeNonCompliant);
+  if (!text) { toast('No details available', 'error'); return; }
+  navigator.clipboard.writeText(text).then(() => toast('Details copied'));
+}
+function copyImpact(findingId) {
+  const f = rawFindings.find(f => f.id === findingId);
+  const text = f?.impact || f?.risk;
+  if (!text) { toast('No impact details available', 'error'); return; }
+  navigator.clipboard.writeText(text).then(() => toast('Impact copied'));
+}
+function copyRemediation(findingId) {
+  const f = rawFindings.find(f => f.id === findingId);
+  if (!f?.remediation) { toast('No remediation available', 'error'); return; }
+  navigator.clipboard.writeText(f.remediation).then(() => toast('Remediation copied'));
+}
+function copyFailedAssetsTSV(findingId) {
+  const f = rawFindings.find(f => f.id === findingId);
+  if (!f) return;
+  const assets = f.assets.filter(a => a.status === 'FAIL');
+  const header = `Affected ${getResourceShortName(f)}`;
+  const tsv = assets.length ? buildListTsv(header, assets.map(a => a.name)) : header;
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length} failed assets as TSV`));
 }
 
 // =========================================================
@@ -1798,99 +2553,45 @@ async function doSave(extraData = {}, withSnapshot = true) {
 async function openHistory() {
   document.getElementById('history-modal').classList.add('open');
   const list = document.getElementById('history-list');
-  list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">Loading...</div>';
-
+  list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">Loading…</div>';
   const snapshots = await api('GET', `/api/project/${currentProjectId}/history`);
   if (!snapshots.length) {
     list.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">No history yet</div>';
     return;
   }
-
   list.innerHTML = snapshots.map(s => {
-    // Format timestamp from filename like "2025-05-28T14-32-00-000Z"
-    const ts = s.filename.replace('.json', '').replace(/T/, ' ').replace(/(\d{4}-\d{2}-\d{2}) (\d{2})-(\d{2})-(\d{2}).*/, '$1 $2:$3:$4');
-    return `
-      <div class="history-item">
-        <span class="hist-ts">${ts}</span>
-        <button class="btn small" onclick="restoreSnapshot('${s.filename}')">Restore</button>
-      </div>`;
+    const ts = s.filename.replace('.json','').replace(/(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2}).*/,'$1 $2:$3:$4');
+    return `<div class="history-item"><span class="hist-ts">${ts}</span><button class="btn small" onclick="restoreSnapshot('${s.filename}')">Restore</button></div>`;
   }).join('');
 }
-
 async function restoreSnapshot(filename) {
-  if (!confirm(`Restore this snapshot? Current state will be saved before restoring.`)) return;
+  if (!confirm('Restore this snapshot? Current state will be saved before restoring.')) return;
   const result = await api('POST', `/api/project/${currentProjectId}/history/${filename}/restore`);
   analysisStatuses = result.state?.statuses || {};
+  preferredBenchmarks = result.state?.preferredBenchmarks || [];
+  populateCompBenchmarkSelector();
   computeStats();
   renderFindings();
+  if (currentView === 'reporting') renderReportingView();
   closeHistory();
   toast('Snapshot restored');
 }
+function closeHistory() { document.getElementById('history-modal').classList.remove('open'); }
 
-function closeHistory() {
-  document.getElementById('history-modal').classList.remove('open');
+// =========================================================
+// AUTO-SAVE
+// =========================================================
+function scheduleSave(extra = {}, withSnapshot = true) {
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(() => doSave(extra, withSnapshot), 800);
 }
-
-// =========================================================
-// TSV COPY
-// =========================================================
-function copyFindingsTSV() {
-  const headers = ['ID', 'Title', 'Severity', 'Cloud', 'Service', 'Fail Count', 'Pass Count', 'Assets', 'Subscriptions', 'Resource Groups', 'Analysis Status'];
-  const rows = filteredFindings.map(f => [
-    f.id,
-    f.title,
-    f.severity,
-    f.cloud,
-    f.service,
-    f.failCount,
-    f.passCount,
-    f.assets.length,
-    f.subscriptions.join(', '),
-    f.resourceGroups.join(', '),
-    analysisStatuses[f.id] || ''
-  ]);
-  const tsv = [headers, ...rows].map(r => r.map(c => String(c ?? '').replace(/\t/g, ' ')).join('\t')).join('\n');
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${filteredFindings.length} findings as TSV`));
+async function doSave(extra = {}, withSnapshot = true) {
+  if (!currentProjectId) return;
+  try {
+    await api('POST', `/api/project/${currentProjectId}/state`, { statuses: analysisStatuses, preferredBenchmarks, ...extra, _snapshot: withSnapshot });
+    showSaved();
+  } catch(e) { console.warn('Auto-save failed', e); }
 }
-
-function copyAssetsTSV(id) {
-  const finding = rawFindings.find(f => f.id === id);
-  if (!finding) return;
-
-  const assets = finding.assets;
-  const cols = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(assets.length))));
-  const rows = chunkArray(assets.map(a => a.name), cols);
-  // Pad rows to same length
-  const tsv = rows.map(r => {
-    while (r.length < cols) r.push('');
-    return r.map(c => String(c).replace(/\t/g, ' ')).join('\t');
-  }).join('\n');
-
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length} assets as ${cols}-column TSV`));
-}
-
-// =========================================================
-// UTILITIES
-// =========================================================
-function esc(s) {
-  return String(s ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
-
-function chunkArray(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-// =========================================================
-// MARKED CONFIG
-// =========================================================
-marked.setOptions({ breaks: true, gfm: true });
 
 // =========================================================
 // INIT

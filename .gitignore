@@ -1,0 +1,16 @@
+# Dependencies (local npm install in backend/)
+node_modules/
+
+# User / scan data (DATA_DIR when running backend outside Docker)
+data/
+
+# Secrets
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional local Docker overrides
+docker-compose.override.yml

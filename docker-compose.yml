@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     build: ./frontend
@@ -14,8 +12,12 @@ services:
     environment:
       - DATA_DIR=/data
       - PORT=3001
+      - COMPLIANCE_DIR=/compliance
+      - CHECK_METADATA_DIR=/check-metadata
     volumes:
       - prowler_data:/data
+      - ./resources/compliance:/compliance:ro
+      - ./resources/check-metadata:/check-metadata:ro
     restart: unless-stopped
 
 volumes:
