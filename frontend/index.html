@@ -1033,6 +1033,28 @@ function buildListTsv(header, values) {
   return [headerRow, ...rows].join('\n');
 }
 
+function buildHtmlTable(headers, rows) {
+  const headerCells = headers.map(h => `<th>${htmlCell(h)}</th>`).join('');
+  const bodyRows = rows.map(row =>
+    `<tr>${row.map(cell => `<td>${htmlCell(cell)}</td>`).join('')}</tr>`
+  ).join('');
+  return `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+}
+
+function buildListHtml(header, values) {
+  const items = (values || []).map(v => String(v ?? '').replace(/\t/g, ' '));
+  const cols = items.length ? computeTsvGridColumns(items.length) : 1;
+  const headerRow = `<tr><th colspan="${cols}">${htmlCell(header)}</th></tr>`;
+  if (!items.length) {
+    return `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse"><thead>${headerRow}</thead></table>`;
+  }
+  const dataRows = chunkArray(items, cols).map(r => {
+    while (r.length < cols) r.push('');
+    return `<tr>${r.map(c => `<td>${htmlCell(c)}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse"><thead>${headerRow}</thead><tbody>${dataRows}</tbody></table>`;
+}
+
 function tsvCell(v) {
   return String(v ?? '').replace(/[\t\r\n]+/g, ' ').trim();
 }
@@ -1041,17 +1063,71 @@ function htmlCell(v) {
   return esc(String(v ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n'));
 }
 
-async function copyPlainAndHtml(plain, html) {
+function wrapHtmlForClipboard(fragment) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><!--StartFragment-->${fragment}<!--EndFragment--></body></html>`;
+}
+
+function copyViaDomSelection(htmlFragment) {
+  const host = document.createElement('div');
+  host.contentEditable = 'true';
+  host.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none;';
+  host.innerHTML = htmlFragment;
+  document.body.appendChild(host);
+  host.focus();
+
+  const range = document.createRange();
+  range.selectNodeContents(host);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } finally {
+    sel.removeAllRanges();
+    document.body.removeChild(host);
+  }
+  return ok;
+}
+
+async function copyPlainAndHtml(plain, htmlFragment) {
+  const wrappedHtml = wrapHtmlForClipboard(htmlFragment);
   if (navigator.clipboard?.write && window.ClipboardItem) {
     await navigator.clipboard.write([
       new ClipboardItem({
         'text/plain': new Blob([plain], { type: 'text/plain' }),
-        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/html': new Blob([wrappedHtml], { type: 'text/html' }),
       }),
     ]);
     return;
   }
   await navigator.clipboard.writeText(plain);
+}
+
+async function copyRichContent(plain, html, successMsg) {
+  const fragment = html || esc(plain).replace(/\n/g, '<br>');
+  try {
+    if (copyViaDomSelection(fragment)) {
+      toast(successMsg);
+      return;
+    }
+    await copyPlainAndHtml(plain, fragment);
+    toast(successMsg);
+  } catch {
+    try {
+      await navigator.clipboard.writeText(plain);
+      toast(successMsg);
+    } catch {
+      toast('Failed to copy to clipboard', 'error');
+    }
+  }
+}
+
+function markdownToCopyHtml(text) {
+  if (!text) return '';
+  try { return DOMPurify.sanitize(marked.parse(text)); }
+  catch { return esc(text).replace(/\n/g, '<br>'); }
 }
 
 function csvEscape(v) {
@@ -2237,7 +2313,7 @@ function copyFindingsTSV() {
   const headers = ['ID','Title','Severity','Cloud','Service','Fail Count','Pass Count','Assets','Subscriptions','Resource Groups','Analysis Status'];
   const rows = filteredFindings.map(f => [f.id, f.title, f.severity, f.cloud, f.service, f.failCount, f.passCount, f.assets.length, f.subscriptions.join(', '), f.resourceGroups.join(', '), analysisStatuses[f.id]||'']);
   const tsv = [headers,...rows].map(r=>r.map(c=>String(c??'').replace(/\t/g,' ')).join('\t')).join('\n');
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${filteredFindings.length} findings as TSV`));
+  copyRichContent(tsv, buildHtmlTable(headers, rows), `Copied ${filteredFindings.length} findings as TSV`);
 }
 
 function copyAssetsTSV(findingId, status) {
@@ -2245,16 +2321,17 @@ function copyAssetsTSV(findingId, status) {
   if (!f) return;
   const assets = status ? f.assets.filter(a => a.status === status) : f.assets;
   const header = `Affected ${getResourceShortName(f)}`;
-  const tsv = buildListTsv(header, assets.map(a => a.name));
+  const names = assets.map(a => a.name);
+  const tsv = buildListTsv(header, names);
   const label = status === 'FAIL' ? 'failed' : status === 'PASS' ? 'passed' : '';
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length}${label?' '+label:''} assets as TSV`));
+  copyRichContent(tsv, buildListHtml(header, names), `Copied ${assets.length}${label?' '+label:''} assets as TSV`);
 }
 
 function copyControlsTSV(findingId) {
   const f = rawFindings.find(f => f.id === findingId);
   if (!f?.controls?.length) { toast('No controls available', 'error'); return; }
   const tsv = buildListTsv('Control', f.controls);
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${f.controls.length} controls as TSV`));
+  copyRichContent(tsv, buildListHtml('Control', f.controls), `Copied ${f.controls.length} controls as TSV`);
 }
 
 // =========================================================
@@ -2600,9 +2677,7 @@ function runCompExportAction() {
   }
   const tsv = buildComplianceExportTsv(columns);
   const html = buildComplianceExportHtml(columns);
-  copyPlainAndHtml(tsv, html)
-    .then(() => toast(`Copied ${count} requirements as TSV`))
-    .catch(() => toast('Failed to copy to clipboard', 'error'))
+  copyRichContent(tsv, html, `Copied ${count} requirements as TSV`)
     .finally(() => closeCompExport());
 }
 
@@ -2874,26 +2949,28 @@ function copyDetails(findingId, includeNonCompliant = true) {
   const f = rawFindings.find(f => f.id === findingId);
   const text = getDetailsCopyText(f, includeNonCompliant);
   if (!text) { toast('No details available', 'error'); return; }
-  navigator.clipboard.writeText(text).then(() => toast('Details copied'));
+  copyRichContent(text, markdownToCopyHtml(text), 'Details copied');
 }
 function copyImpact(findingId) {
   const f = rawFindings.find(f => f.id === findingId);
   const text = f?.impact || f?.risk;
   if (!text) { toast('No impact details available', 'error'); return; }
-  navigator.clipboard.writeText(text).then(() => toast('Impact copied'));
+  copyRichContent(text, markdownToCopyHtml(text), 'Impact copied');
 }
 function copyRemediation(findingId) {
   const f = rawFindings.find(f => f.id === findingId);
   if (!f?.remediation) { toast('No remediation available', 'error'); return; }
-  navigator.clipboard.writeText(f.remediation).then(() => toast('Remediation copied'));
+  copyRichContent(f.remediation, markdownToCopyHtml(f.remediation), 'Remediation copied');
 }
 function copyFailedAssetsTSV(findingId) {
   const f = rawFindings.find(f => f.id === findingId);
   if (!f) return;
   const assets = f.assets.filter(a => a.status === 'FAIL');
   const header = `Affected ${getResourceShortName(f)}`;
-  const tsv = assets.length ? buildListTsv(header, assets.map(a => a.name)) : header;
-  navigator.clipboard.writeText(tsv).then(() => toast(`Copied ${assets.length} failed assets as TSV`));
+  const names = assets.map(a => a.name);
+  const tsv = assets.length ? buildListTsv(header, names) : header;
+  const html = assets.length ? buildListHtml(header, names) : buildListHtml(header, []);
+  copyRichContent(tsv, html, `Copied ${assets.length} failed assets as TSV`);
 }
 
 // =========================================================
