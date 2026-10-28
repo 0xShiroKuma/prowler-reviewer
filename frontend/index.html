@@ -494,6 +494,15 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
 .api-key-meta { font-size: 12px; color: #6d6d6d; margin-top: 2px; }
 .custom-asset-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.7fr auto; gap: 8px; margin-bottom: 8px; }
 .custom-pick { max-height: 180px; overflow: auto; border: 1px solid #d7d3d3; margin-top: 8px; }
+.custom-pick .asset-choice {
+  display: block; width: 100%; margin: 0; padding: 8px 12px;
+  border: 0; border-bottom: 1px solid #d7d3d3; background: #fff; color: #141414;
+  font-family: var(--font-ui); font-size: 13px; font-weight: 400; letter-spacing: 0;
+  text-transform: none; text-align: left; white-space: normal; overflow-wrap: anywhere;
+  cursor: pointer; min-height: 0;
+}
+.custom-pick .asset-choice:last-child { border-bottom: 0; }
+.custom-pick .asset-choice:hover { background: #f3f1f1; }
 
 /* =========================================================
    IMPORT MODAL
@@ -510,10 +519,11 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
   --surface2: #f3f1f1;
   --surface3: #efecec;
   --border: #d7d3d3;
-  background: var(--paper); color: #424242; border: 1px solid var(--ink); border-radius: 0; width: 560px; max-height: 90vh; display: flex; flex-direction: column;
+  background: var(--paper); color: #424242; border: 1px solid var(--ink); border-radius: 0; width: 560px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
 }
+.modal > form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .modal-large { width: 700px; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #d7d3d3; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #d7d3d3; flex-shrink: 0; }
 .modal .btn { color: var(--ink); border-color: var(--ink); background: transparent; }
 .modal .btn:hover { background: var(--ink); color: var(--paper); }
 .modal .btn.primary, .modal .btn.primary:hover { background: var(--signal); border-color: var(--signal); color: #fff; }
@@ -521,8 +531,8 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
 .modal .btn.danger { color: var(--signal); border-color: var(--signal); }
 .modal .btn.danger:hover { background: var(--signal); color: #fff; }
 .modal-header h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
-.modal-body { flex: 1; overflow-y: auto; padding: 18px; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid #d7d3d3; }
+.modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid #d7d3d3; flex-shrink: 0; }
 .form-group { margin-bottom: 16px; }
 .form-label { display: block; font-size: 12px; font-weight: 600; color: #424242; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
 .form-input {
@@ -4300,7 +4310,7 @@ function renderCustomAssetChoices() {
     return;
   }
   el.innerHTML = choices.map((asset, index) => `
-    <button class="btn small" type="button" data-asset-index="${index}" style="margin:6px">${esc(asset.name)}${asset.region ? ' · ' + esc(asset.region) : ''}</button>
+    <button class="asset-choice" type="button" data-asset-index="${index}">${esc(asset.name)}${asset.region ? ' · ' + esc(asset.region) : ''}</button>
   `).join('');
   el.querySelectorAll('button').forEach(button => {
     button.addEventListener('click', () => addCustomAsset(choices[Number(button.dataset.assetIndex)]));
