@@ -20,7 +20,7 @@ const KEYLEN = 32;
 const SALT_LEN = 16;
 const SCRYPT_MAXMEM = 256 * 1024 * 1024;
 
-const MIN_PASSWORD = 12;
+const MIN_PASSWORD = 5;
 const MAX_PASSWORD = 128;
 const MIN_USERNAME = 3;
 const MAX_USERNAME = 64;

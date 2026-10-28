@@ -796,7 +796,7 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
           <label class="auth-label" for="auth-confirm">Confirm password</label>
           <input class="auth-input" id="auth-confirm" name="confirm" type="password" maxlength="128" autocomplete="new-password">
         </div>
-        <p class="auth-hint" id="auth-hint">Use at least 12 characters. A long passphrase is easier to remember and harder to guess.</p>
+        <p class="auth-hint" id="auth-hint">Use at least 5 characters.</p>
         <p class="auth-error" id="auth-error" role="alert"></p>
         <button class="btn primary auth-submit" id="auth-submit" type="submit">Sign in</button>
       </form>
@@ -1400,7 +1400,7 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
           <label class="form-label" for="pw-confirm">Confirm new password</label>
           <input class="form-input" id="pw-confirm" type="password" autocomplete="new-password" maxlength="128" required>
         </div>
-        <p class="import-bm-hint">At least 12 characters. This signs you out everywhere.</p>
+        <p class="import-bm-hint">At least 5 characters. This signs you out everywhere.</p>
         <p class="password-error" id="password-error" role="alert"></p>
       </div>
       <div class="modal-footer">
@@ -4643,8 +4643,8 @@ async function submitAuth(event) {
   const confirm = document.getElementById('auth-confirm').value;
   const button = document.getElementById('auth-submit');
   if (authMode === 'register') {
-    if (password.length < 12) {
-      setAuthError('Password must be at least 12 characters.');
+    if (password.length < 5) {
+      setAuthError('Password must be at least 5 characters.');
       return;
     }
     if (password !== confirm) {
@@ -4712,8 +4712,8 @@ async function submitPasswordChange(event) {
   const confirm = document.getElementById('pw-confirm').value;
   const error = document.getElementById('password-error');
   const button = document.getElementById('pw-submit');
-  if (newPassword.length < 12) {
-    error.textContent = 'Password must be at least 12 characters.';
+  if (newPassword.length < 5) {
+    error.textContent = 'Password must be at least 5 characters.';
     return;
   }
   if (newPassword !== confirm) {

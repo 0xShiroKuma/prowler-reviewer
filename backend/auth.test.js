@@ -15,7 +15,7 @@ process.env.CHECK_METADATA_DIR = path.join(tmp, 'meta');
 delete process.env.COOKIE_SECURE;
 
 const { app, auth } = require('./server');
-const { pruneAttempts, pushAttempt } = require('./auth');
+const { pruneAttempts, pushAttempt, validatePassword } = require('./auth');
 
 const USER = 'reviewer';
 const PASS = 'correct-horse-battery';
@@ -62,6 +62,12 @@ test('lockout window does not slide when the cap is reached', () => {
   assert.deepEqual(pruneAttempts([Date.now() + 60000], Date.now(), windowMs), []);
 });
 
+test('password length is five characters with no composition rule', () => {
+  assert.match(validatePassword('abcd', 'reviewer'), /5 characters/);
+  assert.equal(validatePassword('abcde', 'reviewer'), '');
+  assert.equal(validatePassword('12345', 'reviewer'), '');
+});
+
 test('authentication', { timeout: 180000 }, async () => {
   const help = spawnSync(process.execPath, ['reset-password.js', '--help'], { cwd: __dirname, encoding: 'utf8' });
   assert.equal(help.status, 0);
@@ -96,9 +102,9 @@ test('authentication', { timeout: 180000 }, async () => {
     });
     assert.equal(noCsrf.status, 403);
 
-    const short = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: 'short-pass' } });
+    const short = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: 'abcd' } });
     assert.equal(short.status, 400);
-    assert.match(short.json.error, /12 characters/);
+    assert.match(short.json.error, /5 characters/);
 
     const common = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: 'password12345' } });
     assert.equal(common.status, 400);
