@@ -2,22 +2,25 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8080:80"
+      - "8081:80"
     depends_on:
       - backend
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        PROWLER_REPO: ${PROWLER_REPO:-https://github.com/prowler-cloud/prowler.git}
+        PROWLER_REF: ${PROWLER_REF:-master}
     environment:
       - DATA_DIR=/data
       - PORT=3001
       - COMPLIANCE_DIR=/compliance
       - CHECK_METADATA_DIR=/check-metadata
+      - COOKIE_SECURE=${COOKIE_SECURE:-}
     volumes:
       - prowler_data:/data
-      - ./resources/compliance:/compliance:ro
-      - ./resources/check-metadata:/check-metadata:ro
     restart: unless-stopped
 
 volumes:

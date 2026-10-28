@@ -8,18 +8,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+@font-face { font-family: "Montserrat"; font-style: normal; font-weight: 300; font-display: swap; src: url("/fonts/montserrat-300.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/montserrat-700.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 300; font-display: swap; src: url("/fonts/inter-300.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/inter-400.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/inter-600.woff2") format("woff2"); }
+
 /* =========================================================
    DESIGN SYSTEM
    ========================================================= */
 :root {
-  --grey1: #d1d1d1;
-  --grey2: #525252;
+  --ink: #141414;
+  --paper: #f9f8f8;
+  --signal: #ca3e47;
+  --grey1: #d7d3d3;
+  --grey2: #5a5a5a;
   --grey3: #424242;
-  --grey4: #313131;
+  --grey4: #1c1c1c;
   --red:   #CA3E47;
   --red2:  #A72E36;
-  --accent: #0B7CB5;
-  --accent2: #095f8a;
+  --accent: #CA3E47;
+  --accent2: #A72E36;
 
   --sev-none:     #53AA33;
   --sev-low:      #FFCB0D;
@@ -31,43 +40,47 @@
   --status-flagged:      #F9A009;
   --status-false-pos:    #BFBFBF;
   --status-reported:     #53AA33;
-  --status-none:         #525252;
+  --status-none:         #8a8a8a;
 
   --comp-fail: #CA3E47;
   --comp-pass: #53AA33;
-  --comp-na:   #525252;
+  --comp-manual: #F9A009;
+  --comp-na:   #8a8a8a;
 
-  --bg:       #2a2a2a;
-  --surface:  #313131;
-  --surface2: #3a3a3a;
-  --surface3: #424242;
-  --border:   #525252;
-  --text:     #d1d1d1;
-  --text-dim: #888;
+  --bg:       #141414;
+  --surface:  #1c1c1c;
+  --surface2: #242424;
+  --surface3: #2c2c2c;
+  --border:   #3a3a3a;
+  --text:     #f9f8f8;
+  --text-dim: #b5b5b5;
 
-  --font-body: 'Calibri', 'Trebuchet MS', sans-serif;
-  --font-code: 'Consolas', 'Courier New', monospace;
-  --font-ui:   'Calibri', sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-code: "Inter", sans-serif;
+  --font-ui:   "Inter", sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 400; line-height: 1.55; }
+button, input, select, textarea { font-family: inherit; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: var(--grey1); }
 
 /* =========================================================
    LAYOUT
    ========================================================= */
-#app { display: flex; flex-direction: column; min-height: 100vh; }
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.ready { display: flex; }
 
 header {
-  background: var(--surface);
-  border-bottom: 2px solid var(--red);
+  background: var(--ink);
+  border-bottom: 3px solid var(--signal);
   padding: 0 24px;
-  height: 52px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -77,9 +90,9 @@ header {
   flex-shrink: 0;
 }
 .header-left { display: flex; align-items: center; gap: 16px; }
-.logo { font-family: var(--font-code); font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 2px; text-transform: uppercase; }
-.logo span { color: var(--grey1); }
-.project-name { font-size: 12px; color: var(--text-dim); font-family: var(--font-code); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logo { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--paper); letter-spacing: 0.18em; text-transform: uppercase; }
+.logo span { color: var(--signal); letter-spacing: 0.18em; }
+.project-name { font-size: 13px; font-weight: 300; color: var(--text-dim); font-family: var(--font-body); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .header-right { display: flex; align-items: center; gap: 10px; }
 .save-indicator { font-size: 11px; color: var(--sev-none); font-family: var(--font-code); opacity: 0; transition: opacity 0.3s; }
 .save-indicator.visible { opacity: 1; }
@@ -96,16 +109,17 @@ main { flex: 1; padding: 20px 24px; }
   padding: 0 24px;
   background: var(--surface);
   position: sticky;
-  top: 52px;
+  top: 64px;
   z-index: 50;
 }
 .view-tab {
-  padding: 12px 22px;
-  font-size: 11px;
-  font-family: var(--font-code);
-  letter-spacing: 1px;
+  padding: 14px 22px;
+  font-size: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: #8a8a8a;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -113,103 +127,174 @@ main { flex: 1; padding: 20px 24px; }
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
-.view-tab:hover { color: var(--text); }
-.view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.view-tab:hover { color: var(--paper); }
+.view-tab.active { color: var(--paper); border-bottom-color: var(--signal); }
 
 /* =========================================================
    BUTTONS
    ========================================================= */
 .btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--text); font-family: var(--font-ui); font-size: 12px;
-  cursor: pointer; border-radius: 3px; transition: all 0.15s; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 20px; border: 1px solid #5a5a5a; border-radius: 0;
+  background: transparent; color: var(--paper); font-family: var(--font-body);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.17em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; white-space: nowrap;
 }
-.btn:hover { background: var(--surface3); border-color: var(--grey1); }
-.btn.primary { background: var(--red); border-color: var(--red2); color: #fff; }
-.btn.primary:hover { background: var(--red2); }
-.btn.small { padding: 3px 9px; font-size: 11px; }
-.btn.danger { border-color: var(--red); color: var(--red); }
-.btn.danger:hover { background: var(--red); color: #fff; }
-.btn.accent { border-color: var(--accent); color: var(--accent); }
-.btn.accent:hover { background: var(--accent); color: #fff; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.btn.primary { background: var(--signal); border-color: var(--signal); color: #fff; }
+.btn.primary:hover { background: var(--red2); border-color: var(--red2); color: #fff; }
+.btn.small { min-height: 36px; padding: 0 14px; }
+.btn.danger { border-color: var(--signal); color: var(--signal); background: transparent; }
+.btn.danger:hover { background: var(--signal); color: #fff; }
+.btn.accent { min-height: 0; padding: 8px 0; border-color: transparent; color: var(--signal); background: transparent; }
+.btn.accent:hover { background: transparent; color: var(--red2); }
+.btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+a.btn { text-decoration: none; }
+
+input[type=checkbox] {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; margin: 0; flex: 0 0 16px;
+  border: 1px solid var(--paper); background: transparent;
+  display: inline-grid; place-content: center; cursor: pointer;
+}
+input[type=checkbox]::after {
+  content: ""; width: 8px; height: 4px;
+  border-left: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  transform: rotate(-45deg) translateY(-1px); opacity: 0;
+}
+input[type=checkbox]:checked { background: var(--paper); border-color: var(--paper); }
+input[type=checkbox]:checked::after { opacity: 1; }
+input[type=checkbox]:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+input[type=checkbox]:disabled { opacity: 0.45; cursor: not-allowed; }
+.modal input[type=checkbox],
+.ms-dropdown input[type=checkbox],
+.menu-select-panel input[type=checkbox] {
+  border-color: var(--ink); background: #fff;
+}
+.modal input[type=checkbox]::after,
+.ms-dropdown input[type=checkbox]::after,
+.menu-select-panel input[type=checkbox]::after {
+  border-left-color: var(--paper); border-bottom-color: var(--paper);
+}
+.modal input[type=checkbox]:checked,
+.ms-dropdown input[type=checkbox]:checked,
+.menu-select-panel input[type=checkbox]:checked {
+  background: var(--ink); border-color: var(--ink);
+}
 
 /* =========================================================
    LANDING
    ========================================================= */
-.landing-title { font-family: var(--font-code); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px; }
+.landing-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px; }
 .upload-zone {
-  border: 2px dashed var(--border); border-radius: 4px; padding: 40px; text-align: center;
-  cursor: pointer; transition: all 0.2s; margin-bottom: 24px;
+  border: 1px dashed #5a5a5a; border-radius: 0; padding: 48px 40px; text-align: center;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 24px;
 }
-.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(11,124,181,0.05); }
-.upload-zone .icon { font-size: 32px; margin-bottom: 10px; }
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--signal); background: rgba(202,62,71,0.08); }
+.upload-zone .icon, .empty-state .icon { display: flex; justify-content: center; color: var(--text-dim); line-height: 0; }
+.upload-zone .icon .ico, .empty-state .icon .ico { width: 28px; height: 28px; }
+.upload-zone .icon { margin-bottom: 12px; }
 .upload-zone h3 { color: var(--text); margin-bottom: 6px; }
 .upload-zone p { color: var(--text-dim); font-size: 12px; }
 .project-list { display: flex; flex-direction: column; gap: 8px; }
 .project-item {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 3px; cursor: pointer; transition: border-color 0.15s;
+  border-radius: 0; cursor: pointer; transition: border-color 0.15s;
 }
-.project-item.selected { border-color: var(--accent); background: rgba(11,124,181,0.06); }
+.project-item.selected { border-color: var(--signal); background: rgba(202,62,71,0.08); }
 .project-item-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.project-item input[type=checkbox] { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+.project-item input[type=checkbox] { flex-shrink: 0; }
 .project-bulk-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 8px 12px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 8px 12px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 0;
 }
 .project-bulk-left { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); }
 .project-bulk-actions { display: flex; gap: 6px; }
-.project-item:hover { border-color: var(--accent); }
+.project-item:hover { border-color: var(--signal); }
 .proj-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
 .proj-meta { font-size: 11px; color: var(--text-dim); }
 .proj-actions { display: flex; gap: 6px; }
 .empty-state { text-align: center; padding: 40px; color: var(--text-dim); }
-.empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+.empty-state .icon { margin-bottom: 10px; }
+.ico {
+  width: 16px; height: 16px; flex-shrink: 0; display: inline-block; vertical-align: -3px;
+  stroke: currentColor; fill: none; stroke-width: 1.5;
+  stroke-linecap: square; stroke-linejoin: miter;
+}
+.btn .ico, .charts-toggle .ico, .save-indicator .ico { width: 14px; height: 14px; }
+.save-indicator { display: inline-flex; align-items: center; gap: 6px; }
+.btn.icon-only { width: 36px; min-width: 36px; padding: 0; }
+.charts-toggle .ico { transition: transform 0.15s; }
+.charts-toggle.open .ico { transform: rotate(180deg); }
 
 /* =========================================================
    MULTI-SELECT FILTER
    ========================================================= */
-.ms-wrap { position: relative; display: inline-block; }
-.ms-trigger {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 3px; cursor: pointer; font-size: 12px; font-family: var(--font-ui);
-  color: var(--text); white-space: nowrap; min-width: 80px; transition: border-color 0.15s;
-  user-select: none;
+.ms-wrap, .menu-select { position: relative; display: inline-block; min-width: 0; max-width: 100%; }
+.ms-trigger, .menu-select-trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-height: 44px; min-width: 13rem; max-width: 22rem; padding: 0 16px;
+  background: #000; color: #fff; border: 0; border-radius: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; text-align: left; user-select: none;
 }
-.ms-trigger:hover { border-color: var(--grey1); }
-.ms-trigger.has-selection { border-color: var(--accent); color: var(--accent); }
-.ms-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff; border-radius: 10px;
-  padding: 0 5px; font-size: 10px; min-width: 16px; height: 16px; line-height: 1;
+.ms-trigger:hover, .menu-select-trigger:hover { background: #262626; }
+.ms-trigger:focus-visible, .menu-select-trigger:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.ms-trigger.has-selection { box-shadow: inset 0 -2px 0 var(--signal); }
+.menu-select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-chevron { width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.15s; }
+.ms-wrap:has(.ms-dropdown.open) .menu-chevron,
+.menu-select.open .menu-chevron { transform: rotate(180deg); }
+.ms-dropdown, .menu-select-panel {
+  display: none; position: absolute; top: calc(100% + 8px); left: 0; z-index: 400;
+  width: max-content; min-width: 16rem; max-width: min(23rem, calc(100vw - 2rem));
+  max-height: 24rem; overflow: auto; padding: 8px;
+  background: #fff; color: #141414; border: 1px solid #d4d0d0; border-radius: 0;
 }
-.ms-caret { font-size: 9px; color: var(--text-dim); margin-left: auto; }
-.ms-dropdown {
-  display: none; position: absolute; top: calc(100% + 3px); left: 0; z-index: 400;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
-  min-width: 180px; max-height: 260px; overflow-y: auto;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+.ms-dropdown.open, .menu-select.open .menu-select-panel { display: block; }
+.menu-select-wide .menu-select-panel { min-width: 23rem; }
+.menu-select-compact { vertical-align: middle; }
+.menu-select-compact .menu-select-trigger { min-width: 9.5rem; min-height: 36px; padding: 0 12px; }
+.menu-select-compact .menu-select-panel { left: auto; right: 0; min-width: 16rem; }
+.ms-dropdown-hdr, .menu-select-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 4px 12px 8px; background: #fff; border: 0; position: sticky; top: 0; z-index: 1;
 }
-.ms-dropdown.open { display: block; }
-.ms-dropdown-hdr {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; border-bottom: 1px solid var(--border);
-  font-size: 11px; color: var(--text-dim); background: var(--surface2);
-  position: sticky; top: 0;
+.menu-select-kicker { margin: 0; }
+.ms-dropdown-hdr span, .menu-select-kicker, .menu-group {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #737373;
 }
-.ms-clear-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 11px; padding: 0; }
-.ms-clear-btn:hover { text-decoration: underline; }
-.ms-dropdown label {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px; cursor: pointer; font-size: 12px; color: var(--text);
+.menu-group { display: block; padding: 10px 12px 4px; list-style: none; }
+.ms-clear-btn {
+  background: none; border: 0; color: #141414; cursor: pointer; padding: 0;
+  font-family: var(--font-body); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
 }
-.ms-dropdown label:hover { background: var(--surface2); }
-.ms-dropdown input[type=checkbox] { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
-.ms-options-container { /* dynamic options injected here */ }
+.ms-clear-btn:hover { color: var(--signal); }
+.ms-dropdown label.menu-item { justify-content: flex-start; gap: 12px; }
+.ms-dropdown label, .menu-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  width: 100%; min-height: 3.5rem; padding: 8px 12px; margin: 0;
+  background: transparent; border: 0; border-top: 1px solid #e5e5e5;
+  color: #141414; text-align: left; cursor: pointer; font-family: var(--font-body);
+  font-size: 14px; font-weight: 500; letter-spacing: 0; text-transform: none;
+}
+.ms-dropdown label:hover, .menu-item:hover, .menu-item:focus-visible { background: #f5f5f5; }
+.menu-item:focus-visible { outline: 2px solid #141414; outline-offset: -2px; }
+.menu-item-label { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.menu-check { width: 16px; height: 16px; flex-shrink: 0; color: #141414; }
+.menu-select-list, .ms-options-container { list-style: none; margin: 0; padding: 0; }
+.menu-select-search {
+  width: calc(100% - 8px); margin: 0 4px 8px; min-height: 40px; padding: 0 12px;
+  border: 1px solid #bdbdbd; border-radius: 0; background: #fff; color: #141414;
+  font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 400;
+}
+.menu-select-search:focus { outline: 2px solid #141414; outline-offset: 1px; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 
 /* =========================================================
    STATS SECTION
@@ -217,16 +302,16 @@ main { flex: 1; padding: 20px 24px; }
 #stats-section { margin-bottom: 16px; }
 .stats-top {
   display: flex; align-items: center; gap: 0;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 10px 20px;
+  background: var(--ink); border: 1px solid #5a5a5a; border-radius: 0; padding: 10px 20px;
   flex-wrap: wrap; gap: 8px;
 }
 .stat-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-.stat-value { font-size: 22px; font-weight: bold; font-family: var(--font-code); }
-.stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-size: 26px; font-weight: 700; font-family: var(--font-display); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; }
 .stats-divider { width: 1px; height: 36px; background: var(--border); margin: 0 8px; }
 .charts-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-dim); font-size: 12px; }
 .charts-toggle:hover { color: var(--text); }
-.charts-section { display: none; border: 1px solid var(--border); border-top: none; border-radius: 0 0 3px 3px; padding: 10px 14px; gap: 16px; background: var(--surface); max-height: 185px; align-items: flex-start; }
+.charts-section { display: none; border: 1px solid var(--border); border-top: none; border-radius: 0; padding: 10px 14px; gap: 16px; background: var(--surface); max-height: 185px; align-items: flex-start; }
 .charts-section.open { display: flex; }
 .chart-wrap { flex: 1; min-width: 160px; max-height: 165px; position: relative; }
 .chart-wrap canvas { max-height: 140px !important; }
@@ -236,26 +321,40 @@ main { flex: 1; padding: 20px 24px; }
    FILTERS SECTION
    ========================================================= */
 #filters-section { margin-bottom: 12px; }
-.filters-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; }
+.filters-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 16px; background: #1c1c1c; border: 1px solid var(--border); border-radius: 0; }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
-.filter-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.filter-group[hidden] { display: none; }
+.tag-round { background: var(--surface3); color: var(--text); border: 1px solid #5a5a5a; }
+.scan-list { display: flex; flex-direction: column; }
+.scan-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #d7d3d3; }
+.scan-list .scan-row:first-child { border-top: 0; }
+.scan-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.scan-label { font-size: 14px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-when, .scan-replaced { font-size: 12px; color: #6d6d6d; }
+.scan-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.filter-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; }
 .filter-input {
-  padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px;
+  min-height: 38px; padding: 0 10px; background: var(--ink); border: 1px solid #5a5a5a;
+  color: var(--text); font-family: var(--font-ui); font-size: 14px; border-radius: 0;
   min-width: 200px; transition: border-color 0.15s;
 }
-.filter-input:focus { outline: none; border-color: var(--accent); }
+.filter-input:focus { outline: 2px solid var(--signal); outline-offset: 1px; border-color: var(--signal); }
 .findings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .findings-header-left { display: flex; align-items: center; gap: 12px; }
 .results-count { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); }
+.bulk-status-bar:not([hidden]) {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.bulk-status-label { font-size: 11px; color: var(--text-dim); font-family: var(--font-code); }
 
 /* =========================================================
    FINDING CARDS
    ========================================================= */
 .finding-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
-  margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0;
+  margin-bottom: 6px; overflow: visible; transition: border-color 0.15s;
 }
+.finding-card:has(.menu-select.open) { position: relative; z-index: 30; }
 .finding-card.status-confirmed { border-left: 3px solid var(--status-confirmed); }
 .finding-card.status-flagged { border-left: 3px solid var(--status-flagged); }
 .finding-card.status-false-positive { border-left: 3px solid var(--status-false-pos); }
@@ -266,15 +365,29 @@ main { flex: 1; padding: 20px 24px; }
   cursor: pointer; user-select: none;
 }
 .finding-header:hover { background: var(--surface2); }
-.expand-icon { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.finding-reason { padding: 0 14px 10px; }
+.finding-reason-input {
+  width: 100%; min-height: 34px; padding: 0 10px; background: var(--ink);
+  border: 1px solid #5a5a5a; color: var(--text); font-family: var(--font-ui);
+  font-size: 13px; border-radius: 0;
+}
+.finding-reason-input:focus { outline: 2px solid var(--signal); outline-offset: 1px; border-color: var(--signal); }
+.reviewer-note { margin-bottom: 14px; }
+.reviewer-note-input {
+  width: 100%; min-height: 96px; padding: 8px 10px; resize: vertical;
+  background: var(--ink); border: 1px solid #5a5a5a; color: var(--text);
+  font-family: var(--font-ui); font-size: 13px; line-height: 1.55; border-radius: 0;
+}
+.reviewer-note-input:focus { outline: 2px solid var(--signal); outline-offset: 1px; border-color: var(--signal); }
+.expand-icon { display: inline-flex; width: 14px; height: 14px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
 .finding-card.open .expand-icon { transform: rotate(90deg); }
-.finding-title { font-size: 13px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.finding-title { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .finding-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
 
 .sev-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 2px 8px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
-  font-weight: bold; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0;
+  padding: 2px 8px; border-radius: 0; font-size: 10px; font-family: var(--font-display);
+  font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; flex-shrink: 0;
 }
 .sev-badge.sev-critical { background: var(--sev-critical); color: #fff; }
 .sev-badge.sev-high     { background: var(--sev-high); color: #fff; }
@@ -284,22 +397,17 @@ main { flex: 1; padding: 20px 24px; }
 
 .tag {
   display: inline-flex; align-items: center; padding: 2px 7px;
-  border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  border-radius: 0; font-size: 10px; font-family: var(--font-code);
 }
 .tag-failed { background: rgba(202,62,71,0.2); color: #ff6b73; border: 1px solid rgba(202,62,71,0.4); }
 .tag-passed { background: rgba(83,170,51,0.2); color: #7dd966; border: 1px solid rgba(83,170,51,0.4); }
+.tag-manual { background: rgba(249,160,9,0.2); color: #F9A009; border: 1px solid rgba(249,160,9,0.45); }
 .tag-assets { background: var(--surface3); color: var(--text-dim); }
-.tag-cloud  { background: rgba(11,124,181,0.15); color: #5bbce4; }
+.tag-cloud  { background: transparent; color: var(--paper); border: 1px solid #5a5a5a; }
 .tag-service { background: var(--surface3); color: var(--text-dim); }
+.tag-custom { background: rgba(83,170,51,0.15); color: #8fd07a; border: 1px solid rgba(83,170,51,0.45); }
 
-.status-select {
-  padding: 3px 6px; background: var(--surface3); border: 1px solid var(--border);
-  color: var(--text); font-size: 11px; border-radius: 2px; cursor: pointer;
-}
-.status-select.s-confirmed    { border-color: var(--status-confirmed); color: var(--status-confirmed); }
-.status-select.s-flagged       { border-color: var(--status-flagged); color: var(--status-flagged); }
-.status-select.s-false-positive { border-color: var(--status-false-pos); color: var(--status-false-pos); }
-.status-select.s-reported      { border-color: var(--status-reported); color: var(--status-reported); }
+.status-select { position: absolute; }
 
 .finding-body { display: none; border-top: 1px solid var(--border); }
 .finding-card.open .finding-body { display: block; }
@@ -323,16 +431,17 @@ main { flex: 1; padding: 20px 24px; }
 .non-compliant-controls { margin-top: 18px; }
 .non-compliant-controls { padding-top: 0; border-top: none; }
 #comp-stats-section { margin-bottom: 16px; }
-#comp-stats-section .stats-top { border-radius: 3px 3px 0 0; }
+#comp-stats-section .stats-top { border-radius: 0 3px 0 0; }
 .comp-charts-visible { display: flex !important; border-top: none; border-radius: 0 0 3px 3px; }
 .assets-grid { display: flex; flex-direction: column; gap: 4px; }
 .asset-row { display: grid; gap: 4px; }
 .asset-cell {
-  padding: 5px 10px; background: var(--surface2); border-radius: 2px; border: 1px solid var(--border);
+  padding: 5px 10px; background: var(--surface2); border-radius: 0; border: 1px solid var(--border);
   font-size: 12px; display: flex; align-items: center; gap: 6px; overflow: hidden;
 }
 .asset-cell.status-fail { border-color: rgba(202,62,71,0.4); background: rgba(202,62,71,0.08); }
 .asset-cell.status-pass { border-color: rgba(83,170,51,0.3); background: rgba(83,170,51,0.06); }
+.asset-cell.status-manual { border-color: rgba(249,160,9,0.4); background: rgba(249,160,9,0.08); }
 .asset-name { font-family: var(--font-code); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .asset-rg { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
 .asset-region { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
@@ -343,13 +452,13 @@ main { flex: 1; padding: 20px 24px; }
    MARKDOWN BLOCK
    ========================================================= */
 .md-block {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 0;
   padding: 12px 14px; font-size: 13px; line-height: 1.7; max-height: 320px; overflow-y: auto;
 }
 .md-block h1,.md-block h2,.md-block h3 { color: var(--text); margin: 8px 0 4px; font-size: 14px; }
 .md-block p { margin-bottom: 8px; }
-.md-block code { background: var(--surface2); padding: 1px 5px; border-radius: 2px; font-family: var(--font-code); font-size: 11px; color: #e8b4a0; }
-.md-block pre { background: var(--surface2); padding: 10px; border-radius: 3px; overflow-x: auto; margin: 8px 0; }
+.md-block code { background: var(--surface2); padding: 1px 5px; border-radius: 0; font-family: var(--font-code); font-size: 11px; color: #e8b4a0; }
+.md-block pre { background: var(--surface2); padding: 10px; border-radius: 0; overflow-x: auto; margin: 8px 0; }
 .md-block pre code { background: none; padding: 0; }
 .md-block ul,.md-block ol { padding-left: 20px; margin-bottom: 8px; }
 .md-block strong { color: var(--grey1); }
@@ -363,9 +472,28 @@ main { flex: 1; padding: 20px 24px; }
 .controls-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .control-badge {
   padding: 2px 8px; background: var(--surface3); border: 1px solid var(--border);
-  border-radius: 10px; font-size: 10px; font-family: var(--font-code); color: var(--text-dim);
+  border-radius: 0; font-size: 10px; font-family: var(--font-code); color: var(--text-dim);
 }
-.control-badge.preferred { border-color: var(--accent); color: var(--accent); background: rgba(11,124,181,0.1); }
+.control-badge.preferred { border-color: var(--accent); color: var(--accent); background: rgba(202,62,71,0.12); }
+.control-badge.validated { border-color: #53AA33; color: #53AA33; background: rgba(83,170,51,0.12); }
+.control-badge.unvalidated { border-color: #F9A009; color: #F9A009; background: rgba(249,160,9,0.12); }
+.control-legend { margin-top: 10px; color: var(--text-dim); font-size: 12px; font-weight: 300; }
+.comp-req-review { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.comp-review-label {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+}
+.comp-review-select {
+  background: var(--ink); color: var(--text); border: 1px solid #5a5a5a;
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: 0; text-transform: none; padding: 4px 6px;
+}
+.comp-review-note { width: 100%; min-height: 72px; margin-top: 6px; padding: 8px 10px; background: var(--ink); color: var(--text); border: 1px solid #5a5a5a; font-family: var(--font-ui); font-size: 13px; resize: vertical; }
+textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
+.api-token { font-family: var(--font-code); font-size: 13px; line-height: 1.45; word-break: break-all; background: #fff; border: 1px solid #bdbdbd; padding: 10px; color: var(--ink); }
+.api-key-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #d7d3d3; }
+.api-key-meta { font-size: 12px; color: #6d6d6d; margin-top: 2px; }
+.custom-asset-row { display: grid; grid-template-columns: 1.4fr 0.8fr 0.7fr auto; gap: 8px; margin-bottom: 8px; }
+.custom-pick { max-height: 180px; overflow: auto; border: 1px solid #d7d3d3; margin-top: 8px; }
 
 /* =========================================================
    IMPORT MODAL
@@ -375,29 +503,43 @@ main { flex: 1; padding: 20px 24px; }
   background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
 }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 560px; max-height: 90vh; display: flex; flex-direction: column; }
-.modal-large { width: 700px; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
-.modal-header h2 { font-family: var(--font-code); font-size: 13px; letter-spacing: 2px; color: var(--text); }
-.modal-body { flex: 1; overflow-y: auto; padding: 18px; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.form-input {
-  width: 100%; padding: 7px 10px; background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--font-ui); font-size: 13px; border-radius: 3px;
+.modal {
+  --text: var(--ink);
+  --text-dim: #6d6d6d;
+  --surface: #fff;
+  --surface2: #f3f1f1;
+  --surface3: #efecec;
+  --border: #d7d3d3;
+  background: var(--paper); color: #424242; border: 1px solid var(--ink); border-radius: 0; width: 560px; max-height: 90vh; display: flex; flex-direction: column;
 }
-.form-input:focus { outline: none; border-color: var(--accent); }
+.modal-large { width: 700px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #d7d3d3; }
+.modal .btn { color: var(--ink); border-color: var(--ink); background: transparent; }
+.modal .btn:hover { background: var(--ink); color: var(--paper); }
+.modal .btn.primary, .modal .btn.primary:hover { background: var(--signal); border-color: var(--signal); color: #fff; }
+.modal .btn.accent, .modal .btn.accent:hover { color: var(--signal); border-color: transparent; background: transparent; }
+.modal .btn.danger { color: var(--signal); border-color: var(--signal); }
+.modal .btn.danger:hover { background: var(--signal); color: #fff; }
+.modal-header h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.modal-body { flex: 1; overflow-y: auto; padding: 18px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid #d7d3d3; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: #424242; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.form-input {
+  width: 100%; min-height: 42px; padding: 0 12px; background: #fff; border: 1px solid #bdbdbd;
+  color: var(--ink); font-family: var(--font-ui); font-size: 15px; border-radius: 0;
+}
+.form-input:focus { outline: 2px solid var(--ink); outline-offset: 1px; border-color: var(--ink); }
 
-.import-bm-search { width: 100%; padding: 7px 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px; margin-bottom: 10px; }
-.import-bm-search:focus { outline: none; border-color: var(--accent); }
-.import-bm-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; }
-.import-bm-group { border-bottom: 1px solid var(--border); }
+.import-bm-search { width: 100%; min-height: 42px; padding: 0 12px; background: #fff; border: 1px solid #bdbdbd; color: var(--ink); font-family: var(--font-ui); font-size: 15px; border-radius: 0; margin-bottom: 10px; }
+.import-bm-search:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.import-bm-list { max-height: 280px; overflow-y: auto; border: 1px solid #d7d3d3; border-radius: 0; }
+.import-bm-group { border-bottom: 1px solid #d7d3d3; }
 .import-bm-group:last-child { border-bottom: none; }
 .import-bm-group-header {
   padding: 8px 12px; font-size: 11px; font-family: var(--font-code);
   text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);
-  cursor: pointer; background: var(--surface2);
+  cursor: pointer; background: #fff; color: #6d6d6d;
   display: flex; align-items: center; justify-content: space-between;
   user-select: none;
 }
@@ -409,17 +551,18 @@ main { flex: 1; padding: 20px 24px; }
   cursor: pointer; border-bottom: 1px solid var(--border);
 }
 .import-bm-item:last-child { border-bottom: none; }
-.import-bm-item:hover { background: var(--surface2); }
-.import-bm-item input { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
-.import-bm-name { font-size: 12px; flex: 1; }
-.import-bm-meta { font-size: 10px; color: var(--text-dim); font-family: var(--font-code); white-space: nowrap; }
-.import-bm-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.import-bm-item:hover { background: #f3f1f1; }
+.import-bm-item input { flex-shrink: 0; }
+.import-bm-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; }
+.import-bm-meta { font-size: 12px; color: #6d6d6d; font-family: var(--font-body); white-space: nowrap; }
+.import-bm-hint { font-size: 14px; color: #6d6d6d; margin-bottom: 8px; }
 
 /* =========================================================
    HISTORY MODAL
    ========================================================= */
 .history-list { display: flex; flex-direction: column; gap: 6px; }
-.history-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface2); border-radius: 3px; }
+.history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; background: transparent; border-radius: 0; border-top: 1px solid #d7d3d3; }
+.history-list .history-item:first-child { border-top: 0; }
 .hist-ts { font-family: var(--font-code); font-size: 12px; color: var(--text-dim); }
 
 /* =========================================================
@@ -431,39 +574,37 @@ main { flex: 1; padding: 20px 24px; }
 }
 .comp-toolbar-group { display: flex; flex-direction: column; gap: 5px; }
 .comp-toolbar-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-code); }
-.comp-benchmark-select {
-  padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--font-ui); font-size: 12px; border-radius: 3px;
-  min-width: 260px; max-width: 400px;
-}
+.comp-toolbar-group .menu-select-wide { display: block; }
+.comp-toolbar-group .menu-select-trigger { width: min(28rem, 100%); max-width: none; }
 .comp-profile-btns { display: flex; gap: 4px; }
 .comp-profile-btn {
   padding: 4px 12px; font-size: 11px; font-family: var(--font-code);
   background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
-  cursor: pointer; border-radius: 3px; transition: all 0.15s;
+  cursor: pointer; border-radius: 0; transition: all 0.15s;
 }
 .comp-profile-btn:hover { border-color: var(--grey1); color: var(--text); }
-.comp-profile-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.comp-profile-btn.active { background: var(--signal); border-color: var(--signal); color: #fff; }
 .comp-toolbar-actions { margin-left: auto; align-self: flex-end; display: flex; gap: 8px; flex-wrap: wrap; }
 
-.export-column-list { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; border: 1px solid var(--border); border-radius: 3px; padding: 8px; }
+.export-column-list { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow-y: auto; border: 1px solid var(--border); border-radius: 0; padding: 8px; }
 .export-column-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px; border-radius: 3px; font-size: 12px;
+  padding: 6px 8px; border-radius: 0; font-size: 12px;
   border: 1px solid transparent;
 }
 .export-column-item:hover { background: var(--surface2); }
 .export-column-item.dragging { opacity: 0.45; }
-.export-column-item.drag-over { border-color: var(--accent); background: rgba(11,124,181,0.08); }
+.export-column-item.drag-over { border-color: var(--accent); background: rgba(202,62,71,0.12); }
 .export-drag-handle {
-  flex-shrink: 0; width: 16px; color: var(--text-dim); font-size: 14px; line-height: 1;
-  cursor: grab; user-select: none; text-align: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0; width: 16px; color: var(--text-dim);
+  cursor: grab; user-select: none;
 }
 .export-drag-handle:active { cursor: grabbing; }
 .export-drag-handle.disabled { visibility: hidden; pointer-events: none; }
 .export-column-label { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; min-width: 0; }
 .export-column-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.export-column-label input { accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+.export-column-label input { flex-shrink: 0; }
 .export-column-item.locked { opacity: 0.85; }
 .export-column-item.locked .export-column-label { cursor: default; }
 .export-column-item.locked input { cursor: not-allowed; }
@@ -471,13 +612,13 @@ main { flex: 1; padding: 20px 24px; }
 .impact-subsection { margin-bottom: 10px; }
 .impact-subsection:last-child { margin-bottom: 0; }
 
-.comp-section { margin-bottom: 6px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.comp-section { margin-bottom: 6px; border: 1px solid var(--border); border-radius: 0; overflow: hidden; }
 .comp-section-header {
   display: flex; align-items: center; gap: 10px; padding: 9px 14px;
   background: var(--surface); cursor: pointer; user-select: none;
 }
 .comp-section-header:hover { background: var(--surface2); }
-.comp-section-toggle { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.comp-section-toggle { display: inline-flex; width: 14px; height: 14px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
 .comp-section.open .comp-section-toggle { transform: rotate(90deg); }
 .comp-section-title { font-size: 12px; font-family: var(--font-code); flex: 1; }
 .comp-section-counts { display: flex; gap: 8px; font-size: 11px; font-family: var(--font-code); flex-shrink: 0; }
@@ -491,7 +632,7 @@ main { flex: 1; padding: 20px 24px; }
   background: var(--surface2); cursor: pointer; user-select: none;
 }
 .comp-subsection-header:hover { color: var(--text); }
-.comp-subsection-toggle { font-size: 9px; transition: transform 0.15s; }
+.comp-subsection-toggle { display: inline-flex; width: 14px; height: 14px; transition: transform 0.15s; }
 .comp-subsection.open .comp-subsection-toggle { transform: rotate(90deg); }
 .comp-subsection-body { display: none; }
 .comp-subsection.open .comp-subsection-body { display: block; }
@@ -506,17 +647,20 @@ main { flex: 1; padding: 20px 24px; }
 .comp-req.open .comp-req-row { background: var(--surface2); }
 .comp-status-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 1px 6px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  padding: 1px 6px; border-radius: 0; font-size: 10px; font-family: var(--font-code);
   font-weight: bold; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; min-width: 38px;
 }
 .comp-status-badge.fail { background: var(--comp-fail); color: #fff; }
 .comp-status-badge.pass { background: var(--comp-pass); color: #fff; }
+.comp-status-badge.manual { background: var(--comp-manual); color: #1a1a1a; }
 .comp-status-badge.na { background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border); }
 .comp-req-id { font-family: var(--font-code); font-size: 10px; color: var(--text-dim); flex-shrink: 0; min-width: 48px; }
 .comp-req-desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .comp-req-counts { display: flex; gap: 6px; flex-shrink: 0; font-family: var(--font-code); font-size: 11px; }
-.comp-req-count-fail { color: var(--comp-fail); }
-.comp-req-count-pass { color: var(--comp-pass); }
+.comp-req-count-fail { color: var(--comp-fail); display: inline-flex; align-items: center; gap: 3px; }
+.comp-req-count-pass { color: var(--comp-pass); display: inline-flex; align-items: center; gap: 3px; }
+.comp-req-count-manual { color: var(--comp-manual); display: inline-flex; align-items: center; gap: 3px; }
+.comp-req-count-fail .ico, .comp-req-count-pass .ico, .comp-req-count-manual .ico { width: 12px; height: 12px; }
 .comp-req-detail {
   display: none; padding: 10px 14px 10px 34px;
   background: var(--bg); border-top: 1px solid var(--border);
@@ -525,10 +669,10 @@ main { flex: 1; padding: 20px 24px; }
 .comp-req.open .comp-req-detail { display: block; }
 .comp-detail-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-family: var(--font-code); }
 .comp-detail-checks { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
-.comp-check-id { background: var(--surface3); padding: 2px 6px; border-radius: 2px; font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
+.comp-check-id { background: var(--surface3); padding: 2px 6px; border-radius: 0; font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
 .comp-check-id a { color: var(--accent); text-decoration: none; }
 .comp-check-id a:hover { text-decoration: underline; }
-.comp-check-block { margin-top: 8px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.comp-check-block { margin-top: 8px; border: 1px solid var(--border); border-radius: 0; overflow: hidden; }
 .comp-check-block-hdr { padding: 6px 10px; background: var(--surface2); font-family: var(--font-code); font-size: 11px; display: flex; align-items: center; gap: 8px; }
 .comp-check-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); overflow-x: auto; }
 .comp-check-tab {
@@ -542,7 +686,7 @@ main { flex: 1; padding: 20px 24px; }
 .remediation-procedure { margin-top: 10px; }
 .remediation-procedure-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-family: var(--font-code); }
 .comp-linked-findings { display: flex; flex-direction: column; gap: 4px; }
-.comp-linked-finding { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--surface2); border-radius: 2px; font-size: 11px; }
+.comp-linked-finding { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--surface2); border-radius: 0; font-size: 11px; }
 .comp-linked-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* =========================================================
@@ -550,7 +694,8 @@ main { flex: 1; padding: 20px 24px; }
    ========================================================= */
 .report-view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 .report-count { font-family: var(--font-code); font-size: 11px; color: var(--text-dim); }
-.report-finding { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+.report-finding { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--signal); border-radius: 0; margin-bottom: 10px; overflow: visible; }
+.report-finding:has(.menu-select.open) { position: relative; z-index: 30; }
 .report-finding.status-confirmed { border-left: 3px solid var(--status-confirmed); }
 .report-finding.status-reported  { border-left: 3px solid var(--status-reported); }
 .report-finding-hdr {
@@ -558,9 +703,9 @@ main { flex: 1; padding: 20px 24px; }
   cursor: pointer; user-select: none;
 }
 .report-finding-hdr:hover { background: var(--surface2); }
-.report-expand-icon { font-size: 9px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
+.report-expand-icon { display: inline-flex; width: 14px; height: 14px; color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
 .report-finding.open .report-expand-icon { transform: rotate(90deg); }
-.report-finding-title { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.report-finding-title { font-size: 15px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .report-finding-body { display: none; border-top: 1px solid var(--border); }
 .report-finding.open .report-finding-body { display: block; }
 .report-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
@@ -568,7 +713,7 @@ main { flex: 1; padding: 20px 24px; }
 .report-section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .report-section-label { font-size: 10px; font-family: var(--font-code); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
 .analysis-status-tag {
-  padding: 2px 8px; border-radius: 2px; font-size: 10px; font-family: var(--font-code);
+  padding: 2px 8px; border-radius: 0; font-size: 10px; font-family: var(--font-code);
   font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
 }
 .analysis-status-tag.status-confirmed  { color: var(--status-confirmed); border: 1px solid var(--status-confirmed); }
@@ -578,12 +723,52 @@ main { flex: 1; padding: 20px 24px; }
 .other-controls-details .controls-list { margin-top: 6px; }
 
 /* =========================================================
+   AUTH
+   ========================================================= */
+#auth-screen { display: none; min-height: 100vh; flex-direction: column; background: var(--bg); }
+#auth-screen.open { display: flex; }
+.auth-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+.auth-panel {
+  width: 100%; max-width: 420px; background: var(--surface);
+  border: 1px solid var(--border); border-top: 3px solid var(--signal); padding: 28px 28px 24px;
+}
+.auth-kicker {
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+}
+.auth-title {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px;
+}
+.auth-lead { color: var(--text-dim); font-size: 13px; font-weight: 300; margin-bottom: 22px; }
+.auth-label {
+  display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+}
+.auth-input {
+  width: 100%; min-height: 44px; margin-bottom: 14px; padding: 0 12px;
+  background: #000; color: var(--paper); border: 1px solid #5a5a5a; border-radius: 0;
+  font-family: var(--font-ui); font-size: 15px;
+}
+.auth-input:focus { outline: 2px solid var(--signal); outline-offset: 1px; border-color: var(--signal); }
+.auth-hint { color: var(--text-dim); font-size: 12px; font-weight: 300; margin: -2px 0 14px; }
+.auth-error { color: var(--signal); font-size: 13px; min-height: 1.2em; margin-bottom: 12px; }
+.auth-submit { width: 100%; }
+.auth-footnote { margin-top: 16px; color: var(--text-dim); font-size: 12px; font-weight: 300; }
+.auth-footnote code { display: block; margin-top: 8px; color: var(--paper); font-family: var(--font-code); font-size: 12px; line-height: 1.45; }
+.header-user {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.password-error { color: var(--signal); font-size: 13px; min-height: 1.2em; }
+
+/* =========================================================
    TOAST
    ========================================================= */
 #toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px);
-  background: var(--surface3); border: 1px solid var(--border); color: var(--text);
-  padding: 8px 18px; border-radius: 4px; font-size: 12px; font-family: var(--font-code);
+  background: var(--ink); border: 1px solid var(--signal); color: var(--paper);
+  padding: 10px 18px; border-radius: 0; font-size: 14px; font-family: var(--font-body);
   opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 9999; pointer-events: none;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -591,18 +776,52 @@ main { flex: 1; padding: 20px 24px; }
 </style>
 </head>
 <body>
+<div id="auth-screen" class="open">
+  <header>
+    <div class="header-left">
+      <div class="logo">Prowler <span>Reviewer</span></div>
+    </div>
+  </header>
+  <div class="auth-main">
+    <div class="auth-panel">
+      <div class="auth-kicker" id="auth-kicker">Account</div>
+      <h1 class="auth-title" id="auth-title">Sign in</h1>
+      <p class="auth-lead" id="auth-checking">Checking session…</p>
+      <form id="auth-form" hidden novalidate>
+        <label class="auth-label" for="auth-username">Username</label>
+        <input class="auth-input" id="auth-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="64" required>
+        <label class="auth-label" for="auth-password">Password</label>
+        <input class="auth-input" id="auth-password" name="password" type="password" maxlength="128" required>
+        <div id="auth-confirm-wrap">
+          <label class="auth-label" for="auth-confirm">Confirm password</label>
+          <input class="auth-input" id="auth-confirm" name="confirm" type="password" maxlength="128" autocomplete="new-password">
+        </div>
+        <p class="auth-hint" id="auth-hint">Use at least 12 characters. A long passphrase is easier to remember and harder to guess.</p>
+        <p class="auth-error" id="auth-error" role="alert"></p>
+        <button class="btn primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <p class="auth-footnote" id="auth-footnote"></p>
+      <p class="auth-footnote" id="auth-reset" hidden>Lost the password? An operator with access to this machine can reset it from the backend container:<code>docker compose exec -u root -it backend node reset-password.js</code></p>
+    </div>
+  </div>
+</div>
 <div id="app">
   <header>
     <div class="header-left">
-      <div class="logo">PROWLER<span>·</span>REVIEWER</div>
+      <div class="logo">Prowler <span>Reviewer</span></div>
       <div class="project-name" id="header-project-name"></div>
     </div>
     <div class="header-right">
-      <span class="save-indicator" id="save-indicator">✓ SAVED</span>
-      <button class="btn small" id="btn-settings" style="display:none" onclick="openSettings()">⚙ Settings</button>
-      <button class="btn small" id="btn-history" style="display:none" onclick="openHistory()">⟳ History</button>
-      <button class="btn small" id="btn-back" style="display:none" onclick="goHome()">← Projects</button>
-      <button class="btn small primary" id="btn-new" onclick="goHome()">+ New Project</button>
+      <span class="save-indicator" id="save-indicator"><span data-icon="check"></span> Saved</span>
+      <button class="btn small" id="btn-settings" style="display:none" onclick="openSettings()"><span data-icon="settings"></span> Settings</button>
+      <button class="btn small" id="btn-history" style="display:none" onclick="openHistory()"><span data-icon="history"></span> History</button>
+      <button class="btn small" id="btn-back" style="display:none" onclick="goHome()"><span data-icon="arrow-left"></span> Projects</button>
+      <a class="btn small" href="/identity.html">Identity</a>
+      <button class="btn small primary" id="btn-new" onclick="goHome()"><span data-icon="plus"></span> New Project</button>
+      <span class="header-user" id="header-user"></span>
+      <button class="btn small" id="btn-api" type="button" onclick="openApiAccess()">API</button>
+      <button class="btn small" id="btn-password" type="button" onclick="openPasswordModal()">Password</button>
+      <button class="btn small" id="btn-logout" type="button" onclick="logout()">Log out</button>
     </div>
   </header>
 
@@ -615,7 +834,7 @@ main { flex: 1; padding: 20px 24px; }
            ondragleave="handleDragLeave(event)"
            ondrop="handleDrop(event)"
            onclick="document.getElementById('file-input').click()">
-        <div class="icon">📂</div>
+        <div class="icon" data-icon="folder"></div>
         <h3>Load Prowler OCSF JSON</h3>
         <p>Drop your prowler JSON file here or click to browse</p>
         <p style="margin-top:6px;font-size:11px;color:var(--red)">AWS · Azure · GCP</p>
@@ -634,7 +853,7 @@ main { flex: 1; padding: 20px 24px; }
         </div>
         <div class="landing-title" style="font-size:11px">Recent Projects</div>
         <div id="project-list" class="project-list">
-          <div class="empty-state"><div class="icon">📋</div>No projects yet</div>
+          <div class="empty-state"><div class="icon" data-icon="file"></div>No projects yet</div>
         </div>
       </div>
     </div>
@@ -667,6 +886,11 @@ main { flex: 1; padding: 20px 24px; }
             </div>
             <div class="stats-divider"></div>
             <div class="stat-item">
+              <div class="stat-value" id="stat-manual" style="color:var(--comp-manual)">0</div>
+              <div class="stat-label">Manual</div>
+            </div>
+            <div class="stats-divider"></div>
+            <div class="stat-item">
               <div class="stat-value" id="stat-assets">0</div>
               <div class="stat-label">Assets</div>
             </div>
@@ -685,8 +909,8 @@ main { flex: 1; padding: 20px 24px; }
               <div class="stat-value" id="stat-confirmed" style="color:var(--status-confirmed)">0</div>
               <div class="stat-label">Confirmed</div>
             </div>
-            <div class="charts-toggle" onclick="toggleCharts()">
-              <span id="charts-toggle-icon">▼</span> Charts
+            <div class="charts-toggle" id="charts-toggle" onclick="toggleCharts()">
+              <span data-icon="chevron-down"></span> Charts
             </div>
           </div>
           <div class="charts-section" id="charts-section">
@@ -695,7 +919,7 @@ main { flex: 1; padding: 20px 24px; }
               <canvas id="chart-sev" height="140"></canvas>
             </div>
             <div class="chart-wrap">
-              <div class="chart-title">Pass / Fail distribution</div>
+              <div class="chart-title">Failed / Passed / Manual</div>
               <canvas id="chart-pf" height="140"></canvas>
             </div>
           </div>
@@ -712,13 +936,31 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Status</div>
               <div class="ms-wrap" id="ms-status">
-                <button class="ms-trigger" id="ms-status-trigger" type="button" onclick="toggleMs('status',event)">
-                  Status <span class="ms-badge" id="ms-status-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-status-trigger" type="button" onclick="toggleMs('status',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-status-label" data-placeholder="Status">Status</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-status-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Status</span><button class="ms-clear-btn" onclick="msClearFilter('status',event)">Clear</button></div>
-                  <label><input type="checkbox" value="FAIL" onchange="msChanged('status')"> Failed</label>
-                  <label><input type="checkbox" value="PASS" onchange="msChanged('status')"> Passed</label>
+                <div class="ms-dropdown" id="ms-status-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Status</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('status',event)">Clear</button></div>
+                  <label class="menu-item"><input type="checkbox" value="FAIL" onchange="msChanged('status')"><span class="menu-item-label">Failed</span></label>
+                  <label class="menu-item"><input type="checkbox" value="PASS" onchange="msChanged('status')"><span class="menu-item-label">Passed</span></label>
+                  <label class="menu-item"><input type="checkbox" value="MANUAL" onchange="msChanged('status')"><span class="menu-item-label">Manual</span></label>
+                </div>
+              </div>
+            </div>
+            <!-- Retest round. Shown only when a current scan replaced an earlier one. -->
+            <div class="filter-group" id="retest-filter" hidden>
+              <div class="filter-label">Round</div>
+              <div class="ms-wrap" id="ms-round">
+                <button class="ms-trigger" id="ms-round-trigger" type="button" onclick="toggleMs('round',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-round-label" data-placeholder="Round">Round</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                </button>
+                <div class="ms-dropdown" id="ms-round-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Round</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('round',event)">Clear</button></div>
+                  <label class="menu-item"><input type="checkbox" value="open" onchange="msChanged('round')"><span class="menu-item-label">Still open</span></label>
+                  <label class="menu-item"><input type="checkbox" value="closed" onchange="msChanged('round')"><span class="menu-item-label">Closed</span></label>
+                  <label class="menu-item"><input type="checkbox" value="new" onchange="msChanged('round')"><span class="menu-item-label">New</span></label>
                 </div>
               </div>
             </div>
@@ -726,16 +968,17 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Severity</div>
               <div class="ms-wrap" id="ms-severity">
-                <button class="ms-trigger" id="ms-severity-trigger" type="button" onclick="toggleMs('severity',event)">
-                  Severity <span class="ms-badge" id="ms-severity-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-severity-trigger" type="button" onclick="toggleMs('severity',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-severity-label" data-placeholder="Severity">Severity</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-severity-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Severity</span><button class="ms-clear-btn" onclick="msClearFilter('severity',event)">Clear</button></div>
-                  <label><input type="checkbox" value="critical"      onchange="msChanged('severity')"> Critical</label>
-                  <label><input type="checkbox" value="high"          onchange="msChanged('severity')"> High</label>
-                  <label><input type="checkbox" value="medium"        onchange="msChanged('severity')"> Medium</label>
-                  <label><input type="checkbox" value="low"           onchange="msChanged('severity')"> Low</label>
-                  <label><input type="checkbox" value="informational" onchange="msChanged('severity')"> Informational</label>
+                <div class="ms-dropdown" id="ms-severity-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Severity</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('severity',event)">Clear</button></div>
+                  <label class="menu-item"><input type="checkbox" value="critical" onchange="msChanged('severity')"><span class="menu-item-label">Critical</span></label>
+                  <label class="menu-item"><input type="checkbox" value="high" onchange="msChanged('severity')"><span class="menu-item-label">High</span></label>
+                  <label class="menu-item"><input type="checkbox" value="medium" onchange="msChanged('severity')"><span class="menu-item-label">Medium</span></label>
+                  <label class="menu-item"><input type="checkbox" value="low" onchange="msChanged('severity')"><span class="menu-item-label">Low</span></label>
+                  <label class="menu-item"><input type="checkbox" value="informational" onchange="msChanged('severity')"><span class="menu-item-label">Informational</span></label>
                 </div>
               </div>
             </div>
@@ -743,16 +986,17 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Analysis</div>
               <div class="ms-wrap" id="ms-analysis">
-                <button class="ms-trigger" id="ms-analysis-trigger" type="button" onclick="toggleMs('analysis',event)">
-                  Analysis <span class="ms-badge" id="ms-analysis-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-analysis-trigger" type="button" onclick="toggleMs('analysis',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-analysis-label" data-placeholder="Analysis">Analysis</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-analysis-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Analysis</span><button class="ms-clear-btn" onclick="msClearFilter('analysis',event)">Clear</button></div>
-                  <label><input type="checkbox" value="confirmed"      onchange="msChanged('analysis')"> Confirmed</label>
-                  <label><input type="checkbox" value="flagged"        onchange="msChanged('analysis')"> Flagged</label>
-                  <label><input type="checkbox" value="false-positive" onchange="msChanged('analysis')"> False Positive</label>
-                  <label><input type="checkbox" value="reported"       onchange="msChanged('analysis')"> Reported</label>
-                  <label><input type="checkbox" value="none"           onchange="msChanged('analysis')"> Unset</label>
+                <div class="ms-dropdown" id="ms-analysis-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Analysis</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('analysis',event)">Clear</button></div>
+                  <label class="menu-item"><input type="checkbox" value="confirmed" onchange="msChanged('analysis')"><span class="menu-item-label">Confirmed</span></label>
+                  <label class="menu-item"><input type="checkbox" value="flagged" onchange="msChanged('analysis')"><span class="menu-item-label">Flagged</span></label>
+                  <label class="menu-item"><input type="checkbox" value="false-positive" onchange="msChanged('analysis')"><span class="menu-item-label">False Positive</span></label>
+                  <label class="menu-item"><input type="checkbox" value="reported" onchange="msChanged('analysis')"><span class="menu-item-label">Reported</span></label>
+                  <label class="menu-item"><input type="checkbox" value="none" onchange="msChanged('analysis')"><span class="menu-item-label">Unset</span></label>
                 </div>
               </div>
             </div>
@@ -760,11 +1004,12 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Cloud</div>
               <div class="ms-wrap" id="ms-cloud">
-                <button class="ms-trigger" id="ms-cloud-trigger" type="button" onclick="toggleMs('cloud',event)">
-                  Cloud <span class="ms-badge" id="ms-cloud-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-cloud-trigger" type="button" onclick="toggleMs('cloud',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-cloud-label" data-placeholder="Cloud">Cloud</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-cloud-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Cloud</span><button class="ms-clear-btn" onclick="msClearFilter('cloud',event)">Clear</button></div>
+                <div class="ms-dropdown" id="ms-cloud-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Cloud</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('cloud',event)">Clear</button></div>
                   <div class="ms-options-container" id="ms-cloud-options"></div>
                 </div>
               </div>
@@ -773,11 +1018,12 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Subscription / Account</div>
               <div class="ms-wrap" id="ms-subscription">
-                <button class="ms-trigger" id="ms-subscription-trigger" type="button" onclick="toggleMs('subscription',event)">
-                  Account <span class="ms-badge" id="ms-subscription-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-subscription-trigger" type="button" onclick="toggleMs('subscription',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-subscription-label" data-placeholder="Account">Account</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-subscription-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Account</span><button class="ms-clear-btn" onclick="msClearFilter('subscription',event)">Clear</button></div>
+                <div class="ms-dropdown" id="ms-subscription-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Account</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('subscription',event)">Clear</button></div>
                   <div class="ms-options-container" id="ms-subscription-options"></div>
                 </div>
               </div>
@@ -786,11 +1032,12 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Resource Group</div>
               <div class="ms-wrap" id="ms-rg">
-                <button class="ms-trigger" id="ms-rg-trigger" type="button" onclick="toggleMs('rg',event)">
-                  Res. Group <span class="ms-badge" id="ms-rg-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-rg-trigger" type="button" onclick="toggleMs('rg',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-rg-label" data-placeholder="Res. Group">Res. Group</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-rg-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Resource Group</span><button class="ms-clear-btn" onclick="msClearFilter('rg',event)">Clear</button></div>
+                <div class="ms-dropdown" id="ms-rg-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Resource Group</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('rg',event)">Clear</button></div>
                   <div class="ms-options-container" id="ms-rg-options"></div>
                 </div>
               </div>
@@ -799,18 +1046,19 @@ main { flex: 1; padding: 20px 24px; }
             <div class="filter-group">
               <div class="filter-label">Service</div>
               <div class="ms-wrap" id="ms-service">
-                <button class="ms-trigger" id="ms-service-trigger" type="button" onclick="toggleMs('service',event)">
-                  Service <span class="ms-badge" id="ms-service-badge" style="display:none"></span><span class="ms-caret">▾</span>
+                <button class="ms-trigger" id="ms-service-trigger" type="button" onclick="toggleMs('service',event)" aria-haspopup="menu" aria-expanded="false">
+                  <span class="menu-select-value" id="ms-service-label" data-placeholder="Service">Service</span>
+                  <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                 </button>
-                <div class="ms-dropdown" id="ms-service-dropdown">
-                  <div class="ms-dropdown-hdr"><span>Service</span><button class="ms-clear-btn" onclick="msClearFilter('service',event)">Clear</button></div>
+                <div class="ms-dropdown" id="ms-service-dropdown" role="menu">
+                  <div class="ms-dropdown-hdr"><span>Service</span><button class="ms-clear-btn" type="button" onclick="msClearFilter('service',event)">Clear</button></div>
                   <div class="ms-options-container" id="ms-service-options"></div>
                 </div>
               </div>
             </div>
             <!-- Clear all -->
             <div class="filter-group" style="align-self:flex-end">
-              <button class="btn small" onclick="clearAllFilters()">✕ Clear all</button>
+              <button class="btn small" onclick="clearAllFilters()"><span data-icon="x"></span> Clear all</button>
             </div>
           </div>
         </div>
@@ -819,7 +1067,35 @@ main { flex: 1; padding: 20px 24px; }
           <div class="findings-header-left">
             <span class="results-count" id="results-count"></span>
           </div>
-          <button class="btn small accent" onclick="copyFindingsTSV()" title="Copy filtered findings as TSV for Excel">📋 Copy TSV</button>
+          <button class="btn small" type="button" onclick="openCustomFinding()">Add finding</button>
+          <button class="btn small accent" onclick="copyFindingsTSV()" title="Copy filtered findings as TSV for Excel"><span data-icon="copy"></span> Copy TSV</button>
+        </div>
+
+        <div class="bulk-status-bar" id="bulk-status-bar" hidden>
+          <span class="bulk-status-label" id="bulk-status-label">Set status on 0 displayed findings</span>
+          <div class="menu-select" id="bulk-status-menu">
+            <button type="button" class="menu-select-trigger" aria-haspopup="menu" aria-expanded="false" onclick="toggleMenuSelect(this, event)">
+              <span class="menu-select-value">Set status</span>
+              <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div class="menu-select-panel" role="menu">
+              <div class="menu-select-head"><p class="menu-select-kicker" id="bulk-status-kicker">Set status on 0 displayed findings</p></div>
+              <ul class="menu-select-list">
+                <li><button type="button" class="menu-item" data-value="" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">Unset</span><span class="menu-check"></span></button></li>
+                <li><button type="button" class="menu-item" data-value="confirmed" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">Confirmed</span><span class="menu-check"></span></button></li>
+                <li><button type="button" class="menu-item" data-value="flagged" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">Flagged</span><span class="menu-check"></span></button></li>
+                <li><button type="button" class="menu-item" data-value="false-positive" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">False Positive</span><span class="menu-check"></span></button></li>
+                <li><button type="button" class="menu-item" data-value="reported" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">Reported</span><span class="menu-check"></span></button></li>
+              </ul>
+            </div>
+            <select class="status-select visually-hidden" id="bulk-status-select" onchange="setDisplayedStatus(this)">
+              <option value="">Unset</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="flagged">Flagged</option>
+              <option value="false-positive">False Positive</option>
+              <option value="reported">Reported</option>
+            </select>
+          </div>
         </div>
 
         <div id="findings-list"></div>
@@ -830,9 +1106,20 @@ main { flex: 1; padding: 20px 24px; }
         <div class="comp-toolbar">
           <div class="comp-toolbar-group">
             <div class="comp-toolbar-label">Benchmark</div>
-            <select class="comp-benchmark-select" id="comp-benchmark-select" onchange="onCompBenchmarkChange(this.value)">
-              <option value="">— Select benchmark —</option>
-            </select>
+            <div class="menu-select menu-select-wide" id="comp-benchmark-menu">
+              <button type="button" class="menu-select-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="comp-benchmark-panel" onclick="toggleMenuSelect(this, event)">
+                <span class="menu-select-value">Select benchmark</span>
+                <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+              </button>
+              <div class="menu-select-panel" id="comp-benchmark-panel" role="menu">
+                <div class="menu-select-head"><p class="menu-select-kicker">Benchmark</p></div>
+                <input type="text" class="menu-select-search" placeholder="Filter benchmarks…" oninput="filterBenchmarkMenu(this.value)" onclick="event.stopPropagation()">
+                <ul class="menu-select-list" id="comp-benchmark-list"></ul>
+              </div>
+              <select class="visually-hidden" id="comp-benchmark-select" onchange="onCompBenchmarkChange(this.value)">
+                <option value="">— Select benchmark —</option>
+              </select>
+            </div>
           </div>
           <div class="comp-toolbar-group" id="comp-profile-filter-wrap" style="display:none">
             <div class="comp-toolbar-label" id="comp-profile-label">Profile</div>
@@ -845,7 +1132,7 @@ main { flex: 1; padding: 20px 24px; }
         </div>
         <div id="comp-stats"></div>
         <div id="comp-requirements">
-          <div class="empty-state"><div class="icon">📋</div>Select a benchmark to view compliance status</div>
+          <div class="empty-state"><div class="icon" data-icon="file"></div>Select a benchmark to view compliance status</div>
         </div>
       </div>
 
@@ -865,7 +1152,7 @@ main { flex: 1; padding: 20px 24px; }
   <div class="modal modal-large">
     <div class="modal-header">
       <h2>CREATE PROJECT</h2>
-      <button class="btn small" onclick="closeImportModal()">✕</button>
+      <button class="btn small icon-only" onclick="closeImportModal()" aria-label="Close"><span data-icon="x"></span></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -893,7 +1180,7 @@ main { flex: 1; padding: 20px 24px; }
   <div class="modal modal-large">
     <div class="modal-header">
       <h2>PROJECT SETTINGS</h2>
-      <button class="btn small" onclick="closeSettings()">✕</button>
+      <button class="btn small icon-only" onclick="closeSettings()" aria-label="Close"><span data-icon="x"></span></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -903,6 +1190,13 @@ main { flex: 1; padding: 20px 24px; }
         <div class="import-bm-list" id="settings-benchmark-list">
           <div class="empty-state" style="padding:20px">Loading benchmarks…</div>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Scans</label>
+        <div class="import-bm-hint">Add another account or cloud, or upload a retest of an existing scan. A replaced scan stays here.</div>
+        <div class="scan-list" id="settings-scan-list"></div>
+        <input type="file" id="add-scan-input" accept=".json,application/json" hidden onchange="addScanFromInput(this)">
+        <input type="file" id="retest-scan-input" accept=".json,application/json" hidden onchange="retestFromInput(this)">
       </div>
     </div>
     <div class="modal-footer">
@@ -917,7 +1211,7 @@ main { flex: 1; padding: 20px 24px; }
   <div class="modal">
     <div class="modal-header">
       <h2>STATE HISTORY</h2>
-      <button class="btn small" onclick="closeHistory()">✕</button>
+      <button class="btn small icon-only" onclick="closeHistory()" aria-label="Close"><span data-icon="x"></span></button>
     </div>
     <div class="modal-body">
       <div id="history-list" class="history-list"></div>
@@ -933,7 +1227,7 @@ main { flex: 1; padding: 20px 24px; }
   <div class="modal modal-large">
     <div class="modal-header">
       <h2 id="comp-export-modal-title">EXPORT COMPLIANCE</h2>
-      <button class="btn small" onclick="closeCompExport()">✕</button>
+      <button class="btn small icon-only" onclick="closeCompExport()" aria-label="Close"><span data-icon="x"></span></button>
     </div>
     <div class="modal-body">
       <div class="import-bm-hint">Select columns to include and drag rows to set export order. Requirement ID stays first. TSV copies include section/subsection grouping rows and an HTML table for rich-text paste (e.g. PlexTrac).</div>
@@ -946,10 +1240,208 @@ main { flex: 1; padding: 20px 24px; }
   </div>
 </div>
 
+<!-- ── CUSTOM FINDING ────────────────────────────────────── -->
+<div class="modal-overlay" id="custom-finding-modal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2 id="custom-finding-title">Add finding</h2>
+      <button class="btn small icon-only" type="button" onclick="closeCustomFinding()" aria-label="Close"><span data-icon="x"></span></button>
+    </div>
+    <form id="custom-finding-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="custom-title">Title</label>
+          <input class="form-input" id="custom-title" maxlength="200" required>
+        </div>
+        <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label" for="custom-severity">Severity</label>
+            <select class="form-input" id="custom-severity">
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+              <option value="informational">Informational</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="custom-status">Status</label>
+            <select class="form-input" id="custom-status" onchange="toggleCustomReason()">
+              <option value="">Unset</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="flagged">Flagged</option>
+              <option value="false-positive">False Positive</option>
+              <option value="reported">Reported</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label" for="custom-cloud">Cloud</label>
+            <input class="form-input" id="custom-cloud" maxlength="40" placeholder="AWS, Azure, GCP">
+          </div>
+          <div>
+            <label class="form-label" for="custom-service">Service</label>
+            <input class="form-input" id="custom-service" maxlength="120">
+          </div>
+        </div>
+        <div class="form-group" id="custom-reason-wrap" hidden>
+          <label class="form-label" for="custom-reason">False positive reason</label>
+          <input class="form-input" id="custom-reason" maxlength="4000" placeholder="Why this is a false positive">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custom-details">Details</label>
+          <textarea class="form-input" id="custom-details" maxlength="16000"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custom-impact">Impact</label>
+          <textarea class="form-input" id="custom-impact" maxlength="16000"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custom-remediation">Remediation</label>
+          <textarea class="form-input" id="custom-remediation" maxlength="16000"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custom-note">Reviewer note</label>
+          <textarea class="form-input" id="custom-note" maxlength="16000" placeholder="Paragraph for the client"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assets</label>
+          <p class="import-bm-hint">Pick an asset already in this project, or add one by name.</p>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input class="form-input" id="custom-asset-search" placeholder="Search project assets" oninput="renderCustomAssetChoices()">
+            <button class="btn small" type="button" onclick="addCustomAsset()">Add asset</button>
+          </div>
+          <div id="custom-asset-choices" class="custom-pick"></div>
+          <div id="custom-assets" style="margin-top:8px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Benchmark controls</label>
+          <p class="import-bm-hint">Controls come from the benchmarks selected in Settings.</p>
+          <input class="form-input" id="custom-control-search" placeholder="Search controls" oninput="renderCustomControlChoices()">
+          <div id="custom-controls" class="custom-pick"></div>
+        </div>
+        <p class="password-error" id="custom-error" role="alert"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn small" type="button" onclick="closeCustomFinding()">Cancel</button>
+        <button class="btn small primary" id="custom-submit" type="submit">Save finding</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── API ACCESS ────────────────────────────────────────── -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2>API access</h2>
+      <button class="btn small icon-only" type="button" onclick="closeApiAccess()" aria-label="Close"><span data-icon="x"></span></button>
+    </div>
+    <form id="api-form">
+      <div class="modal-body">
+        <p class="import-bm-hint">Create a key for a harness such as Cursor or Codex. The token is shown once. It can read one project, and change findings only if Write is checked. It cannot delete the project, upload scans, or create other keys.</p>
+        <div id="api-key-list"></div>
+        <div id="api-token-panel" hidden>
+          <p class="import-bm-hint">Copy this token now. It will not be shown again.</p>
+          <div id="api-token-value" class="api-token"></div>
+          <button class="btn small" type="button" style="margin-top:8px" onclick="copyApiToken()">Copy token</button>
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label" for="api-name">Name</label>
+          <input class="form-input" id="api-name" maxlength="64" required placeholder="Codex review">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="api-project">Project</label>
+          <select class="form-input" id="api-project" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="api-expires">Expires</label>
+          <input class="form-input" id="api-expires" type="date" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="api-ips">IP addresses</label>
+          <textarea class="form-input" id="api-ips" placeholder="203.0.113.10&#10;10.0.0.0/8"></textarea>
+          <p class="import-bm-hint">One address or CIDR range per line. Leave this empty only when the harness address changes. An empty list allows any address that can reach this app.</p>
+        </div>
+        <label class="import-bm-item" style="padding-left:0">
+          <input type="checkbox" id="api-write">
+          <span class="import-bm-name">Write</span>
+          <span class="import-bm-meta">Create findings and set statuses</span>
+        </label>
+        <p class="password-error" id="api-error" role="alert"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn small" type="button" onclick="closeApiAccess()">Close</button>
+        <button class="btn small primary" id="api-submit" type="submit">Create key</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── PASSWORD MODAL ────────────────────────────────────── -->
+<div class="modal-overlay" id="password-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Change password</h2>
+      <button class="btn small icon-only" type="button" onclick="closePasswordModal()" aria-label="Close"><span data-icon="x"></span></button>
+    </div>
+    <form id="password-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="pw-current">Current password</label>
+          <input class="form-input" id="pw-current" type="password" autocomplete="current-password" maxlength="128" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pw-new">New password</label>
+          <input class="form-input" id="pw-new" type="password" autocomplete="new-password" maxlength="128" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pw-confirm">Confirm new password</label>
+          <input class="form-input" id="pw-confirm" type="password" autocomplete="new-password" maxlength="128" required>
+        </div>
+        <p class="import-bm-hint">At least 12 characters. This signs you out everywhere.</p>
+        <p class="password-error" id="password-error" role="alert"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn small" type="button" onclick="closePasswordModal()">Cancel</button>
+        <button class="btn small primary" id="pw-submit" type="submit">Update password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ── TOAST ─────────────────────────────────────────────── -->
 <div id="toast"></div>
 
 <script>
+const ICONS = {
+  settings: '<path d="M4 21V14M4 10V3M12 21V12M12 8V3M20 21V16M20 12V3M2 14h4M10 8h4M18 16h4"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  'arrow-left': '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  folder: '<path d="M3 7V5h6l2 2h10v12H3z"/>',
+  file: '<path d="M14 3H6v18h12V8z"/><path d="M14 3v5h5M8 13h8M8 17h6"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/>',
+  'chevron-down': '<path d="M6 9l6 6 6-6"/>',
+  'chevron-right': '<path d="M9 6l6 6-6 6"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  copy: '<rect x="9" y="9" width="12" height="12"/><path d="M5 15H4V4h11v1"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  check: '<path d="M5 12l5 5L20 7"/>',
+  manual: '<circle cx="12" cy="12" r="7"/>',
+  grip: '<path d="M9 6h2M9 12h2M9 18h2M14 6h2M14 12h2M14 18h2"/>'
+};
+function icon(name) {
+  return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+function mountIcons(root) {
+  (root || document).querySelectorAll('[data-icon]').forEach(el => {
+    el.innerHTML = icon(el.dataset.icon);
+    el.removeAttribute('data-icon');
+  });
+}
+
 // =========================================================
 // STATE
 // =========================================================
@@ -957,6 +1449,12 @@ let currentProjectId   = null;
 let rawFindings        = [];
 let filteredFindings   = [];
 let analysisStatuses   = {};
+let analysisReasons    = {};
+let analysisNotes      = {};
+let customFindings     = [];
+let controlReviews     = {};
+let projectScans       = [];
+let retestActive       = false;
 let preferredBenchmarks = [];
 let saveDebounceTimer  = null;
 let currentView        = 'analysis';
@@ -980,6 +1478,12 @@ let checkMetadataIndex   = {};
 let pendingFile = null;
 let selectedProjectIds = new Set();
 let landingProjects = [];
+let projectsLoaded = false;
+let sessionEnding = false;
+let authMode = 'login';
+let customDraftId = null;
+let customControlPicks = new Set();
+let apiTokenOnce = '';
 
 // Multi-select: track which dropdown is open
 let openMsId = null;
@@ -1150,6 +1654,7 @@ function downloadCsv(filename, content) {
 function formatComplianceStatus(status) {
   if (status === 'fail') return 'FAIL';
   if (status === 'pass') return 'PASS';
+  if (status === 'manual') return 'MANUAL';
   return 'N/A';
 }
 
@@ -1220,7 +1725,11 @@ function showSaved() {
 // API
 // =========================================================
 async function api(method, url, body) {
-  const opts = { method, headers: {} };
+  const opts = {
+    method,
+    credentials: 'same-origin',
+    headers: { 'X-Requested-With': 'prowler-reviewer' }
+  };
   if (body && !(body instanceof FormData)) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);
@@ -1228,7 +1737,18 @@ async function api(method, url, body) {
     opts.body = body;
   }
   const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`API ${url} → ${r.status}`);
+  if (r.status === 401) {
+    handleSessionExpired();
+    throw new Error('Authentication required.');
+  }
+  if (!r.ok) {
+    let message = `API ${url} → ${r.status}`;
+    try {
+      const data = await r.json();
+      if (data && typeof data.error === 'string') message = data.error;
+    } catch { /* keep the status message */ }
+    throw new Error(message);
+  }
   return r.json();
 }
 
@@ -1260,8 +1780,11 @@ async function loadCheckMetadata() {
 
 function getShortCheckId(id) {
   if (!id) return '';
-  const m = String(id).match(/^prowler-(?:aws|azure|gcp|kubernetes|oraclecloud|alibabacloud)-(.+)$/i);
-  return m ? m[1].toLowerCase() : String(id).toLowerCase();
+  let raw = String(id);
+  const sep = raw.indexOf('::');
+  if (sep !== -1) raw = raw.slice(sep + 2);
+  const m = raw.match(/^prowler-(?:aws|azure|gcp|kubernetes|oraclecloud|alibabacloud)-(.+)$/i);
+  return m ? m[1].toLowerCase() : raw.toLowerCase();
 }
 
 function lookupCheckMetadata(idOrShort) {
@@ -1341,6 +1864,8 @@ function renderDetailsBlock(f, includeNonCompliant = false) {
 
 function getDetailsCopyText(f, includeNonCompliant = false) {
   const parts = [];
+  const note = (analysisNotes[f.id] || '').trim();
+  if (note) parts.push('## Reviewer note\n\n' + note);
   const bg = f.details || f.description;
   if (bg) parts.push('## Background\n\n' + bg);
   const obs = (f.observations || []).filter(Boolean);
@@ -1540,7 +2065,7 @@ function renderProjectList(projects) {
   const el = document.getElementById('project-list');
   updateProjectBulkBar();
   if (!projects.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No projects yet</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">${icon('file')}</div>No projects yet</div>`;
     return;
   }
   el.innerHTML = projects.map(p => `
@@ -1553,7 +2078,7 @@ function renderProjectList(projects) {
         </div>
       </div>
       <div class="proj-actions" onclick="event.stopPropagation()">
-        <button class="btn small danger" onclick="deleteProject('${p.id}')">🗑</button>
+        <button class="btn small danger icon-only" onclick="deleteProject('${p.id}')" aria-label="Delete project">${icon('trash')}</button>
       </div>
     </div>`).join('');
 }
@@ -1586,6 +2111,7 @@ async function openSettings() {
   await loadAvailableBenchmarks();
   document.getElementById('settings-bm-search').value = '';
   renderSettingsBenchmarkList('');
+  renderScanList();
   document.getElementById('settings-modal').classList.add('open');
 }
 
@@ -1621,6 +2147,83 @@ async function saveSettings() {
   }
   closeSettings();
   toast('Project settings saved');
+}
+
+function renderScanList() {
+  const el = document.getElementById('settings-scan-list');
+  if (!el) return;
+  const scans = Array.isArray(projectScans) ? projectScans : [];
+  const replacedIds = new Set(scans.map(scan => scan.replaces).filter(Boolean));
+  const rows = scans.length
+    ? scans.map(scan => ({ ...scan, replaced: replacedIds.has(scan.id), legacy: false }))
+    : [{ id: 'legacy', label: document.getElementById('header-project-name')?.textContent || 'Uploaded scan', addedAt: '', replaces: null, replaced: false, legacy: true }];
+  const ordered = [...rows.filter(row => !row.replaced), ...rows.filter(row => row.replaced)];
+  el.innerHTML = ordered.map(scan => {
+    const when = scan.addedAt ? new Date(scan.addedAt).toLocaleString() : '';
+    const retest = scan.replaced ? '' : `<button class="btn small" type="button" onclick="promptRetest('${esc(scan.id)}')">Upload retest</button>`;
+    const remove = scan.legacy ? '' : `<button class="btn small danger" type="button" onclick="removeScan('${esc(scan.id)}')">Remove</button>`;
+    const mark = scan.replaced ? '<span class="scan-replaced">Replaced</span>' : '';
+    return `<div class="scan-row"><div class="scan-meta"><span class="scan-label">${esc(scan.label)}</span><span class="scan-when">${esc(when)}${mark ? ' ' + mark : ''}</span></div><div class="scan-actions">${retest}${remove}</div></div>`;
+  }).join('') + `<div class="scan-actions" style="margin-top:10px"><button class="btn small" type="button" onclick="document.getElementById('add-scan-input').click()">Add scan</button></div>`;
+}
+
+function promptRetest(scanId) {
+  const input = document.getElementById('retest-scan-input');
+  input.dataset.replaces = scanId;
+  input.click();
+}
+
+function addScanFromInput(input) {
+  const file = input.files?.[0];
+  input.value = '';
+  if (file) uploadScan(file, null);
+}
+
+function retestFromInput(input) {
+  const file = input.files?.[0];
+  const replaces = input.dataset.replaces || '';
+  input.value = '';
+  if (file) uploadScan(file, replaces);
+}
+
+async function reloadAfterScanChange(retestJustAdded) {
+  const state = await api('GET', `/api/project/${currentProjectId}/state`);
+  await rebuildFindings(state);
+  buildFilterOptions();
+  if (retestJustAdded) applyRetestDefault();
+  else if (!retestActive) document.querySelectorAll('#ms-round-dropdown input[type=checkbox]').forEach(c => { c.checked = false; });
+  msChanged('status');
+  if (retestActive) msChanged('round');
+  scheduleSave({ findingCount: rawFindings.length });
+  if (currentView === 'reporting') renderReportingView();
+}
+
+async function uploadScan(file, replaces) {
+  clearTimeout(saveDebounceTimer);
+  const fd = new FormData();
+  fd.append('file', file);
+  if (replaces) fd.append('replaces', replaces);
+  try {
+    await api('POST', `/api/project/${currentProjectId}/scans`, fd);
+    closeSettings();
+    await reloadAfterScanChange(!!replaces);
+    toast(replaces ? 'Retest added' : 'Scan added');
+  } catch (e) {
+    toast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+async function removeScan(scanId) {
+  if (!confirm('Remove this scan?')) return;
+  clearTimeout(saveDebounceTimer);
+  try {
+    await api('DELETE', `/api/project/${currentProjectId}/scans/${scanId}`);
+    await reloadAfterScanChange(false);
+    renderScanList();
+    toast('Scan removed');
+  } catch (e) {
+    toast('Remove failed: ' + e.message, 'error');
+  }
 }
 
 // =========================================================
@@ -1691,6 +2294,246 @@ async function submitImport() {
 }
 
 // =========================================================
+// SCANS — current evidence, then one retest level
+// =========================================================
+function asFindingItems(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.findings)) return data.findings;
+  if (Array.isArray(data?.results)) return data.results;
+  return [];
+}
+
+function concatScanItems(groups) {
+  const seen = new Set();
+  const out = [];
+  for (const items of groups) {
+    const inThisScan = new Set();
+    for (const item of items) {
+      const uid = item?.finding_info?.uid;
+      if (uid && seen.has(uid)) continue;
+      out.push(item);
+      if (uid) inThisScan.add(uid);
+    }
+    for (const uid of inThisScan) seen.add(uid);
+  }
+  return out;
+}
+
+function firstCloud(items) {
+  for (const item of items) {
+    const cloud = detectCloud(item);
+    if (cloud && cloud !== 'Unknown') return cloud;
+  }
+  return '';
+}
+
+async function fetchScanItems(projectId, scan) {
+  try {
+    return asFindingItems(await api('GET', `/api/project/${projectId}/scans/${scan.id}`));
+  } catch {
+    return [];
+  }
+}
+
+async function loadEvidence(projectId, state) {
+  const scans = Array.isArray(state.scans) ? state.scans : [];
+  if (!scans.length) {
+    try {
+      return { items: asFindingItems(await api('GET', `/api/project/${projectId}/raw`)), baselineItems: [], hasRetest: false };
+    } catch {
+      return { items: [], baselineItems: [], hasRetest: false };
+    }
+  }
+  const replaced = new Set(scans.map(scan => scan.replaces).filter(Boolean));
+  const current = scans.filter(scan => !replaced.has(scan.id));
+  const baseline = scans.filter(scan => current.some(item => item.replaces === scan.id));
+  const currentGroups = [];
+  for (const scan of current) currentGroups.push(await fetchScanItems(projectId, scan));
+  const baselineGroups = [];
+  for (const scan of baseline) baselineGroups.push(await fetchScanItems(projectId, scan));
+  return {
+    items: concatScanItems(currentGroups),
+    baselineItems: concatScanItems(baselineGroups),
+    hasRetest: baseline.length > 0
+  };
+}
+
+function applyReviewState(state) {
+  const source = state || {};
+  analysisStatuses = source.statuses || {};
+  analysisReasons = source.reasons || {};
+  analysisNotes = source.notes || {};
+  projectScans = source.scans || [];
+  preferredBenchmarks = source.preferredBenchmarks || [];
+  customFindings = Array.isArray(source.customFindings) ? source.customFindings : [];
+  controlReviews = source.controlReviews && typeof source.controlReviews === 'object' && !Array.isArray(source.controlReviews)
+    ? source.controlReviews
+    : {};
+}
+
+function reviewKey(benchmarkId, requirementId) {
+  return `${benchmarkId}::${requirementId}`;
+}
+
+function alignReviewerKeys(findings, originalCloud) {
+  const clouds = [...new Set(findings.map(f => f.cloud).filter(c => c && c !== 'Unknown'))];
+  const multi = clouds.length > 1;
+  const rewrite = (map) => {
+    const next = {};
+    for (const [key, value] of Object.entries(map || {})) {
+      if (key.startsWith('custom_')) {
+        next[key] = value;
+        continue;
+      }
+      const sep = key.indexOf('::');
+      if (multi && sep === -1) {
+        const matches = findings.filter(f => f.id.endsWith(`::${key}`));
+        const matchClouds = [...new Set(matches.map(f => f.id.slice(0, f.id.length - key.length - 2)))];
+        const cloud = matchClouds.length === 1 ? matchClouds[0] : (originalCloud || clouds[0] || '');
+        next[cloud ? `${cloud}::${key}` : key] = value;
+      } else if (!multi && clouds.length === 1 && sep !== -1 && key.startsWith(`${clouds[0]}::`)) {
+        next[key.slice(clouds[0].length + 2)] = value;
+      } else {
+        next[key] = value;
+      }
+    }
+    return next;
+  };
+  analysisStatuses = rewrite(analysisStatuses);
+  analysisReasons = rewrite(analysisReasons);
+  analysisNotes = rewrite(analysisNotes);
+}
+
+function matchPrevAsset(asset, prevAssets) {
+  if (asset.uid) {
+    const byUid = prevAssets.find(a => a.uid && a.uid === asset.uid);
+    if (byUid) return byUid;
+  }
+  if (asset.name) return prevAssets.find(a => a.name === asset.name) || null;
+  return null;
+}
+
+function assetRound(prev, nowStatus) {
+  const prevFail = !!(prev && prev.status === 'FAIL');
+  const nowFail = nowStatus === 'FAIL';
+  if (prevFail && nowFail) return 'open';
+  if (prevFail && !nowFail) return 'closed';
+  if (nowFail && !prevFail) return 'new';
+  return '';
+}
+
+function annotateRetest(findings, baselineFindings) {
+  const base = new Map((baselineFindings || []).map(f => [f.id, f]));
+  const seen = new Set(findings.map(f => f.id));
+  const out = findings.map(f => {
+    const prev = base.get(f.id);
+    const prevFail = !!(prev && prev.failCount > 0);
+    const nowFail = f.failCount > 0;
+    let round = '';
+    if (prevFail && nowFail) round = 'open';
+    else if (prevFail && !nowFail) round = 'closed';
+    else if (!prevFail && nowFail) round = 'new';
+    const prevAssets = prev?.assets || [];
+    const assets = f.assets.map(a => ({ ...a, round: assetRound(matchPrevAsset(a, prevAssets), a.status) }));
+    for (const a of prevAssets) {
+      if (a.status !== 'FAIL') continue;
+      if (assets.some(c => (a.uid && c.uid === a.uid) || (a.name && c.name === a.name))) continue;
+      assets.push({ ...a, round: 'closed', absent: true });
+    }
+    return { ...f, round, assets };
+  });
+  for (const prev of baselineFindings || []) {
+    if (seen.has(prev.id) || !(prev.failCount > 0)) continue;
+    out.push({
+      ...prev,
+      failCount: 0,
+      passCount: 0,
+      manualCount: 0,
+      round: 'closed',
+      assets: (prev.assets || []).filter(a => a.status === 'FAIL').map(a => ({ ...a, round: 'closed', absent: true }))
+    });
+  }
+  return out;
+}
+
+function updateRoundCounts() {
+  const counts = { open: 0, closed: 0, new: 0 };
+  for (const finding of rawFindings) if (counts[finding.round] != null) counts[finding.round]++;
+  const labels = { open: 'Still open', closed: 'Closed', new: 'New' };
+  for (const [value, text] of Object.entries(labels)) {
+    const input = document.querySelector(`#ms-round-dropdown input[value="${value}"]`);
+    const label = input?.parentElement?.querySelector('.menu-item-label');
+    if (label) label.textContent = retestActive ? `${text} (${counts[value]})` : text;
+  }
+}
+
+function materializeCustomFinding(record) {
+  const assets = (record.assets || []).map(asset => ({
+    name: asset.name || 'Unknown',
+    uid: asset.name || '',
+    resourceId: '',
+    portalLink: null,
+    status: asset.status || 'FAIL',
+    subscription: asset.subscription || '',
+    resourceGroup: asset.resourceGroup || '',
+    region: asset.region || '',
+    service: asset.service || '',
+    absent: false
+  }));
+  return {
+    id: record.id,
+    source: 'custom',
+    title: record.title || record.id,
+    severity: record.severity || 'medium',
+    cloud: record.cloud || 'Custom',
+    service: record.service || '',
+    description: record.details || '',
+    details: record.details || '',
+    risk: record.impact || '',
+    impact: record.impact || '',
+    remediation: record.remediation || '',
+    remUrls: [],
+    addUrls: [],
+    controls: (record.controls || []).map(control => control.label || `${control.benchmarkId}: ${control.requirementId}`),
+    controlRefs: record.controls || [],
+    observations: record.observations || [],
+    assets,
+    subscriptions: [...new Set(assets.map(asset => asset.subscription).filter(Boolean))],
+    resourceGroups: [...new Set(assets.map(asset => asset.resourceGroup).filter(Boolean))],
+    failCount: assets.filter(asset => asset.status === 'FAIL').length,
+    passCount: assets.filter(asset => asset.status === 'PASS').length,
+    manualCount: assets.filter(asset => asset.status === 'MANUAL').length,
+    round: ''
+  };
+}
+
+function sortFindings(findings) {
+  const order = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 };
+  return findings.sort((a, b) => (order[a.severity] ?? 5) - (order[b.severity] ?? 5) || b.failCount - a.failCount);
+}
+
+async function rebuildFindings(state) {
+  applyReviewState(state);
+  const evidence = await loadEvidence(currentProjectId, state);
+  const clouds = new Set(evidence.items.map(detectCloud).filter(c => c && c !== 'Unknown'));
+  let findings = consolidateFindings(evidence.items, clouds.size > 1);
+  alignReviewerKeys(findings, firstCloud(evidence.items));
+  if (evidence.hasRetest) findings = annotateRetest(findings, consolidateFindings(evidence.baselineItems, clouds.size > 1));
+  enrichFindingsWithMetadata(findings);
+  rawFindings = sortFindings([...findings, ...customFindings.map(materializeCustomFinding)]);
+  retestActive = evidence.hasRetest;
+  const filter = document.getElementById('retest-filter');
+  if (filter) filter.hidden = !retestActive;
+  updateRoundCounts();
+}
+
+function applyRetestDefault() {
+  document.querySelectorAll('#ms-round-dropdown input[type=checkbox]').forEach(c => {
+    c.checked = retestActive && (c.value === 'open' || c.value === 'new');
+  });
+}
+
+// =========================================================
 // OPEN PROJECT
 // =========================================================
 async function openProject(id) {
@@ -1698,19 +2541,14 @@ async function openProject(id) {
     currentProjectId = id;
     toast('Loading project…');
 
-    const [rawResp, state] = await Promise.all([
-      fetch(`/api/project/${id}/raw`).then(r => r.json()),
+    const [state] = await Promise.all([
       api('GET', `/api/project/${id}/state`),
       loadCheckMetadata()
     ]);
 
-    analysisStatuses   = state.statuses || {};
-    preferredBenchmarks = state.preferredBenchmarks || [];
-
-    rawFindings      = consolidateFindings(rawResp);
-    enrichFindingsWithMetadata(rawFindings);
+    await rebuildFindings(state);
     filteredFindings = [...rawFindings];
-    ensurePreferredBenchmarksLoaded();
+    await ensurePreferredBenchmarksLoaded();
 
     scheduleSave({ findingCount: rawFindings.length }, false);
 
@@ -1733,7 +2571,13 @@ async function openProject(id) {
 
     switchView('analysis');
     buildFilterOptions();
-    applyFilters();
+    // Failed is the default only when a project opens. switchView must not set it again.
+    document.querySelectorAll('#ms-status-dropdown input[type=checkbox]').forEach(c => {
+      c.checked = c.value === 'FAIL';
+    });
+    applyRetestDefault();
+    msChanged('status');
+    if (retestActive) msChanged('round');
 
     toast('Project loaded');
   } catch(e) {
@@ -1742,12 +2586,20 @@ async function openProject(id) {
   }
 }
 
-function goHome() {
+function goHome(opts = {}) {
   currentProjectId     = null;
   rawFindings          = [];
   filteredFindings     = [];
   analysisStatuses     = {};
+  analysisReasons      = {};
+  analysisNotes        = {};
+  customFindings       = [];
+  controlReviews       = {};
+  projectScans         = [];
+  retestActive         = false;
   preferredBenchmarks  = [];
+  const roundFilter = document.getElementById('retest-filter');
+  if (roundFilter) roundFilter.hidden = true;
   loadedBenchmark      = null;
   complianceBenchmarkId = '';
 
@@ -1764,7 +2616,7 @@ function goHome() {
   if (chartCompStatus) { chartCompStatus.destroy(); chartCompStatus = null; }
   if (chartCompSections) { chartCompSections.destroy(); chartCompSections = null; }
 
-  loadProjectList();
+  if (!opts.skipLoad) loadProjectList();
 }
 
 // =========================================================
@@ -1787,7 +2639,7 @@ function switchView(view) {
 // =========================================================
 // OCSF PARSING & CONSOLIDATION (unchanged core logic)
 // =========================================================
-function consolidateFindings(data) {
+function consolidateFindings(data, multiCloud = false) {
   let items = Array.isArray(data) ? data : (data.findings || data.results || Object.values(data)[0] || []);
   if (!Array.isArray(items)) items = [];
 
@@ -1806,6 +2658,7 @@ function consolidateFindings(data) {
     const status      = normalizeStatus(item.status_code || item.unmapped?.status_code || item.unmapped?.check_result || item.status_id || item.status);
     const severity    = normalizeSeverity(item.severity || item.severity_id);
     const cloud       = detectCloud(item);
+    const key         = multiCloud ? `${cloud}::${checkId}` : checkId;
     const service     = extractService(item);
     const sub         = extractSubscription(item);
     const rg          = extractResourceGroup(item);
@@ -1821,10 +2674,10 @@ function consolidateFindings(data) {
     const orgName     = item.cloud?.org?.name || '';
     const portalLink  = buildPortalLinkFromParts(cloud, orgName, resourceId);
 
-    if (!map.has(checkId)) {
-      map.set(checkId, { id: checkId, title, severity, cloud, service, description, risk, remediation, remUrls, addUrls, controls, observations: new Set(), assets: [], subscriptions: new Set(), resourceGroups: new Set(), failCount: 0, passCount: 0 });
+    if (!map.has(key)) {
+      map.set(key, { id: key, title, severity, cloud, service, description, risk, remediation, remUrls, addUrls, controls, observations: new Set(), assets: [], subscriptions: new Set(), resourceGroups: new Set(), failCount: 0, passCount: 0, manualCount: 0 });
     }
-    const f = map.get(checkId);
+    const f = map.get(key);
     if (!f.risk && risk)                       f.risk = risk;
     if (!f.description && description)         f.description = description;
     if (!f.remediation && remediation)         f.remediation = remediation;
@@ -1834,7 +2687,9 @@ function consolidateFindings(data) {
     if (observation) f.observations.add(observation);
     if (sub) f.subscriptions.add(sub);
     if (rg)  f.resourceGroups.add(rg);
-    if (status === 'PASS') f.passCount++; else f.failCount++;
+    if (status === 'PASS') f.passCount++;
+    else if (status === 'MANUAL') f.manualCount++;
+    else f.failCount++;
     f.assets.push({ name: assetName, uid: assetUid, resourceId, portalLink, status, subscription: sub, resourceGroup: rg, region: item.cloud?.region || item.resources?.[0]?.region || item.unmapped?.region || '' });
   }
 
@@ -1876,6 +2731,7 @@ function normalizeStatus(s) {
   if (s == null) return 'FAIL';
   const v = String(s).toUpperCase().trim();
   if (v==='PASS'||v==='PASSED'||v==='1'||v==='TRUE') return 'PASS';
+  if (v==='MANUAL') return 'MANUAL';
   return 'FAIL';
 }
 
@@ -1931,9 +2787,64 @@ function extractControls(item) {
 // =========================================================
 // MULTI-SELECT FILTERS
 // =========================================================
+const MENU_CHECK = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.2 8.3l3 3 6.6-6.6" fill="none" stroke="currentColor" stroke-width="1.75"/></svg>';
+
+function closeMenuSelects() {
+  document.querySelectorAll('.menu-select.open').forEach(root => {
+    root.classList.remove('open');
+    root.querySelector('.menu-select-trigger')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function closeMsMenus(exceptId) {
+  if (openMsId && openMsId !== exceptId) {
+    document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
+    document.getElementById(`ms-${openMsId}-trigger`)?.setAttribute('aria-expanded', 'false');
+    if (openMsId !== exceptId) openMsId = null;
+  }
+}
+
+function toggleMenuSelect(button, event) {
+  if (event) event.stopPropagation();
+  const root = button.closest('.menu-select');
+  const willOpen = !root.classList.contains('open');
+  closeMenuSelects();
+  closeMsMenus();
+  if (willOpen) {
+    root.classList.add('open');
+    button.setAttribute('aria-expanded', 'true');
+    const search = root.querySelector('.menu-select-search');
+    if (search) { search.value = ''; filterBenchmarkMenu(''); }
+  }
+}
+
+function chooseMenuItem(button, event) {
+  if (event) event.stopPropagation();
+  const root = button.closest('.menu-select');
+  const select = root.querySelector('select');
+  if (select) {
+    select.value = button.dataset.value;
+    select.dispatchEvent(new Event('change'));
+  }
+  closeMenuSelects();
+}
+
 document.addEventListener('click', e => {
+  if (e.target.closest('.menu-select') || e.target.closest('.ms-dropdown')) return;
+  closeMenuSelects();
   if (openMsId && !e.target.closest(`#ms-${openMsId}`)) {
     document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
+    document.getElementById(`ms-${openMsId}-trigger`)?.setAttribute('aria-expanded', 'false');
+    openMsId = null;
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeMenuSelects();
+  if (openMsId) {
+    document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
+    document.getElementById(`ms-${openMsId}-trigger`)?.setAttribute('aria-expanded', 'false');
     openMsId = null;
   }
 });
@@ -1941,12 +2852,12 @@ document.addEventListener('click', e => {
 function toggleMs(id, event) {
   if (event) event.stopPropagation();
   const dropdown = document.getElementById(`ms-${id}-dropdown`);
+  const trigger = document.getElementById(`ms-${id}-trigger`);
   const isOpen = dropdown.classList.contains('open');
-  // Close any other open dropdown
-  if (openMsId && openMsId !== id) {
-    document.getElementById(`ms-${openMsId}-dropdown`)?.classList.remove('open');
-  }
+  closeMenuSelects();
+  closeMsMenus(id);
   dropdown.classList.toggle('open', !isOpen);
+  trigger?.setAttribute('aria-expanded', String(!isOpen));
   openMsId = !isOpen ? id : null;
 }
 
@@ -1956,23 +2867,23 @@ function msGetSelected(id) {
 
 function msChanged(id) {
   const selected = msGetSelected(id);
-  const badge   = document.getElementById(`ms-${id}-badge`);
+  const label = document.getElementById(`ms-${id}-label`);
   const trigger = document.getElementById(`ms-${id}-trigger`);
-  if (selected.length > 0) {
-    badge.textContent = selected.length;
-    badge.style.display = '';
-    trigger.classList.add('has-selection');
-  } else {
-    badge.style.display = 'none';
-    trigger.classList.remove('has-selection');
+  const names = [...document.querySelectorAll(`#ms-${id}-dropdown input[type=checkbox]:checked`)]
+    .map(c => c.parentElement.querySelector('.menu-item-label')?.textContent || c.value);
+  if (label) {
+    if (!selected.length) label.textContent = label.dataset.placeholder || label.textContent;
+    else if (names.length === 1) label.textContent = names[0];
+    else label.textContent = `${names.length} selected`;
   }
+  trigger?.classList.toggle('has-selection', selected.length > 0);
   applyFilters();
 }
 
 function msClearFilterSilent(id) {
   document.querySelectorAll(`#ms-${id}-dropdown input[type=checkbox]`).forEach(c => c.checked = false);
-  const badge = document.getElementById(`ms-${id}-badge`);
-  if (badge) badge.style.display = 'none';
+  const label = document.getElementById(`ms-${id}-label`);
+  if (label) label.textContent = label.dataset.placeholder || label.textContent;
   document.getElementById(`ms-${id}-trigger`)?.classList.remove('has-selection');
 }
 
@@ -1983,7 +2894,7 @@ function msClearFilter(id, event) {
 }
 
 function clearAllFilters() {
-  ['status','severity','analysis','cloud','subscription','rg','service'].forEach(msClearFilterSilent);
+  ['status','severity','analysis','cloud','subscription','rg','service','round'].forEach(msClearFilterSilent);
   document.getElementById('f-search').value = '';
   applyFilters();
 }
@@ -1992,7 +2903,7 @@ function populateMsOptions(id, options) {
   const container = document.getElementById(`ms-${id}-options`);
   if (!container) return;
   container.innerHTML = options.map(o => `
-    <label><input type="checkbox" value="${esc(o)}" onchange="msChanged('${id}')"> ${esc(o)}</label>
+    <label class="menu-item"><input type="checkbox" value="${esc(o)}" onchange="msChanged('${id}')"><span class="menu-item-label">${esc(o)}</span></label>
   `).join('');
 }
 
@@ -2016,6 +2927,7 @@ function buildFilterOptions() {
 function applyFilters() {
   const search      = (document.getElementById('f-search')?.value || '').toLowerCase();
   const selStatus   = msGetSelected('status');
+  const selRound    = msGetSelected('round');
   const selSeverity = msGetSelected('severity');
   const selAnalysis = msGetSelected('analysis');
   const selCloud    = msGetSelected('cloud');
@@ -2030,9 +2942,13 @@ function applyFilters() {
       const eff = aStatus || 'none';
       if (!selAnalysis.includes(eff)) return false;
     }
-    if (selStatus.length > 0 && selStatus.length < 2) {
-      if (selStatus.includes('FAIL') && f.failCount === 0) return false;
-      if (selStatus.includes('PASS') && f.passCount === 0) return false;
+    if (selRound.length > 0 && !selRound.includes(f.round || '')) return false;
+    if (selStatus.length > 0) {
+      const hasSelectedResult = (selStatus.includes('FAIL') && f.failCount > 0)
+        || (selStatus.includes('PASS') && f.passCount > 0)
+        || (selStatus.includes('MANUAL') && f.manualCount > 0);
+      const closedByRound = f.round === 'closed' && selRound.includes('closed');
+      if (!hasSelectedResult && !closedByRound) return false;
     }
     if (selSeverity.length > 0 && !selSeverity.includes(f.severity)) return false;
     if (selCloud.length    > 0 && !selCloud.includes(f.cloud))    return false;
@@ -2060,11 +2976,11 @@ function applyFilters() {
 // =========================================================
 function computeStats() {
   const src = filteredFindings.length > 0 || rawFindings.length === 0 ? filteredFindings : rawFindings;
-  let failed=0, passed=0, assets=0, critical=0, high=0, confirmed=0;
+  let failed=0, passed=0, manual=0, assets=0, critical=0, high=0, confirmed=0;
   const sevCounts = { critical:0, high:0, medium:0, low:0, informational:0 };
 
   for (const f of src) {
-    failed += f.failCount; passed += f.passCount; assets += f.assets.length;
+    failed += f.failCount; passed += f.passCount; manual += f.manualCount || 0; assets += f.assets.length;
     if (f.severity==='critical') critical++;
     if (f.severity==='high') high++;
     if (f.failCount > 0) sevCounts[f.severity] = (sevCounts[f.severity]||0)+1;
@@ -2074,14 +2990,15 @@ function computeStats() {
   document.getElementById('stat-total').textContent    = src.length;
   document.getElementById('stat-failed').textContent   = failed;
   document.getElementById('stat-passed').textContent   = passed;
+  document.getElementById('stat-manual').textContent   = manual;
   document.getElementById('stat-assets').textContent   = assets;
   document.getElementById('stat-critical').textContent = critical;
   document.getElementById('stat-high').textContent     = high;
   document.getElementById('stat-confirmed').textContent = confirmed;
-  renderCharts(sevCounts, failed, passed);
+  renderCharts(sevCounts, failed, passed, manual);
 }
 
-function renderCharts(sevCounts, failed, passed) {
+function renderCharts(sevCounts, failed, passed, manual) {
   const ctxSev = document.getElementById('chart-sev');
   if (chartSev) chartSev.destroy();
   chartSev = new Chart(ctxSev, {
@@ -2092,36 +3009,35 @@ function renderCharts(sevCounts, failed, passed) {
         backgroundColor: ['#CC0501','#DF3D03','#F9A009','#FFCB0D','#53AA33'], borderWidth:0, borderRadius:2 }]
     },
     options: { responsive:true, maintainAspectRatio:true, aspectRatio:2.5, plugins:{legend:{display:false}},
-      scales:{ x:{ticks:{color:'#888',font:{size:10}},grid:{color:'#424242'}}, y:{ticks:{color:'#888',font:{size:10}},grid:{color:'#424242'},beginAtZero:true} } }
+      scales:{ x:{ticks:{color:'#b5b5b5',font:{size:10}},grid:{color:'#3a3a3a'}}, y:{ticks:{color:'#b5b5b5',font:{size:10}},grid:{color:'#3a3a3a'},beginAtZero:true} } }
   });
 
   const ctxPF = document.getElementById('chart-pf');
   if (chartPF) chartPF.destroy();
   chartPF = new Chart(ctxPF, {
     type: 'doughnut',
-    data: { labels:['Failed','Passed'], datasets:[{ data:[failed, passed], backgroundColor:['#CA3E47','#53AA33'], borderWidth:0 }] },
-    options: { responsive:true, maintainAspectRatio:true, aspectRatio:1.8, plugins:{ legend:{position:'bottom',labels:{color:'#888',font:{size:10},padding:8}} } }
+    data: { labels:['Failed','Passed','Manual'], datasets:[{ data:[failed, passed, manual], backgroundColor:['#CA3E47','#53AA33','#F9A009'], borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:true, aspectRatio:1.8, plugins:{ legend:{position:'bottom',labels:{color:'#b5b5b5',font:{size:10},padding:8}} } }
   });
 }
 
 function toggleCharts() {
   const s = document.getElementById('charts-section');
-  const i = document.getElementById('charts-toggle-icon');
   s.classList.toggle('open');
-  i.textContent = s.classList.contains('open') ? '▲' : '▼';
+  document.getElementById('charts-toggle').classList.toggle('open', s.classList.contains('open'));
 }
 
-function renderComplianceCharts(totalFail, totalPass, totalNA, results) {
+function renderComplianceCharts(totalFail, totalPass, totalManual, totalNA, results) {
   const ctxStatus = document.getElementById('chart-comp-status');
   if (chartCompStatus) chartCompStatus.destroy();
   if (ctxStatus) {
     chartCompStatus = new Chart(ctxStatus, {
       type: 'doughnut',
       data: {
-        labels: ['Failed', 'Passed', 'N/A'],
-        datasets: [{ data: [totalFail, totalPass, totalNA], backgroundColor: ['#CA3E47', '#53AA33', '#525252'], borderWidth: 0 }]
+        labels: ['Failed', 'Passed', 'Manual', 'N/A'],
+        datasets: [{ data: [totalFail, totalPass, totalManual, totalNA], backgroundColor: ['#CA3E47', '#53AA33', '#F9A009', '#525252'], borderWidth: 0 }]
       },
-      options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.8, plugins: { legend: { position: 'bottom', labels: { color: '#888', font: { size: 10 }, padding: 8 } } } }
+      options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1.8, plugins: { legend: { position: 'bottom', labels: { color: '#b5b5b5', font: { size: 10 }, padding: 8 } } } }
     });
   }
 
@@ -2144,8 +3060,8 @@ function renderComplianceCharts(totalFail, totalPass, totalNA, results) {
         responsive: true, maintainAspectRatio: true, aspectRatio: 2.2,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#888', font: { size: 9 } }, grid: { color: '#424242' } },
-          y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#424242' }, beginAtZero: true }
+          x: { ticks: { color: '#b5b5b5', font: { size: 9 } }, grid: { color: '#3a3a3a' } },
+          y: { ticks: { color: '#b5b5b5', font: { size: 10 } }, grid: { color: '#3a3a3a' }, beginAtZero: true }
         }
       }
     });
@@ -2155,50 +3071,82 @@ function renderComplianceCharts(totalFail, totalPass, totalNA, results) {
 // =========================================================
 // ANALYSIS VIEW — FINDINGS RENDER
 // =========================================================
+function updateBulkStatusBar() {
+  const n = filteredFindings.length;
+  const bar = document.getElementById('bulk-status-bar');
+  if (bar) bar.hidden = n === 0;
+  const text = `Set status on ${n} displayed finding${n === 1 ? '' : 's'}`;
+  const label = document.getElementById('bulk-status-label');
+  if (label) label.textContent = text;
+  const kicker = document.getElementById('bulk-status-kicker');
+  if (kicker) kicker.textContent = text;
+}
+
 function renderFindings() {
+  updateBulkStatusBar();
   const el = document.getElementById('findings-list');
   if (!filteredFindings.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🔍</div>No findings match current filters</div>';
+    el.innerHTML = `<div class="empty-state"><div class="icon">${icon('search')}</div>No findings match current filters</div>`;
     return;
   }
   el.innerHTML = filteredFindings.map(f => renderFindingCard(f)).join('');
+}
+
+let bulkStatusApplying = false;
+function setDisplayedStatus(selectEl) {
+  if (bulkStatusApplying) return;
+  const value = selectEl.value;
+  const ids = filteredFindings.map(f => f.id);
+  if (!ids.length) return;
+  bulkStatusApplying = true;
+  for (const id of ids) analysisStatuses[id] = value;
+  renderFindings();
+  computeStats();
+  scheduleSave({ statuses: analysisStatuses });
+  if (currentView === 'reporting') renderReportingView();
+  selectEl.selectedIndex = -1;
+  bulkStatusApplying = false;
 }
 
 function renderFindingCard(f) {
   const aStatus      = analysisStatuses[f.id] || '';
   const statusClass  = aStatus ? `status-${aStatus}` : '';
   const sevClass     = `sev-${f.severity}`;
-  const failedAssets = f.assets.filter(a => a.status === 'FAIL');
+  const failedAssets = f.assets.filter(a => a.status === 'FAIL' && !a.absent);
   const passedAssets = f.assets.filter(a => a.status === 'PASS');
-
-  const selStatus = s => aStatus === s ? 'selected' : '';
-  const ssClass   = aStatus ? `s-${aStatus}` : '';
+  const manualAssets = f.assets.filter(a => a.status === 'MANUAL');
+  const closedAbsent = f.assets.filter(a => a.absent && a.round === 'closed');
 
   return `
 <div class="finding-card ${statusClass}" id="fc-${esc(f.id)}" data-id="${esc(f.id)}">
   <div class="finding-header" onclick="toggleCard('${esc(f.id)}')">
-    <span class="expand-icon">▶</span>
+    <span class="expand-icon">${icon('chevron-right')}</span>
     <span class="sev-badge ${sevClass}">${f.severity}</span>
     <span class="finding-title">${esc(f.title)}</span>
     <div class="finding-meta">
+      ${f.source === 'custom' ? '<span class="tag tag-custom">Custom</span>' : ''}
       ${f.cloud   ? `<span class="tag tag-cloud">${esc(f.cloud)}</span>` : ''}
       ${f.service ? `<span class="tag tag-service">${esc(f.service)}</span>` : ''}
       ${failedAssets.length ? `<span class="tag tag-failed">${failedAssets.length} FAIL</span>` : ''}
       ${passedAssets.length ? `<span class="tag tag-passed">${passedAssets.length} PASS</span>` : ''}
-      <select class="status-select ${ssClass}" data-id="${esc(f.id)}"
-              onchange="setStatus('${esc(f.id)}', this)" onclick="event.stopPropagation()">
-        <option value="">— Unset —</option>
-        <option value="confirmed"      ${selStatus('confirmed')}>Confirmed</option>
-        <option value="flagged"        ${selStatus('flagged')}>Flagged</option>
-        <option value="false-positive" ${selStatus('false-positive')}>False Positive</option>
-        <option value="reported"       ${selStatus('reported')}>Reported</option>
-      </select>
+      ${manualAssets.length ? `<span class="tag tag-manual">${manualAssets.length} MANUAL</span>` : ''}
+      ${f.round === 'closed' ? '<span class="tag tag-round">Closed this round</span>' : ''}
+      ${renderStatusMenu(f.id, aStatus, [
+        { value: '', label: 'Unset' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'flagged', label: 'Flagged' },
+        { value: 'false-positive', label: 'False Positive' },
+        { value: 'reported', label: 'Reported' },
+      ])}
+      ${f.source === 'custom' ? `<button class="btn small" type="button" onclick="event.stopPropagation(); openCustomFinding('${esc(f.id)}')">Edit</button><button class="btn small danger" type="button" onclick="event.stopPropagation(); deleteCustomFinding('${esc(f.id)}')">Delete</button>` : ''}
     </div>
   </div>
+  ${aStatus === 'false-positive' ? renderReasonField(f.id) : ''}
   <div class="finding-body" id="fb-${esc(f.id)}">
     <div class="finding-body-tabs">
       <div class="body-tab active" onclick="switchTab('${esc(f.id)}','failed',this)">Failed (${failedAssets.length})</div>
       <div class="body-tab" onclick="switchTab('${esc(f.id)}','passed',this)">Passed (${passedAssets.length})</div>
+      <div class="body-tab" onclick="switchTab('${esc(f.id)}','manual',this)">Manual (${manualAssets.length})</div>
       <div class="body-tab" onclick="switchTab('${esc(f.id)}','details',this)">Details</div>
       <div class="body-tab" onclick="switchTab('${esc(f.id)}','impact',this)">Impact</div>
       <div class="body-tab" onclick="switchTab('${esc(f.id)}','remediation',this)">Remediation</div>
@@ -2208,31 +3156,41 @@ function renderFindingCard(f) {
     <div class="tab-panel active" id="tp-${esc(f.id)}-failed">
       <div class="assets-header">
         <h4>${failedAssets.length} failed asset${failedAssets.length !== 1 ? 's' : ''}</h4>
-        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','FAIL')">📋 Copy TSV</button>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','FAIL')">${icon('copy')} Copy TSV</button>
       </div>
       ${renderAssetsGrid(failedAssets)}
+      ${closedAbsent.length ? `<div class="section-label" style="margin-top:12px">Closed this round</div>${renderAssetsGrid(closedAbsent)}` : ''}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-passed">
       <div class="assets-header">
         <h4>${passedAssets.length} passed asset${passedAssets.length !== 1 ? 's' : ''}</h4>
-        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','PASS')">📋 Copy TSV</button>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','PASS')">${icon('copy')} Copy TSV</button>
       </div>
       ${renderAssetsGrid(passedAssets)}
+    </div>
+
+    <div class="tab-panel" id="tp-${esc(f.id)}-manual">
+      <div class="assets-header">
+        <h4>${manualAssets.length} manual asset${manualAssets.length !== 1 ? 's' : ''}</h4>
+        <button class="btn small accent" onclick="copyAssetsTSV('${esc(f.id)}','MANUAL')">${icon('copy')} Copy TSV</button>
+      </div>
+      ${renderAssetsGrid(manualAssets)}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-details">
       <div class="assets-header">
         <h4>Finding Details</h4>
-        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}', false)">📋 Copy</button>
+        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}', false)">${icon('copy')} Copy</button>
       </div>
+      ${renderReviewerNote(f.id)}
       ${renderDetailsBlock(f)}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-impact">
       <div class="assets-header">
         <h4>Impact</h4>
-        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">📋 Copy</button>
+        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
       <div class="md-block">${renderMD(f.impact || f.risk)}</div>
     </div>
@@ -2240,7 +3198,7 @@ function renderFindingCard(f) {
     <div class="tab-panel" id="tp-${esc(f.id)}-remediation">
       <div class="assets-header">
         <h4>Remediation Guidance</h4>
-        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">📋 Copy</button>
+        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
       ${renderRemediationBlock(f)}
     </div>
@@ -2248,11 +3206,12 @@ function renderFindingCard(f) {
     <div class="tab-panel" id="tp-${esc(f.id)}-controls">
       <div class="assets-header">
         <h4>Benchmark Controls &amp; Recommendations</h4>
-        <button class="btn small accent" onclick="copyControlsTSV('${esc(f.id)}')">📋 Copy TSV</button>
+        <button class="btn small accent" onclick="copyControlsTSV('${esc(f.id)}')">${icon('copy')} Copy TSV</button>
       </div>
+      ${renderRelatedControls(f)}
       ${f.controls.length
-        ? `<div class="controls-list">${f.controls.map(c => `<span class="control-badge">${esc(c)}</span>`).join('')}</div>`
-        : '<div style="color:var(--text-dim);font-size:12px">No compliance controls mapped</div>'}
+        ? `<div class="section-label" style="margin-top:14px">Scan mappings</div><div class="controls-list">${f.controls.map(c => `<span class="control-badge">${esc(c)}</span>`).join('')}</div>`
+        : ''}
     </div>
   </div>
 </div>`;
@@ -2269,7 +3228,10 @@ function renderAssetsGrid(assets) {
         const link   = a.portalLink ? ` <a href="${esc(a.portalLink)}" target="_blank" rel="noopener" class="asset-portal-link" onclick="event.stopPropagation()">↗</a>` : '';
         const rg     = a.resourceGroup ? `<span class="asset-rg">${esc(a.resourceGroup)}</span>` : '';
         const region = a.region ? `<span class="asset-region">[${esc(a.region)}]</span>` : '';
-        return `<div class="asset-cell status-${a.status.toLowerCase()}" title="${esc(a.uid)}"><span class="asset-name">${esc(a.name)}</span>${rg}${region}${link}</div>`;
+        const roundLabel = a.round === 'open' ? 'Still open' : a.round === 'closed' ? 'Closed' : a.round === 'new' ? 'New' : '';
+        const round = roundLabel ? `<span class="tag tag-round">${roundLabel}</span>` : '';
+        const statusClass = a.absent ? 'status-fail' : `status-${String(a.status || '').toLowerCase()}`;
+        return `<div class="asset-cell ${statusClass}" title="${esc(a.uid)}"><span class="asset-name">${esc(a.name)}</span>${round}${rg}${region}${link}</div>`;
       }).join('') + `</div>`
     ).join('') + `</div>`;
 }
@@ -2293,25 +3255,95 @@ function switchTab(id, tab, el) {
 }
 
 // Analysis status
+function renderStatusMenu(findingId, value, options) {
+  const current = options.find(o => o.value === value) || options[0];
+  const optionHtml = options.map(o => `<option value="${esc(o.value)}"${o.value === value ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+  const items = options.map(o => {
+    const on = o.value === value;
+    return `<li><button type="button" class="menu-item${on ? ' is-selected' : ''}" data-value="${esc(o.value)}" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">${esc(o.label)}</span><span class="menu-check">${on ? MENU_CHECK : ''}</span></button></li>`;
+  }).join('');
+  return `<div class="menu-select menu-select-compact" onclick="event.stopPropagation()">
+    <button type="button" class="menu-select-trigger" aria-haspopup="menu" aria-expanded="false" onclick="toggleMenuSelect(this, event)">
+      <span class="menu-select-value">${esc(current.label)}</span>
+      <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <div class="menu-select-panel" role="menu">
+      <div class="menu-select-head"><p class="menu-select-kicker">Analysis</p></div>
+      <ul class="menu-select-list">${items}</ul>
+    </div>
+    <select class="status-select visually-hidden" data-id="${esc(findingId)}" onchange="setStatus('${esc(findingId)}', this)">${optionHtml}</select>
+  </div>`;
+}
+
+function paintStatusMenu(selectEl) {
+  const root = selectEl.closest('.menu-select');
+  if (!root) return;
+  const selected = selectEl.selectedOptions[0];
+  const valueEl = root.querySelector('.menu-select-value');
+  if (valueEl && selected) valueEl.textContent = selected.textContent;
+  root.querySelectorAll('.menu-item').forEach(btn => {
+    const on = btn.dataset.value === selectEl.value;
+    btn.classList.toggle('is-selected', on);
+    const mark = btn.querySelector('.menu-check');
+    if (mark) mark.innerHTML = on ? MENU_CHECK : '';
+  });
+}
+
+function renderReasonField(id) {
+  return `<div class="finding-reason" onclick="event.stopPropagation()">
+    <input type="text" class="finding-reason-input" placeholder="why this is a false positive" value="${esc(analysisReasons[id] || '')}" oninput="setReason('${esc(id)}', this)" onclick="event.stopPropagation()">
+  </div>`;
+}
+
+function setReason(id, inputEl) {
+  const value = inputEl.value;
+  if (value) analysisReasons[id] = value;
+  else delete analysisReasons[id];
+  scheduleSave({ statuses: analysisStatuses, reasons: analysisReasons, notes: analysisNotes });
+}
+
+function renderReviewerNote(id) {
+  return `<div class="reviewer-note" onclick="event.stopPropagation()">
+    <div class="section-label">Reviewer note</div>
+    <textarea class="reviewer-note-input" data-note-for="${esc(id)}" placeholder="Paragraph for the client" oninput="setNote('${esc(id)}', this)">${esc(analysisNotes[id] || '')}</textarea>
+  </div>`;
+}
+
+function setNote(id, inputEl) {
+  const value = inputEl.value;
+  if (value) analysisNotes[id] = value;
+  else delete analysisNotes[id];
+  document.querySelectorAll('textarea.reviewer-note-input').forEach(el => {
+    if (el !== inputEl && el.dataset.noteFor === id) el.value = value;
+  });
+  scheduleSave({ statuses: analysisStatuses, reasons: analysisReasons, notes: analysisNotes });
+}
+
 function setStatus(id, selectEl) {
   const value = selectEl.value;
   analysisStatuses[id] = value;
   const card = document.querySelector(`[data-id="${id}"]`);
-  card.className = card.className.replace(/status-\S+/g,'').trim();
-  if (value) card.classList.add(`status-${value}`);
-  selectEl.className = selectEl.className.replace(/s-\S+/g,'').trim();
-  selectEl.classList.add('status-select');
-  if (value) selectEl.classList.add(`s-${value}`);
+  if (card) {
+    card.className = card.className.replace(/status-\S+/g,'').trim();
+    if (value) card.classList.add(`status-${value}`);
+    const existing = card.querySelector('.finding-reason');
+    if (value === 'false-positive') {
+      if (!existing) card.querySelector('.finding-header').insertAdjacentHTML('afterend', renderReasonField(id));
+    } else if (existing) {
+      existing.remove();
+    }
+  }
+  paintStatusMenu(selectEl);
   computeStats();
-  scheduleSave({ statuses: analysisStatuses });
+  scheduleSave({ statuses: analysisStatuses, reasons: analysisReasons, notes: analysisNotes });
   // Refresh reporting view if open so it reflects the change
   if (currentView === 'reporting') renderReportingView();
 }
 
 // TSV copy
 function copyFindingsTSV() {
-  const headers = ['ID','Title','Severity','Cloud','Service','Fail Count','Pass Count','Assets','Subscriptions','Resource Groups','Analysis Status'];
-  const rows = filteredFindings.map(f => [f.id, f.title, f.severity, f.cloud, f.service, f.failCount, f.passCount, f.assets.length, f.subscriptions.join(', '), f.resourceGroups.join(', '), analysisStatuses[f.id]||'']);
+  const headers = ['ID','Title','Severity','Cloud','Service','Fail Count','Pass Count','Manual Count','Assets','Subscriptions','Resource Groups','Analysis Status','Reason','Note'];
+  const rows = filteredFindings.map(f => [f.id, f.title, f.severity, f.cloud, f.service, f.failCount, f.passCount, f.manualCount || 0, f.assets.length, f.subscriptions.join(', '), f.resourceGroups.join(', '), analysisStatuses[f.id]||'', analysisReasons[f.id]||'', analysisNotes[f.id]||'']);
   const tsv = [headers,...rows].map(r=>r.map(c=>String(c??'').replace(/\t/g,' ')).join('\t')).join('\n');
   copyRichContent(tsv, buildHtmlTable(headers, rows), `Copied ${filteredFindings.length} findings as TSV`);
 }
@@ -2323,7 +3355,7 @@ function copyAssetsTSV(findingId, status) {
   const header = `Affected ${getResourceShortName(f)}`;
   const names = assets.map(a => a.name);
   const tsv = buildListTsv(header, names);
-  const label = status === 'FAIL' ? 'failed' : status === 'PASS' ? 'passed' : '';
+  const label = status === 'FAIL' ? 'failed' : status === 'PASS' ? 'passed' : status === 'MANUAL' ? 'manual' : '';
   copyRichContent(tsv, buildListHtml(header, names), `Copied ${assets.length}${label?' '+label:''} assets as TSV`);
 }
 
@@ -2340,6 +3372,7 @@ function copyControlsTSV(findingId) {
 function buildCheckNameMap() {
   checkNameMap = new Map();
   for (const f of rawFindings) {
+    if (f.source === 'custom') continue;
     const shortName = getShortCheckId(f.id);
     checkNameMap.set(shortName, f);
     checkNameMap.set(f.id.toLowerCase(), f);
@@ -2394,6 +3427,49 @@ function populateCompBenchmarkSelector() {
 
   // Set current selection
   if (complianceBenchmarkId) sel.value = complianceBenchmarkId;
+  renderBenchmarkMenu();
+}
+
+function renderBenchmarkMenu() {
+  const sel = document.getElementById('comp-benchmark-select');
+  const list = document.getElementById('comp-benchmark-list');
+  const valueEl = document.querySelector('#comp-benchmark-menu .menu-select-value');
+  if (!sel || !list) return;
+  const selected = sel.selectedOptions[0];
+  if (valueEl) valueEl.textContent = selected && selected.value ? selected.textContent : 'Select benchmark';
+  const chunks = [];
+  const pushOption = opt => {
+    if (!opt.value) return;
+    const on = opt.value === sel.value;
+    chunks.push(`<li><button type="button" class="menu-item${on ? ' is-selected' : ''}" data-value="${esc(opt.value)}" role="menuitem" onclick="chooseMenuItem(this, event)"><span class="menu-item-label">${esc(opt.textContent)}</span><span class="menu-check">${on ? MENU_CHECK : ''}</span></button></li>`);
+  };
+  for (const node of sel.children) {
+    if (node.tagName === 'OPTGROUP') {
+      chunks.push(`<li class="menu-group">${esc(node.label)}</li>`);
+      [...node.children].forEach(pushOption);
+    } else {
+      pushOption(node);
+    }
+  }
+  list.innerHTML = chunks.join('');
+}
+
+function filterBenchmarkMenu(q) {
+  const query = q.trim().toLowerCase();
+  const items = [...document.querySelectorAll('#comp-benchmark-list > li')];
+  items.forEach(li => {
+    if (li.classList.contains('menu-group')) return;
+    li.hidden = !!(query && !li.textContent.toLowerCase().includes(query));
+  });
+  items.forEach((li, i) => {
+    if (!li.classList.contains('menu-group')) return;
+    let visible = false;
+    for (let j = i + 1; j < items.length; j++) {
+      if (items[j].classList.contains('menu-group')) break;
+      if (!items[j].hidden) { visible = true; break; }
+    }
+    li.hidden = !visible;
+  });
 }
 
 async function onCompBenchmarkChange(id) {
@@ -2404,7 +3480,7 @@ async function onCompBenchmarkChange(id) {
     if (chartCompStatus) { chartCompStatus.destroy(); chartCompStatus = null; }
     if (chartCompSections) { chartCompSections.destroy(); chartCompSections = null; }
     document.getElementById('comp-stats').innerHTML = '';
-    document.getElementById('comp-requirements').innerHTML = '<div class="empty-state"><div class="icon">📋</div>Select a benchmark to view compliance status</div>';
+    document.getElementById('comp-requirements').innerHTML = `<div class="empty-state"><div class="icon">${icon('file')}</div>Select a benchmark to view compliance status</div>`;
     document.getElementById('comp-profile-filter-wrap').style.display = 'none';
     updateCompExportButton();
     return;
@@ -2455,15 +3531,20 @@ function setCompProfileFilter(value) {
 
 function getRequirementStatus(req) {
   const checks = req.Checks || [];
-  if (!checks.length) return { status:'n/a', failCount:0, passCount:0, findings:[] };
+  const empty = { status:'n/a', failCount:0, passCount:0, manualCount:0, findings:[] };
+  if (!checks.length) return empty;
   const findings = [];
-  let failCount=0, passCount=0;
+  let failCount=0, passCount=0, manualCount=0;
   for (const name of checks) {
     const f = checkNameMap.get(name.toLowerCase());
-    if (f) { findings.push(f); failCount += f.failCount; passCount += f.passCount; }
+    if (f) { findings.push(f); failCount += f.failCount; passCount += f.passCount; manualCount += f.manualCount || 0; }
   }
-  if (!findings.length) return { status:'n/a', failCount:0, passCount:0, findings:[] };
-  return { status: failCount > 0 ? 'fail' : 'pass', failCount, passCount, findings };
+  if (!findings.length) return empty;
+  let status = 'n/a';
+  if (failCount > 0) status = 'fail';
+  else if (passCount > 0) status = 'pass';
+  else if (manualCount > 0) status = 'manual';
+  return { status, failCount, passCount, manualCount, findings };
 }
 
 const COMPLIANCE_EXPORT_COLUMNS = [
@@ -2500,7 +3581,7 @@ function renderCompExportColumnList() {
   const list = document.getElementById('comp-export-columns');
   list.innerHTML = COMPLIANCE_EXPORT_COLUMNS.map(col => `
     <div class="export-column-item${col.locked ? ' locked' : ''}" data-col="${esc(col.key)}">
-      <span class="export-drag-handle${col.locked ? ' disabled' : ''}" draggable="${col.locked ? 'false' : 'true'}" title="${col.locked ? '' : 'Drag to reorder'}">⠿</span>
+      <span class="export-drag-handle${col.locked ? ' disabled' : ''}" draggable="${col.locked ? 'false' : 'true'}" title="${col.locked ? '' : 'Drag to reorder'}">${icon('grip')}</span>
       <label class="export-column-label">
         <input type="checkbox" data-col="${esc(col.key)}" ${col.defaultOn ? 'checked' : ''} ${col.locked ? 'checked disabled' : ''}>
         <span>${esc(col.label)}${col.locked ? ' (always included)' : ''}</span>
@@ -2692,13 +3773,14 @@ function renderComplianceView() {
     });
   }
 
-  let totalFail=0, totalPass=0, totalNA=0;
+  let totalFail=0, totalPass=0, totalManual=0, totalNA=0;
   const isCis = isCisBenchmark();
   const results = reqs.map(req => {
     const attr = req.Attributes?.[0] || {};
     const res  = getRequirementStatus(req);
     if (res.status==='fail') totalFail++;
     else if (res.status==='pass') totalPass++;
+    else if (res.status==='manual') totalManual++;
     else totalNA++;
     return {
       id: req.Id,
@@ -2732,6 +3814,11 @@ function renderComplianceView() {
         </div>
         <div class="stats-divider"></div>
         <div class="stat-item">
+          <div class="stat-value" style="color:var(--comp-manual)">${totalManual}</div>
+          <div class="stat-label">Manual</div>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stat-item">
           <div class="stat-value" style="color:var(--comp-na)">${totalNA}</div>
           <div class="stat-label">N/A</div>
         </div>
@@ -2748,7 +3835,7 @@ function renderComplianceView() {
       </div>
     </div>`;
 
-  renderComplianceCharts(totalFail, totalPass, totalNA, results);
+  renderComplianceCharts(totalFail, totalPass, totalManual, totalNA, results);
 
   // Group by section > subSection
   const sections = new Map();
@@ -2761,7 +3848,7 @@ function renderComplianceView() {
 
   const reqsEl = document.getElementById('comp-requirements');
   if (!results.length) {
-    reqsEl.innerHTML = '<div class="empty-state"><div class="icon">🔍</div>No requirements match current filter</div>';
+    reqsEl.innerHTML = `<div class="empty-state"><div class="icon">${icon('search')}</div>No requirements match current filter</div>`;
     return;
   }
 
@@ -2769,6 +3856,7 @@ function renderComplianceView() {
     const flat = [...subsMap.values()].flat();
     const sFail = flat.filter(r=>r.status==='fail').length;
     const sPass = flat.filter(r=>r.status==='pass').length;
+    const sManual = flat.filter(r=>r.status==='manual').length;
     const sNA   = flat.filter(r=>r.status==='n/a').length;
     const isOpen = sFail > 0;
 
@@ -2778,7 +3866,7 @@ function renderComplianceView() {
       return `
         <div class="comp-subsection open">
           <div class="comp-subsection-header" onclick="this.closest('.comp-subsection').classList.toggle('open')">
-            <span class="comp-subsection-toggle">▶</span><span>${esc(sub)}</span>
+            <span class="comp-subsection-toggle">${icon('chevron-right')}</span><span>${esc(sub)}</span>
           </div>
           <div class="comp-subsection-body">${reqRows}</div>
         </div>`;
@@ -2787,11 +3875,12 @@ function renderComplianceView() {
     return `
       <div class="comp-section${isOpen ? ' open' : ''}">
         <div class="comp-section-header" onclick="this.closest('.comp-section').classList.toggle('open')">
-          <span class="comp-section-toggle">▶</span>
+          <span class="comp-section-toggle">${icon('chevron-right')}</span>
           <span class="comp-section-title">${esc(section)}</span>
           <div class="comp-section-counts">
             ${sFail ? `<span class="comp-req-count-fail">${sFail} FAIL</span>` : ''}
             ${sPass ? `<span class="comp-req-count-pass">${sPass} PASS</span>` : ''}
+            ${sManual ? `<span class="comp-req-count-manual">${sManual} MANUAL</span>` : ''}
             ${sNA   ? `<span style="color:var(--text-dim)">${sNA} N/A</span>` : ''}
           </div>
         </div>
@@ -2803,8 +3892,9 @@ function renderComplianceView() {
 function renderCompReqRow(r) {
   const statusLabel = r.status === 'n/a' ? 'N/A' : r.status.toUpperCase();
   const counts = r.status !== 'n/a' ? `
-    ${r.failCount ? `<span class="comp-req-count-fail">${r.failCount}✗</span>` : ''}
-    ${r.passCount ? `<span class="comp-req-count-pass">${r.passCount}✓</span>` : ''}
+    ${r.failCount ? `<span class="comp-req-count-fail">${r.failCount}${icon('x')}</span>` : ''}
+    ${r.passCount ? `<span class="comp-req-count-pass">${r.passCount}${icon('check')}</span>` : ''}
+    ${r.manualCount ? `<span class="comp-req-count-manual">${r.manualCount}${icon('manual')}</span>` : ''}
   ` : `<span style="color:var(--text-dim);font-size:10px">N/A</span>`;
 
   const linked = r.findings.map(f => `
@@ -2812,6 +3902,7 @@ function renderCompReqRow(r) {
       <span class="comp-linked-title">${esc(f.title)}</span>
       ${f.failCount ? `<span class="comp-req-count-fail">${f.failCount} failed</span>` : ''}
       ${f.passCount ? `<span class="comp-req-count-pass">${f.passCount} passed</span>` : ''}
+      ${f.manualCount ? `<span class="comp-req-count-manual">${f.manualCount} manual</span>` : ''}
     </div>`).join('');
 
   const checkBlocks = r.checks.length
@@ -2829,11 +3920,14 @@ function renderCompReqRow(r) {
         <span class="comp-req-id">${esc(r.id)}</span>
         <span class="comp-req-desc" title="${esc(r.description)}">${esc(r.description)}</span>
         <div class="comp-req-counts">${counts}</div>
+        ${renderRequirementReview(r)}
         <span class="ms-caret" style="flex-shrink:0">▾</span>
       </div>
       <div class="comp-req-detail">
         ${checkBlocks ? `<div class="comp-detail-label">Prowler Checks</div>${checkBlocks}` : ''}
         ${linked ? `<div class="comp-detail-label" style="margin-top:8px">Linked Findings</div><div class="comp-linked-findings">${linked}</div>` : ''}
+        ${renderCustomLinked(r)}
+        ${renderRequirementNote(r)}
         ${noData}
       </div>
     </div>`;
@@ -2852,7 +3946,7 @@ function renderReportingView() {
 
   if (!confirmed.length) {
     countEl.textContent = '0 confirmed findings';
-    container.innerHTML = `<div class="empty-state"><div class="icon">📄</div>No confirmed findings yet.<br>Mark findings as "Confirmed" or "Reported" in the Analysis view.</div>`;
+    container.innerHTML = `<div class="empty-state"><div class="icon">${icon('file')}</div>No confirmed findings yet.<br>Mark findings as "Confirmed" or "Reported" in the Analysis view.</div>`;
     return;
   }
   countEl.textContent = `${confirmed.length} confirmed finding${confirmed.length !== 1 ? 's' : ''}`;
@@ -2870,7 +3964,7 @@ function getPreferredFrameworks() {
 
 function renderReportFinding(f) {
   const aStatus      = analysisStatuses[f.id] || '';
-  const failedAssets = f.assets.filter(a => a.status === 'FAIL');
+  const failedAssets = f.assets.filter(a => a.status === 'FAIL' && !a.absent);
   const preferredFws = getPreferredFrameworks();
 
   const preferred = [], others = [];
@@ -2881,6 +3975,7 @@ function renderReportFinding(f) {
   }
 
   const controlsHtml = `
+    ${renderRelatedControls(f)}
     <div class="controls-list">
       ${preferred.length
         ? preferred.map(c=>`<span class="control-badge preferred">${esc(c)}</span>`).join('')
@@ -2895,41 +3990,44 @@ function renderReportFinding(f) {
   return `
 <div class="report-finding status-${aStatus}" id="rf-${esc(f.id)}">
   <div class="report-finding-hdr" onclick="this.closest('.report-finding').classList.toggle('open')">
-    <span class="report-expand-icon">▶</span>
+    <span class="report-expand-icon">${icon('chevron-right')}</span>
     <span class="sev-badge sev-${f.severity}">${f.severity}</span>
     <span class="report-finding-title">${esc(f.title)}</span>
-    <select class="status-select ${aStatus ? 's-' + aStatus : ''}" onchange="setStatus('${esc(f.id)}', this)" onclick="event.stopPropagation()">
-      <option value="confirmed" ${aStatus === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-      <option value="reported" ${aStatus === 'reported' ? 'selected' : ''}>Reported</option>
-    </select>
+    ${renderStatusMenu(f.id, aStatus, [
+      { value: 'confirmed', label: 'Confirmed' },
+      { value: 'reported', label: 'Reported' },
+    ])}
     <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${failedAssets.length} failed</span>
   </div>
   <div class="report-finding-body">
     <div class="report-section">
+      ${renderReviewerNote(f.id)}
+    </div>
+    <div class="report-section">
       <div class="report-section-hdr">
         <div class="report-section-label">Details</div>
-        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}')">📋 Copy</button>
+        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
       ${renderDetailsBlock(f, true)}
     </div>
     <div class="report-section">
       <div class="report-section-hdr">
         <div class="report-section-label">Impact</div>
-        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">📋 Copy</button>
+        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
       <div class="md-block">${renderMD(f.impact || f.risk)}</div>
     </div>
     <div class="report-section">
       <div class="report-section-hdr">
         <div class="report-section-label">Remediation</div>
-        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">📋 Copy</button>
+        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
       ${renderRemediationBlock(f)}
     </div>
     <div class="report-section">
       <div class="report-section-hdr">
         <div class="report-section-label">Affected Assets (${failedAssets.length} failed)</div>
-        <button class="btn small accent" onclick="copyFailedAssetsTSV('${esc(f.id)}')">📋 Copy TSV</button>
+        <button class="btn small accent" onclick="copyFailedAssetsTSV('${esc(f.id)}')">${icon('copy')} Copy TSV</button>
       </div>
       ${failedAssets.length
         ? renderAssetsGrid(failedAssets)
@@ -2965,7 +4063,7 @@ function copyRemediation(findingId) {
 function copyFailedAssetsTSV(findingId) {
   const f = rawFindings.find(f => f.id === findingId);
   if (!f) return;
-  const assets = f.assets.filter(a => a.status === 'FAIL');
+  const assets = f.assets.filter(a => a.status === 'FAIL' && !a.absent);
   const header = `Affected ${getResourceShortName(f)}`;
   const names = assets.map(a => a.name);
   const tsv = assets.length ? buildListTsv(header, names) : header;
@@ -2993,11 +4091,9 @@ async function openHistory() {
 async function restoreSnapshot(filename) {
   if (!confirm('Restore this snapshot? Current state will be saved before restoring.')) return;
   const result = await api('POST', `/api/project/${currentProjectId}/history/${filename}/restore`);
-  analysisStatuses = result.state?.statuses || {};
-  preferredBenchmarks = result.state?.preferredBenchmarks || [];
+  await rebuildFindings(result.state || {});
   populateCompBenchmarkSelector();
-  computeStats();
-  renderFindings();
+  applyFilters();
   if (currentView === 'reporting') renderReportingView();
   closeHistory();
   toast('Snapshot restored');
@@ -3014,15 +4110,669 @@ function scheduleSave(extra = {}, withSnapshot = true) {
 async function doSave(extra = {}, withSnapshot = true) {
   if (!currentProjectId) return;
   try {
-    await api('POST', `/api/project/${currentProjectId}/state`, { statuses: analysisStatuses, preferredBenchmarks, ...extra, _snapshot: withSnapshot });
+    await api('POST', `/api/project/${currentProjectId}/state`, {
+      statuses: analysisStatuses,
+      reasons: analysisReasons,
+      notes: analysisNotes,
+      scans: projectScans,
+      preferredBenchmarks,
+      customFindings,
+      controlReviews,
+      ...extra,
+      _snapshot: withSnapshot
+    });
     showSaved();
   } catch(e) { console.warn('Auto-save failed', e); }
+}
+
+function relatedBenchmarkControls(finding) {
+  const rows = [];
+  const seen = new Set();
+  const short = getShortCheckId(finding.id);
+  const refs = new Set((finding.controlRefs || []).map(control => reviewKey(control.benchmarkId, control.requirementId)));
+  const ids = new Set(preferredBenchmarks);
+  for (const control of finding.controlRefs || []) ids.add(control.benchmarkId);
+  for (const benchmarkId of ids) {
+    const benchmark = benchmarkCache.get(benchmarkId);
+    if (!benchmark?.Requirements) continue;
+    for (const requirement of benchmark.Requirements) {
+      const key = reviewKey(benchmarkId, requirement.Id);
+      const byCheck = finding.source !== 'custom' && (requirement.Checks || []).some(check => String(check).toLowerCase() === short);
+      const byRef = refs.has(key);
+      if (!byCheck && !byRef) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const review = controlReviews[key] || {};
+      const validated = Boolean(review.status);
+      rows.push({
+        key,
+        benchmarkId,
+        requirementId: requirement.Id,
+        description: requirement.Description || '',
+        validated,
+        reviewStatus: review.status || ''
+      });
+    }
+  }
+  return rows;
+}
+
+function renderRelatedControls(finding) {
+  const rows = relatedBenchmarkControls(finding);
+  if (!rows.length) {
+    return '<div style="color:var(--text-dim);font-size:12px">No selected benchmark controls are linked to this finding.</div>';
+  }
+  return `<div class="controls-list">${rows.map(row => {
+    const label = `${row.requirementId} ${row.validated ? 'Validated' : 'Not validated'}${row.reviewStatus ? ' · ' + row.reviewStatus.toUpperCase() : ''}`;
+    return `<span class="control-badge ${row.validated ? 'validated' : 'unvalidated'}" data-review-key="${esc(row.key)}" data-requirement-id="${esc(row.requirementId)}" title="${esc(row.benchmarkId + ': ' + row.description)}">${esc(label)}</span>`;
+  }).join('')}</div>
+  <p class="control-legend"><span class="control-badge validated">Validated</span> has a review status in Compliance. <span class="control-badge unvalidated">Not validated</span> still follows the scan only.</p>`;
+}
+
+function renderRequirementReview(requirement) {
+  const key = reviewKey(complianceBenchmarkId, requirement.id);
+  const review = controlReviews[key] || {};
+  const validated = Boolean(review.status);
+  const options = [
+    ['', 'Unreviewed'],
+    ['pass', 'Pass'],
+    ['fail', 'Fail'],
+    ['manual', 'Manual'],
+    ['n/a', 'N/A']
+  ];
+  return `<div class="comp-req-review" onclick="event.stopPropagation()">
+    <span class="control-badge ${validated ? 'validated' : 'unvalidated'}" data-review-key="${esc(key)}" data-requirement-id="${esc(requirement.id)}">${esc(requirement.id)} ${validated ? 'Validated' : 'Not validated'}</span>
+    <label class="comp-review-label">Review
+      <select class="comp-review-select" onchange="setRequirementReview('${esc(complianceBenchmarkId)}','${esc(requirement.id)}', this)">
+        ${options.map(([value, label]) => `<option value="${value}"${review.status === value ? ' selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </label>
+  </div>`;
+}
+
+function renderRequirementNote(requirement) {
+  const key = reviewKey(complianceBenchmarkId, requirement.id);
+  const note = controlReviews[key]?.note || '';
+  return `<div onclick="event.stopPropagation()" style="margin-top:10px">
+    <div class="section-label">Pentester review</div>
+    <textarea class="comp-review-note" placeholder="What you checked, and the judgement" oninput="setRequirementNote('${esc(complianceBenchmarkId)}','${esc(requirement.id)}', this)">${esc(note)}</textarea>
+  </div>`;
+}
+
+function linkedCustomFindings(requirementId) {
+  return rawFindings.filter(finding =>
+    finding.source === 'custom' &&
+    (finding.controlRefs || []).some(control => control.benchmarkId === complianceBenchmarkId && control.requirementId === requirementId)
+  );
+}
+
+function renderCustomLinked(requirement) {
+  const linked = linkedCustomFindings(requirement.id);
+  if (!linked.length) return '';
+  return `<div class="comp-detail-label" style="margin-top:8px">Custom findings</div><div class="comp-linked-findings">${linked.map(finding => `
+    <div class="comp-linked-finding">
+      <span class="comp-linked-title">${esc(finding.title)}</span>
+      <span class="tag tag-custom">Custom</span>
+    </div>`).join('')}</div>`;
+}
+
+function paintReviewMarks(key, review) {
+  const validated = Boolean(review && review.status);
+  document.querySelectorAll('[data-review-key]').forEach(el => {
+    if (el.getAttribute('data-review-key') !== key) return;
+    el.classList.toggle('validated', validated);
+    el.classList.toggle('unvalidated', !validated);
+    const requirementId = el.getAttribute('data-requirement-id') || '';
+    const status = review?.status ? ` · ${review.status.toUpperCase()}` : '';
+    el.textContent = `${requirementId} ${validated ? 'Validated' : 'Not validated'}${status}`;
+  });
+}
+
+function rememberControlReview(benchmarkId, requirementId, patch) {
+  const key = reviewKey(benchmarkId, requirementId);
+  const current = { status: '', note: '', ...(controlReviews[key] || {}), ...patch, updatedAt: new Date().toISOString() };
+  if (!current.status && !current.note) delete controlReviews[key];
+  else controlReviews[key] = current;
+  paintReviewMarks(key, controlReviews[key]);
+  scheduleSave();
+}
+
+function setRequirementReview(benchmarkId, requirementId, selectEl) {
+  rememberControlReview(benchmarkId, requirementId, { status: selectEl.value });
+}
+
+function setRequirementNote(benchmarkId, requirementId, inputEl) {
+  rememberControlReview(benchmarkId, requirementId, { note: inputEl.value });
+}
+
+function newCustomId() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return `custom_${[...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function toggleCustomReason() {
+  const status = document.getElementById('custom-status').value;
+  document.getElementById('custom-reason-wrap').hidden = status !== 'false-positive';
+}
+
+function customAssetRow(asset = {}) {
+  const row = document.createElement('div');
+  row.className = 'custom-asset-row';
+  row.innerHTML = `
+    <input class="form-input custom-asset-name" maxlength="300" placeholder="Asset name" value="${esc(asset.name || '')}">
+    <input class="form-input custom-asset-region" maxlength="200" placeholder="Region" value="${esc(asset.region || '')}">
+    <select class="form-input custom-asset-status">
+      <option value="FAIL">Failed</option>
+      <option value="PASS">Passed</option>
+      <option value="MANUAL">Manual</option>
+    </select>
+    <button class="btn small danger" type="button">Remove</button>`;
+  row.querySelector('.custom-asset-status').value = asset.status || 'FAIL';
+  row.querySelector('button').addEventListener('click', () => row.remove());
+  return row;
+}
+
+function addCustomAsset(asset) {
+  document.getElementById('custom-assets').appendChild(customAssetRow(asset));
+}
+
+function knownProjectAssets() {
+  const map = new Map();
+  for (const finding of rawFindings) {
+    if (finding.source === 'custom') continue;
+    for (const asset of finding.assets || []) {
+      if (!asset.name || asset.absent) continue;
+      const key = [asset.name, asset.region || '', asset.subscription || ''].join('|');
+      if (!map.has(key)) map.set(key, asset);
+    }
+  }
+  return [...map.values()];
+}
+
+function renderCustomAssetChoices() {
+  const query = (document.getElementById('custom-asset-search').value || '').toLowerCase();
+  const choices = knownProjectAssets().filter(asset => !query || `${asset.name} ${asset.region || ''} ${asset.subscription || ''}`.toLowerCase().includes(query)).slice(0, 30);
+  const el = document.getElementById('custom-asset-choices');
+  if (!choices.length) {
+    el.innerHTML = '<div class="import-bm-hint" style="padding:8px">No matching project assets.</div>';
+    return;
+  }
+  el.innerHTML = choices.map((asset, index) => `
+    <button class="btn small" type="button" data-asset-index="${index}" style="margin:6px">${esc(asset.name)}${asset.region ? ' · ' + esc(asset.region) : ''}</button>
+  `).join('');
+  el.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => addCustomAsset(choices[Number(button.dataset.assetIndex)]));
+  });
+}
+
+function renderCustomControlChoices() {
+  const query = (document.getElementById('custom-control-search')?.value || '').toLowerCase();
+  const el = document.getElementById('custom-controls');
+  if (!preferredBenchmarks.length) {
+    el.innerHTML = '<div class="import-bm-hint" style="padding:8px">Select benchmarks in Settings first.</div>';
+    return;
+  }
+  const rows = [];
+  for (const benchmarkId of preferredBenchmarks) {
+    const benchmark = benchmarkCache.get(benchmarkId);
+    if (!benchmark?.Requirements) continue;
+    const name = getBenchmarkDisplayName(benchmarkId);
+    for (const requirement of benchmark.Requirements) {
+      const hay = `${requirement.Id} ${requirement.Description || ''} ${name}`.toLowerCase();
+      if (query && !hay.includes(query)) continue;
+      rows.push({ benchmarkId, requirement, name });
+    }
+  }
+  if (!rows.length) {
+    el.innerHTML = '<div class="import-bm-hint" style="padding:8px">No controls match.</div>';
+    return;
+  }
+  el.innerHTML = rows.slice(0, 80).map(row => {
+    const value = `${row.benchmarkId}|${row.requirement.Id}`;
+    return `<label class="import-bm-item">
+      <input type="checkbox" value="${esc(value)}"${customControlPicks.has(value) ? ' checked' : ''}>
+      <span class="import-bm-name">${esc(row.requirement.Id)}</span>
+      <span class="import-bm-meta">${esc(row.name)} · ${esc(row.requirement.Description || '')}</span>
+    </label>`;
+  }).join('');
+  el.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', () => {
+      if (input.checked) customControlPicks.add(input.value);
+      else customControlPicks.delete(input.value);
+    });
+  });
+}
+
+function syncCustomFindings() {
+  const prowler = rawFindings.filter(finding => finding.source !== 'custom');
+  rawFindings = sortFindings([...prowler, ...customFindings.map(materializeCustomFinding)]);
+  buildCheckNameMap();
+  buildFilterOptions();
+  applyFilters();
+  if (currentView === 'reporting') renderReportingView();
+  if (currentView === 'compliance' && loadedBenchmark) renderComplianceView();
+}
+
+async function openCustomFinding(id) {
+  customDraftId = id || null;
+  const existing = id ? customFindings.find(finding => finding.id === id) : null;
+  document.getElementById('custom-finding-title').textContent = existing ? 'Edit finding' : 'Add finding';
+  document.getElementById('custom-title').value = existing?.title || '';
+  document.getElementById('custom-severity').value = existing?.severity || 'medium';
+  document.getElementById('custom-status').value = analysisStatuses[id] || '';
+  document.getElementById('custom-cloud').value = existing?.cloud === 'Custom' ? '' : (existing?.cloud || '');
+  document.getElementById('custom-service').value = existing?.service || '';
+  document.getElementById('custom-reason').value = id ? (analysisReasons[id] || '') : '';
+  document.getElementById('custom-details').value = existing?.details || '';
+  document.getElementById('custom-impact').value = existing?.impact || '';
+  document.getElementById('custom-remediation').value = existing?.remediation || '';
+  document.getElementById('custom-note').value = id ? (analysisNotes[id] || '') : '';
+  document.getElementById('custom-error').textContent = '';
+  document.getElementById('custom-asset-search').value = '';
+  document.getElementById('custom-control-search').value = '';
+  const assets = document.getElementById('custom-assets');
+  assets.innerHTML = '';
+  for (const asset of existing?.assets || []) addCustomAsset(asset);
+  if (!existing) addCustomAsset();
+  toggleCustomReason();
+  document.getElementById('custom-finding-modal').classList.add('open');
+  await ensurePreferredBenchmarksLoaded();
+  customControlPicks = new Set((existing?.controls || []).map(control => `${control.benchmarkId}|${control.requirementId}`));
+  renderCustomControlChoices();
+  renderCustomAssetChoices();
+  document.getElementById('custom-title').focus();
+}
+
+function closeCustomFinding() {
+  document.getElementById('custom-finding-modal').classList.remove('open');
+  customDraftId = null;
+}
+
+function submitCustomFinding(event) {
+  event.preventDefault();
+  const title = document.getElementById('custom-title').value.trim();
+  const error = document.getElementById('custom-error');
+  if (!title) {
+    error.textContent = 'A title is required.';
+    return;
+  }
+  const assets = [...document.querySelectorAll('#custom-assets .custom-asset-row')].map(row => ({
+    name: row.querySelector('.custom-asset-name').value.trim(),
+    region: row.querySelector('.custom-asset-region').value.trim(),
+    status: row.querySelector('.custom-asset-status').value
+  })).filter(asset => asset.name);
+  if (!assets.length) {
+    error.textContent = 'Add at least one asset.';
+    return;
+  }
+  const controls = [...customControlPicks].map(value => {
+    const sep = value.indexOf('|');
+    const benchmarkId = value.slice(0, sep);
+    const requirementId = value.slice(sep + 1);
+    return {
+      benchmarkId,
+      requirementId,
+      label: `${getBenchmarkDisplayName(benchmarkId)}: ${requirementId}`
+    };
+  });
+  const id = customDraftId || newCustomId();
+  const previous = customFindings.find(finding => finding.id === id);
+  const record = {
+    id,
+    title,
+    severity: document.getElementById('custom-severity').value,
+    cloud: document.getElementById('custom-cloud').value.trim() || 'Custom',
+    service: document.getElementById('custom-service').value.trim(),
+    details: document.getElementById('custom-details').value,
+    impact: document.getElementById('custom-impact').value,
+    remediation: document.getElementById('custom-remediation').value,
+    controls,
+    assets,
+    createdAt: previous?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  customFindings = previous
+    ? customFindings.map(finding => finding.id === id ? record : finding)
+    : customFindings.concat(record);
+  const status = document.getElementById('custom-status').value;
+  const reason = document.getElementById('custom-reason').value;
+  const note = document.getElementById('custom-note').value;
+  if (status) analysisStatuses[id] = status;
+  else delete analysisStatuses[id];
+  if (reason) analysisReasons[id] = reason;
+  else delete analysisReasons[id];
+  if (note) analysisNotes[id] = note;
+  else delete analysisNotes[id];
+  closeCustomFinding();
+  syncCustomFindings();
+  scheduleSave({ findingCount: rawFindings.length });
+  toast(previous ? 'Finding updated' : 'Finding added');
+}
+
+function deleteCustomFinding(id) {
+  if (!confirm('Delete this custom finding?')) return;
+  customFindings = customFindings.filter(finding => finding.id !== id);
+  delete analysisStatuses[id];
+  delete analysisReasons[id];
+  delete analysisNotes[id];
+  syncCustomFindings();
+  scheduleSave({ findingCount: rawFindings.length });
+  toast('Finding deleted');
+}
+
+function localDateInput(daysAhead) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function renderApiKeys(keys) {
+  const el = document.getElementById('api-key-list');
+  if (!keys.length) {
+    el.innerHTML = '<p class="import-bm-hint">No keys yet.</p>';
+    return;
+  }
+  el.innerHTML = keys.map(key => {
+    const when = key.expiresAt ? new Date(key.expiresAt).toLocaleString() : '';
+    const used = key.lastUsedAt ? `Last used ${new Date(key.lastUsedAt).toLocaleString()}. ` : 'Not used yet. ';
+    const addresses = key.ipAllowlist?.length ? key.ipAllowlist.join(', ') : 'Any address';
+    return `<div class="api-key-row">
+      <div>
+        <strong>${esc(key.name)}</strong>
+        <div class="api-key-meta">${esc(key.projectName || key.projectId)} · ${key.scopes?.includes('write') ? 'Read and write' : 'Read only'} · ${esc(key.prefix)}…</div>
+        <div class="api-key-meta">${used}${key.expired ? 'Expired' : 'Expires'} ${esc(when)}. ${esc(addresses)}</div>
+      </div>
+      <button class="btn small danger" type="button" data-key-id="${esc(key.id)}">Revoke</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('button[data-key-id]').forEach(button => {
+    button.addEventListener('click', () => revokeApiKey(button.dataset.keyId));
+  });
+}
+
+async function openApiAccess() {
+  document.getElementById('api-error').textContent = '';
+  document.getElementById('api-token-panel').hidden = true;
+  apiTokenOnce = '';
+  document.getElementById('api-expires').min = localDateInput(0);
+  document.getElementById('api-expires').max = localDateInput(90);
+  document.getElementById('api-expires').value = localDateInput(30);
+  document.getElementById('api-modal').classList.add('open');
+  try {
+    const [keys, projects] = await Promise.all([
+      api('GET', '/api/access'),
+      api('GET', '/api/projects')
+    ]);
+    renderApiKeys(keys.keys || []);
+    const select = document.getElementById('api-project');
+    select.innerHTML = (projects || []).map(project => `<option value="${esc(project.id)}">${esc(project.name || project.id)}</option>`).join('');
+    if (currentProjectId) select.value = currentProjectId;
+  } catch (err) {
+    document.getElementById('api-error').textContent = err.message || 'Could not load API keys.';
+  }
+}
+
+function closeApiAccess() {
+  document.getElementById('api-modal').classList.remove('open');
+  apiTokenOnce = '';
+  document.getElementById('api-token-value').textContent = '';
+}
+
+async function submitApiKey(event) {
+  event.preventDefault();
+  const error = document.getElementById('api-error');
+  error.textContent = '';
+  const expires = document.getElementById('api-expires').value;
+  if (!expires) {
+    error.textContent = 'Set an expiry date.';
+    return;
+  }
+  const button = document.getElementById('api-submit');
+  button.disabled = true;
+  try {
+    const result = await api('POST', '/api/access', {
+      name: document.getElementById('api-name').value.trim(),
+      projectId: document.getElementById('api-project').value,
+      expiresAt: new Date(`${expires}T23:59:59`).toISOString(),
+      ipAllowlist: document.getElementById('api-ips').value.split(/\n|,/).map(item => item.trim()).filter(Boolean),
+      write: document.getElementById('api-write').checked
+    });
+    apiTokenOnce = result.token || '';
+    document.getElementById('api-token-value').textContent = apiTokenOnce;
+    document.getElementById('api-token-panel').hidden = false;
+    document.getElementById('api-name').value = '';
+    document.getElementById('api-ips').value = '';
+    document.getElementById('api-write').checked = false;
+    const keys = await api('GET', '/api/access');
+    renderApiKeys(keys.keys || []);
+  } catch (err) {
+    error.textContent = err.message || 'Could not create the key.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function copyApiToken() {
+  if (!apiTokenOnce) return;
+  navigator.clipboard.writeText(apiTokenOnce).then(() => toast('Token copied')).catch(() => toast('Copy failed', 'error'));
+}
+
+async function revokeApiKey(id) {
+  if (!confirm('Revoke this key? Harnesses using it will stop immediately.')) return;
+  try {
+    await api('DELETE', `/api/access/${id}`);
+    const keys = await api('GET', '/api/access');
+    renderApiKeys(keys.keys || []);
+    toast('Key revoked');
+  } catch (err) {
+    document.getElementById('api-error').textContent = err.message || 'Could not revoke the key.';
+  }
+}
+
+// =========================================================
+// AUTH
+// =========================================================
+async function authRequest(method, url, body) {
+  const headers = { 'X-Requested-With': 'prowler-reviewer' };
+  const opts = { method, credentials: 'same-origin', headers };
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, opts);
+  let data = null;
+  try { data = await r.json(); } catch { data = {}; }
+  return { ok: r.ok, status: r.status, data };
+}
+
+function setAuthError(message) {
+  const el = document.getElementById('auth-error');
+  if (el) el.textContent = message || '';
+}
+
+function showAuth(mode) {
+  authMode = mode;
+  const register = mode === 'register';
+  document.getElementById('auth-screen').classList.add('open');
+  document.getElementById('app').classList.remove('ready');
+  document.getElementById('auth-checking').hidden = true;
+  document.getElementById('auth-form').hidden = false;
+  document.getElementById('auth-kicker').textContent = register ? 'First launch' : 'Account';
+  document.getElementById('auth-title').textContent = register ? 'Create account' : 'Sign in';
+  document.getElementById('auth-confirm-wrap').hidden = !register;
+  document.getElementById('auth-hint').hidden = !register;
+  document.getElementById('auth-reset').hidden = register;
+  document.getElementById('auth-footnote').textContent = register
+    ? 'This account is stored only on this machine. The password is saved as a scrypt hash, not as text.'
+    : '';
+  document.getElementById('auth-password').autocomplete = register ? 'new-password' : 'current-password';
+  document.getElementById('auth-submit').textContent = register ? 'Create account' : 'Sign in';
+  document.getElementById('auth-form').reset();
+  setAuthError('');
+  document.getElementById('auth-username').focus();
+}
+
+function enterApp(username) {
+  setAuthError('');
+  document.getElementById('auth-screen').classList.remove('open');
+  document.getElementById('app').classList.add('ready');
+  document.getElementById('header-user').textContent = username || '';
+  if (!projectsLoaded) {
+    projectsLoaded = true;
+    loadProjectList();
+  }
+}
+
+function handleSessionExpired() {
+  if (sessionEnding) return;
+  sessionEnding = true;
+  const wasIn = document.getElementById('app').classList.contains('ready');
+  if (wasIn) goHome({ skipLoad: true });
+  projectsLoaded = false;
+  showAuth('login');
+  if (wasIn) setAuthError('Your session ended. Sign in again.');
+  sessionEnding = false;
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  const username = document.getElementById('auth-username').value;
+  const password = document.getElementById('auth-password').value;
+  const confirm = document.getElementById('auth-confirm').value;
+  const button = document.getElementById('auth-submit');
+  if (authMode === 'register') {
+    if (password.length < 12) {
+      setAuthError('Password must be at least 12 characters.');
+      return;
+    }
+    if (password !== confirm) {
+      setAuthError('Passwords do not match.');
+      return;
+    }
+  }
+  setAuthError('');
+  button.disabled = true;
+  button.textContent = authMode === 'register' ? 'Creating account…' : 'Signing in…';
+  try {
+    const path = authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const res = await authRequest('POST', path, { username, password });
+    if (res.status === 403 && authMode === 'register') {
+      const me = await authRequest('GET', '/api/auth/me');
+      if (me.ok && me.data && me.data.username) {
+        enterApp(me.data.username);
+        return;
+      }
+      showAuth('login');
+      setAuthError((res.data && res.data.error) || 'An account already exists. Sign in.');
+      return;
+    }
+    if (!res.ok) {
+      setAuthError((res.data && res.data.error) || 'Could not sign in.');
+      return;
+    }
+    enterApp((res.data && res.data.username) || username.trim());
+  } catch {
+    setAuthError('Cannot reach the server.');
+  } finally {
+    button.disabled = false;
+    if (document.getElementById('auth-screen').classList.contains('open')) {
+      button.textContent = authMode === 'register' ? 'Create account' : 'Sign in';
+    }
+  }
+}
+
+async function logout() {
+  try { await authRequest('POST', '/api/auth/logout'); } catch { /* still leave the session locally */ }
+  goHome({ skipLoad: true });
+  projectsLoaded = false;
+  const list = document.getElementById('project-list');
+  if (list) list.innerHTML = '';
+  showAuth('login');
+}
+
+function openPasswordModal() {
+  document.getElementById('password-form').reset();
+  document.getElementById('password-error').textContent = '';
+  document.getElementById('password-modal').classList.add('open');
+  document.getElementById('pw-current').focus();
+}
+
+function closePasswordModal() {
+  document.getElementById('password-modal').classList.remove('open');
+  document.getElementById('password-form').reset();
+  document.getElementById('password-error').textContent = '';
+}
+
+async function submitPasswordChange(event) {
+  event.preventDefault();
+  const currentPassword = document.getElementById('pw-current').value;
+  const newPassword = document.getElementById('pw-new').value;
+  const confirm = document.getElementById('pw-confirm').value;
+  const error = document.getElementById('password-error');
+  const button = document.getElementById('pw-submit');
+  if (newPassword.length < 12) {
+    error.textContent = 'Password must be at least 12 characters.';
+    return;
+  }
+  if (newPassword !== confirm) {
+    error.textContent = 'Passwords do not match.';
+    return;
+  }
+  button.disabled = true;
+  try {
+    const res = await authRequest('POST', '/api/auth/password', { currentPassword, newPassword });
+    if (res.status === 401) {
+      closePasswordModal();
+      handleSessionExpired();
+      return;
+    }
+    if (!res.ok) {
+      error.textContent = (res.data && res.data.error) || 'Could not update the password.';
+      return;
+    }
+    closePasswordModal();
+    goHome({ skipLoad: true });
+    projectsLoaded = false;
+    showAuth('login');
+    setAuthError('Password updated. Sign in with the new password.');
+  } catch {
+    error.textContent = 'Cannot reach the server.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function boot() {
+  try {
+    const status = await authRequest('GET', '/api/auth/status');
+    if (!status.ok) throw new Error('status');
+    if (status.data && status.data.setupRequired) {
+      showAuth('register');
+      return;
+    }
+    const me = await authRequest('GET', '/api/auth/me');
+    if (me.ok && me.data && me.data.username) {
+      enterApp(me.data.username);
+      return;
+    }
+    showAuth('login');
+  } catch {
+    showAuth('login');
+    setAuthError('Cannot reach the server.');
+  }
 }
 
 // =========================================================
 // INIT
 // =========================================================
-loadProjectList();
+document.getElementById('auth-form').addEventListener('submit', submitAuth);
+document.getElementById('password-form').addEventListener('submit', submitPasswordChange);
+document.getElementById('custom-finding-form').addEventListener('submit', submitCustomFinding);
+document.getElementById('api-form').addEventListener('submit', submitApiKey);
+mountIcons();
+boot();
 </script>
 </body>
 </html>

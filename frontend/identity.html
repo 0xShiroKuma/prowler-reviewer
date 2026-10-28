@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prowler Reviewer · Visual identity</title>
+<style>
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/fonts/montserrat-300.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/montserrat-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/fonts/inter-300.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/inter-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/inter-600.woff2") format("woff2");
+}
+
+:root {
+  --ink: #141414;
+  --paper: #f9f8f8;
+  --signal: #ca3e47;
+  --signal-deep: #a72e36;
+  --body: #424242;
+  --muted: #6d6d6d;
+  --line: #d7d3d3;
+  --white: #ffffff;
+  --pass: #53aa33;
+  --flag: #f9a009;
+  --low: #ffcb0d;
+  --high: #df3d03;
+  --critical: #cc0501;
+  --false: #bfbfbf;
+  --font-display: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--body);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+a { color: inherit; }
+button, input, select { font: inherit; }
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 28px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  font-size: 13px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.top nav { display: flex; align-items: center; gap: 22px; }
+.top nav a {
+  color: var(--paper);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 300;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 0;
+  border: 1px solid var(--signal);
+  background: var(--signal);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pill:hover { background: var(--signal-deep); }
+.pill:active { transform: translateY(1px); }
+.pill.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.pill.ghost:hover { background: var(--ink); color: var(--paper); }
+.pill.quiet {
+  min-height: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--signal);
+  border-color: transparent;
+}
+.pill.quiet:hover { background: transparent; color: var(--signal-deep); }
+.pill:disabled, .pill[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+main { padding: 72px 28px 96px; max-width: 1180px; margin: 0 auto; }
+
+.hero {
+  display: grid;
+  gap: 36px;
+  align-items: end;
+  padding-bottom: 28px;
+}
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(42px, 6vw, 78px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.hero h1 span { display: block; color: var(--signal); }
+.hero-note {
+  border-top: 1px solid var(--ink);
+  padding-top: 18px;
+}
+.hero-note p { margin: 0; max-width: 38ch; }
+.hero-note p + p { margin-top: 12px; color: var(--muted); font-size: 14px; }
+.rule { height: 4px; background: var(--signal); margin: 8px 0 0; }
+
+.section {
+  display: grid;
+  gap: 28px;
+  border-top: 1px solid var(--line);
+  padding-top: 36px;
+  margin-top: 56px;
+}
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.section header p { margin: 14px 0 0; max-width: 36ch; font-size: 14px; line-height: 1.6; }
+
+.swatches { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); }
+.swatch { min-height: 148px; padding: 18px; }
+.swatch strong, .swatch span { display: block; }
+.swatch strong { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+.swatch span { margin-top: 8px; font-size: 12px; opacity: 0.75; }
+.ink { background: var(--ink); color: var(--paper); }
+.paper { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.signal { background: var(--signal); color: var(--white); }
+.body-swatch { background: var(--body); color: var(--paper); }
+
+.type-board { display: grid; border: 1px solid var(--ink); background: var(--white); }
+.type-board > div { padding: 28px; }
+.type-board .dark { background: var(--ink); color: var(--paper); }
+.display-sample {
+  margin: 22px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.display-sample em { font-style: normal; color: var(--signal); }
+.kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dark .kicker { color: #bdbdbd; }
+.nav-sample { margin-top: 22px; }
+.nav-sample p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+.nav-sample p.current { color: var(--white); font-weight: 700; }
+
+.specimen { background: var(--white); border: 1px solid var(--ink); }
+.specimen-pad { padding: 28px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.row + .row { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 0 18px;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 3px solid var(--signal);
+}
+.app-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+.app-logo span { color: var(--signal); }
+.app-meta { font-size: 12px; font-weight: 300; color: #c8c8c8; }
+.tabs { display: flex; background: #1c1c1c; }
+.tab {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #b5b5b5;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tab.on { color: var(--paper); border-bottom-color: var(--signal); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid currentColor;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sev-critical { color: var(--critical); }
+.sev-high { color: var(--high); }
+.sev-medium { color: var(--flag); }
+.sev-low { color: #8a6a00; }
+.sev-info { color: var(--muted); }
+.st-confirmed { color: var(--signal); }
+.st-flagged { color: #8a5a00; }
+.st-false { color: #666; }
+.st-reported { color: #2f7a1c; }
+.st-unset { color: var(--muted); }
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+.stat { padding: 16px 20px; min-width: 96px; }
+.stat b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat span {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bdbdbd;
+}
+.fail { color: var(--signal); }
+.ok { color: #7dce63; }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: end;
+  padding: 16px;
+  background: #1c1c1c;
+  color: var(--paper);
+}
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bdbdbd;
+}
+.field input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #5a5a5a;
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+.cms-menu { position: relative; }
+.cms-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  min-width: 13rem;
+  padding: 0 16px;
+  border: 0;
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.cms-menu-trigger svg { transition: transform 0.15s; }
+.cms-menu.open .cms-menu-trigger svg { transform: rotate(180deg); }
+.cms-menu-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  min-width: 16rem;
+  padding: 8px;
+  background: #fff;
+  color: #141414;
+  border: 1px solid #d4d0d0;
+}
+.cms-menu.open .cms-menu-panel { display: block; }
+.cms-menu-panel p {
+  margin: 0;
+  padding: 4px 12px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #737373;
+}
+.cms-menu-panel button {
+  display: flex;
+  width: 100%;
+  min-height: 3.5rem;
+  align-items: center;
+  padding: 8px 12px;
+  border: 0;
+  border-top: 1px solid #e5e5e5;
+  background: #fff;
+  color: #141414;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.cms-menu-panel button:hover { background: #f5f5f5; }
+input[type=checkbox] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--ink);
+  background: #fff;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+}
+input[type=checkbox]::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid var(--paper);
+  border-bottom: 2px solid var(--paper);
+  transform: rotate(-45deg) translateY(-1px);
+  opacity: 0;
+}
+input[type=checkbox]:checked { background: var(--ink); }
+input[type=checkbox]:checked::after { opacity: 1; }
+.field input:focus, .field select:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+
+.finding { background: #1c1c1c; color: var(--paper); border-left: 3px solid var(--signal); }
+.finding header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+}
+.finding h3 {
+  margin: 0;
+  flex: 1 1 220px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+.finding .body { padding: 0 16px 16px; color: #d7d7d7; font-size: 14px; }
+.finding .body p { margin: 0 0 10px; }
+.asset {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #333;
+  font-size: 13px;
+}
+
+.report { background: var(--white); color: var(--ink); }
+.report h3 {
+  margin: 0;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.block { padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.block:last-child { border-bottom: 0; }
+.block .label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.block .label-row span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.copy {
+  border: 0;
+  background: transparent;
+  color: var(--signal);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+}
+
+.form-grid { display: grid; gap: 16px; }
+.light-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.light-field input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #bdbdbd;
+  border-radius: 0;
+  background: var(--white);
+  color: var(--ink);
+}
+.light-field input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.bm {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.bm span { display: grid; gap: 2px; }
+.bm strong { color: var(--ink); font-weight: 600; }
+.bm small { color: var(--muted); font-size: 12px; }
+
+.states { border: 1px solid var(--ink); background: var(--white); }
+.state { display: grid; gap: 4px; padding: 16px 18px; border-top: 1px solid var(--line); }
+.state:first-child { border-top: 0; }
+.state b { color: var(--ink); font-size: 14px; }
+.state span { color: var(--muted); font-size: 13px; }
+.state.bad b { color: var(--signal); }
+.state.good b { color: #2f7a1c; }
+
+.note {
+  border: 1px solid var(--ink);
+  background: var(--white);
+  padding: 28px;
+}
+.note p { margin: 0; max-width: 62ch; font-size: 18px; line-height: 1.45; color: var(--ink); }
+.note .row { margin-top: 22px; }
+
+@media (min-width: 860px) {
+  .hero { grid-template-columns: 1.3fr 0.7fr; }
+  .section { grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr); gap: 48px; }
+  .swatches { grid-template-columns: repeat(4, 1fr); }
+  .type-board { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+  .top { padding: 0 16px; }
+  .top nav a:not(.pill) { display: none; }
+  main { padding: 40px 16px 72px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill:active { transform: none; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="mark" href="#top">Prowler Reviewer</a>
+  <nav>
+    <a href="#foundations">Foundations</a>
+    <a href="#elements">Elements</a>
+    <a class="pill" href="/">Open the tool</a>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <h1>Visual identity<span>for the review tool.</span></h1>
+    <div class="hero-note">
+      <p>Division5 type and colour, set out the way the CMS identity page presents its elements.</p>
+      <p>This page is the reference. The working reviewer keeps its current screens until this direction is applied.</p>
+    </div>
+  </section>
+  <div class="rule" aria-hidden="true"></div>
+
+  <section class="section" id="foundations">
+    <header>
+      <p class="eyebrow">01 / Colour</p>
+      <h2>Signal on ink and paper</h2>
+      <p>The brand uses one red, near-black, and the Division5 paper white. Severity colours stay separate so a finding’s risk is not confused with the brand.</p>
+    </header>
+    <div>
+      <div class="swatches">
+        <div class="swatch ink"><strong>Ink</strong><span>#141414</span></div>
+        <div class="swatch paper"><strong>Paper</strong><span>#F9F8F8</span></div>
+        <div class="swatch signal"><strong>Signal</strong><span>#CA3E47</span></div>
+        <div class="swatch body-swatch"><strong>Body</strong><span>#424242</span></div>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <span class="tag sev-critical">Critical</span>
+        <span class="tag sev-high">High</span>
+        <span class="tag sev-medium">Medium</span>
+        <span class="tag sev-low">Low</span>
+        <span class="tag sev-info">Info</span>
+        <span class="tag st-reported">Pass</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">02 / Type</p>
+      <h2>Montserrat for display, Inter for work</h2>
+      <p>Headlines are Montserrat, bold and uppercase, with the second line in signal red. Labels, findings, and form text use Inter.</p>
+    </header>
+    <div class="type-board">
+      <div>
+        <p class="kicker">Display</p>
+        <p class="display-sample">Prowler<br><em>reviewer.</em></p>
+      </div>
+      <div class="dark">
+        <p class="kicker">Views</p>
+        <div class="nav-sample">
+          <p class="current">Analysis</p>
+          <p>Compliance</p>
+          <p>Reporting</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="elements">
+    <header>
+      <p class="eyebrow">03 / Chrome</p>
+      <h2>The frame of a review</h2>
+      <p>A dark bar, a red rule, and three view names. The project name sits in Inter beside the wordmark.</p>
+    </header>
+    <div class="specimen">
+      <div class="app-bar">
+        <div class="app-logo">Prowler <span>Reviewer</span></div>
+        <div class="app-meta">example_output_aws.ocsf.json</div>
+      </div>
+      <div class="tabs">
+        <button class="tab on" type="button">Analysis</button>
+        <button class="tab" type="button">Compliance</button>
+        <button class="tab" type="button">Reporting</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">04 / Actions</p>
+      <h2>Sharp actions, then quiet alternatives</h2>
+      <p>Primary actions are signal rectangles. Secondary actions are outlined. Destructive and disabled states stay explicit.</p>
+    </header>
+    <div class="specimen specimen-pad">
+      <div class="row">
+        <button class="pill" type="button">Create project</button>
+        <button class="pill ghost" type="button">Export CSV</button>
+        <button class="pill quiet" type="button">Copy TSV</button>
+        <button class="pill" type="button" style="background:#141414;border-color:#141414">Delete</button>
+        <button class="pill" type="button" disabled>Saving</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">05 / Status</p>
+      <h2>Reviewer marks, not brand marks</h2>
+      <p>Analysis status is what the reviewer decides. Pass, fail, and not applicable belong to the compliance view.</p>
+    </header>
+    <div class="specimen specimen-pad">
+      <div class="tags">
+        <span class="tag st-confirmed">Confirmed</span>
+        <span class="tag st-flagged">Flagged</span>
+        <span class="tag st-false">False positive</span>
+        <span class="tag st-reported">Reported</span>
+        <span class="tag st-unset">Unset</span>
+      </div>
+      <div class="row">
+        <span class="tag" style="color:var(--signal)">Fail</span>
+        <span class="tag st-reported">Pass</span>
+        <span class="tag st-unset">N/A</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">06 / Findings</p>
+      <h2>One card per check</h2>
+      <p>The check title, severity, and analysis status sit on one line. Failed assets stay under the description. The red edge marks a failure.</p>
+    </header>
+    <article class="specimen finding">
+      <header>
+        <h3>IAM Access Analyzer is enabled</h3>
+        <span class="tag sev-low">Low</span>
+        <span class="tag st-unset">Unset</span>
+        <span class="tag" style="color:#f9f8f8;border-color:#5a5a5a">AWS</span>
+      </header>
+      <div class="body">
+        <p>IAM Access Analyzer in account 123456789012 is not enabled.</p>
+        <div class="asset"><span>analyzer/unknown</span><span>ap-northeast-1</span></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">07 / Filters and counts</p>
+      <h2>Scan the set before opening a card</h2>
+      <p>Counts use Montserrat. Filters use a black trigger and a white menu, the same pattern as the CMS update list.</p>
+    </header>
+    <div class="specimen">
+      <div class="stats">
+        <div class="stat"><b>5</b><span>Findings</span></div>
+        <div class="stat"><b class="fail">2</b><span>Failed</span></div>
+        <div class="stat"><b class="ok">0</b><span>Passed</span></div>
+        <div class="stat"><b>5</b><span>Assets</span></div>
+      </div>
+      <div class="filters">
+        <div class="field">
+          <label for="q">Search</label>
+          <input id="q" type="text" value="access analyzer" readonly>
+        </div>
+        <div class="field">
+          <label for="cloud">Cloud</label>
+          <div class="cms-menu" id="cloud-menu">
+            <button class="cms-menu-trigger" id="cloud" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span>AWS</span>
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div class="cms-menu-panel" role="menu">
+              <p>Cloud</p>
+              <button type="button" data-value="AWS">AWS</button>
+              <button type="button" data-value="Azure">Azure</button>
+              <button type="button" data-value="GCP">GCP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">08 / Reporting</p>
+      <h2>Sections that can be copied</h2>
+      <p>Confirmed findings open into Details, Impact, Remediation, and Affected assets. Each block has one copy action.</p>
+    </header>
+    <article class="specimen report">
+      <h3>Account contact details are current</h3>
+      <div class="block">
+        <div class="label-row"><span>Details</span><button class="copy" type="button">Copy</button></div>
+        <p style="margin:0">The AWS account contact email and telephone details are current and map to more than one person.</p>
+      </div>
+      <div class="block">
+        <div class="label-row"><span>Affected assets</span><button class="copy" type="button">Copy</button></div>
+        <p style="margin:0">123456789012</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">09 / Import</p>
+      <h2>Name the project, then pick benchmarks</h2>
+      <p>Labels sit above the fields. Benchmark rows use a square checkbox. The create action is the only signal rectangle in the dialog.</p>
+    </header>
+    <div class="specimen specimen-pad">
+      <div class="form-grid">
+        <div class="light-field">
+          <label for="name">Project name</label>
+          <input id="name" value="AWS sample review" readonly>
+        </div>
+        <div class="light-field">
+          <label for="file">Scan file</label>
+          <input id="file" value="example_output_aws.ocsf.json" readonly>
+        </div>
+      </div>
+      <div style="margin-top:18px">
+        <label class="bm"><input type="checkbox" checked><span><strong>CIS Amazon Web Services Foundations Benchmark v5.0</strong><small>AWS · 63 req</small></span></label>
+        <label class="bm"><input type="checkbox"><span><strong>CSA Cloud Controls Matrix v4.0</strong><small>Multi-cloud · 65 req</small></span></label>
+      </div>
+      <div class="row">
+        <button class="pill" type="button">Create project</button>
+        <button class="pill quiet" type="button">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">10 / Feedback</p>
+      <h2>Say what happened</h2>
+      <p>Saving, success, and blocked actions use a plain sentence. Red is reserved for something the reviewer must deal with.</p>
+    </header>
+    <div class="states">
+      <div class="state"><b>Saving the review</b><span>Analysis status is written to this project.</span></div>
+      <div class="state good"><b>Project saved</b><span>example_output_aws.ocsf.json is ready to review.</span></div>
+      <div class="state bad"><b>That file is not an OCSF array</b><span>Choose a Prowler json-ocsf export and try again.</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <header>
+      <p class="eyebrow">11 / Next</p>
+      <h2>Apply this after it is accepted</h2>
+      <p>The live Analysis, Compliance, and Reporting screens use these controls.</p>
+    </header>
+    <div class="note">
+      <p>Buttons are sharp rectangles. Checkboxes are squares with a check. Menus use a black trigger and a white ruled list.</p>
+      <div class="row">
+        <a class="pill" href="/">Open the tool</a>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+  const menu = document.getElementById('cloud-menu');
+  const trigger = menu.querySelector('.cms-menu-trigger');
+  trigger.addEventListener('click', () => {
+    const open = menu.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', String(open));
+  });
+  menu.querySelectorAll('.cms-menu-panel button').forEach(button => {
+    button.addEventListener('click', () => {
+      trigger.querySelector('span').textContent = button.dataset.value;
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    });
+  });
+</script>
+</body>
+</html>
