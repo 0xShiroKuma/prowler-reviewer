@@ -158,6 +158,8 @@ docker compose exec -u root backend tail -n 50 /data/auth/audit.log
 
 A signed-in user can create a key from **API** in the header. Harnesses such as Cursor or Codex call this HTTP API directly. It is not an MCP server, and it does not accept the browser session.
 
+The OpenAPI 3.0 contract is [docs/openapi.yaml](docs/openapi.yaml). Load that file in Swagger UI, Redoc, or any OpenAPI tool. The harness context, with the same operations and no review instructions, is [docs/agent-api.md](docs/agent-api.md).
+
 The token is shown once. The server stores only its SHA-256. A key is bound to one project, expires on the date you set (90 days at most), and can be limited to a list of IP addresses or CIDR ranges. Leave the address list empty only when the harness address changes. An empty list allows any address that can reach this app.
 
 Send the token on every request:
