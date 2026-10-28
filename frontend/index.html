@@ -7,8 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script>window.CKEDITOR_BASEPATH = 'https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.22.1/';</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.22.1/ckeditor.js"></script>
+<link rel="stylesheet" href="/vendor/ckeditor5/ckeditor5.css">
+<script src="/vendor/ckeditor5/ckeditor5.umd.js"></script>
 <style>
 @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 300; font-display: swap; src: url("/fonts/montserrat-300.woff2") format("woff2"); }
 @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/montserrat-700.woff2") format("woff2"); }
@@ -471,7 +471,144 @@ input[type=checkbox]:disabled { opacity: 0.45; cursor: not-allowed; }
 .md-block strong { color: var(--grey1); }
 .md-block a { color: var(--accent); }
 .md-block img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
-.cke_dialog_container, .cke_panel { z-index: 20010 !important; }
+.md-block blockquote { margin: 8px 0; padding: 0 0 0 12px; border-left: 3px solid var(--signal); }
+.md-block s { color: var(--text-dim); }
+
+/* CKEditor 5 uses the app palette. Square corners, Inter, ink/paper/signal.
+   The modal editor is light, like the other form fields. The finding-card note is dark. */
+:root {
+  --ck-font-family: "Inter", sans-serif;
+  --ck-content-font-family: "Inter", sans-serif;
+  --ck-content-font-size: 14px;
+  --ck-radius-unit: 0px;
+  --ck-radius-base: 0px;
+  --ck-radius-corners: 0px;
+  --ck-border-radius: 0px;
+  --ck-border-radius-control: 0px;
+  --ck-border-radius-surface: 0px;
+  --ck-border-radius-uniform: 0px;
+  --ck-button-border-radius: 0px;
+  --ck-toolbar-border-radius: 0px;
+  --ck-editor-frame-border-radius: 0px;
+  --ck-editor-outer-radius: 0px;
+  --ck-dropdown-panel-border-radius: 0px;
+  --ck-balloon-panel-border-radius: 0px;
+  --ck-input-border-radius: 0px;
+  --ck-dialog-border-radius: 0px;
+  --ck-powered-by-border-radius: 0px;
+  --ck-tooltip-border-radius: 0px;
+  --ck-list-border-radius: 0px;
+  --ck-z-modal: 20010;
+  --ck-color-shadow-drop: rgba(20, 20, 20, 0.16);
+  --ck-color-base-focus-shadow: transparent;
+}
+:root,
+.modal .ck.ck-editor,
+html[data-ck-theme="light"] .ck-body-wrapper,
+html[data-ck-theme="light"] .ck.ck-balloon-panel,
+html[data-ck-theme="light"] .ck.ck-dialog {
+  --ck-color-base-background: #fff;
+  --ck-color-base-foreground: #f3f1f1;
+  --ck-color-base-border: #bdbdbd;
+  --ck-color-base-border-light: #d7d3d3;
+  --ck-color-base-text: #141414;
+  --ck-color-base-text-light: #424242;
+  --ck-color-base-hover: #f3f1f1;
+  --ck-color-base-hover-strong: #efecec;
+  --ck-color-base-selected: rgba(202, 62, 71, 0.12);
+  --ck-color-base-selected-hover: rgba(202, 62, 71, 0.2);
+  --ck-color-base-focus: #141414;
+  --ck-color-base-active: #ca3e47;
+  --ck-color-base-active-focus: #a72e36;
+  --ck-color-base-action: #ca3e47;
+  --ck-color-base-action-hover: #a72e36;
+  --ck-color-base-action-muted: rgba(202, 62, 71, 0.12);
+  --ck-color-base-action-disabled: #d7d3d3;
+  --ck-focus-border-color: #141414;
+  --ck-focus-ring: 2px solid #141414;
+  --ck-color-link-default: #ca3e47;
+  --ck-content-font-color: #141414;
+  --ck-color-engine-placeholder-text: #6d6d6d;
+  --ck-powered-by-text-color: #6d6d6d;
+  --ck-toolbar-background-color: #fff;
+  --ck-toolbar-border-color: #bdbdbd;
+  --ck-editor-frame-border-color: #bdbdbd;
+  --ck-editor-editable-focus-border-color: #141414;
+  --ck-button-on-background-color: rgba(202, 62, 71, 0.12);
+  --ck-button-on-hover-background-color: rgba(202, 62, 71, 0.2);
+  --ck-button-on-text-color: #ca3e47;
+  --ck-button-default-hover-background-color: #f3f1f1;
+  --ck-balloon-panel-background-color: #fff;
+  --ck-balloon-panel-border-color: #bdbdbd;
+  --ck-dropdown-panel-background-color: #fff;
+  --ck-dropdown-panel-border-color: #d7d3d3;
+  --ck-input-background-color: #fff;
+  --ck-input-border-color: #bdbdbd;
+  --ck-input-text-color: #141414;
+  --ck-dialog-background-color: #fff;
+  --ck-button-save-color: #ca3e47;
+  --ck-button-cancel-color: #141414;
+}
+.reviewer-note .ck.ck-editor,
+html[data-ck-theme="dark"] .ck-body-wrapper,
+html[data-ck-theme="dark"] .ck.ck-balloon-panel,
+html[data-ck-theme="dark"] .ck.ck-dialog {
+  --ck-color-base-background: #141414;
+  --ck-color-base-foreground: #1c1c1c;
+  --ck-color-base-border: #5a5a5a;
+  --ck-color-base-border-light: #3a3a3a;
+  --ck-color-base-text: #f9f8f8;
+  --ck-color-base-text-light: #b5b5b5;
+  --ck-color-base-hover: #242424;
+  --ck-color-base-hover-strong: #2c2c2c;
+  --ck-color-base-selected: rgba(202, 62, 71, 0.22);
+  --ck-color-base-selected-hover: rgba(202, 62, 71, 0.32);
+  --ck-color-base-focus: #ca3e47;
+  --ck-color-base-active: #ca3e47;
+  --ck-color-base-active-focus: #a72e36;
+  --ck-color-base-action: #ca3e47;
+  --ck-color-base-action-hover: #a72e36;
+  --ck-color-base-action-muted: rgba(202, 62, 71, 0.22);
+  --ck-color-base-action-disabled: #5a5a5a;
+  --ck-focus-border-color: #ca3e47;
+  --ck-focus-ring: 2px solid #ca3e47;
+  --ck-color-link-default: #ca3e47;
+  --ck-content-font-color: #f9f8f8;
+  --ck-color-engine-placeholder-text: #b5b5b5;
+  --ck-powered-by-text-color: #b5b5b5;
+  --ck-toolbar-background-color: #141414;
+  --ck-toolbar-border-color: #5a5a5a;
+  --ck-editor-frame-border-color: #5a5a5a;
+  --ck-editor-editable-focus-border-color: #ca3e47;
+  --ck-button-on-background-color: rgba(202, 62, 71, 0.22);
+  --ck-button-on-hover-background-color: rgba(202, 62, 71, 0.32);
+  --ck-button-on-text-color: #ca3e47;
+  --ck-button-default-hover-background-color: #242424;
+  --ck-balloon-panel-background-color: #141414;
+  --ck-balloon-panel-border-color: #5a5a5a;
+  --ck-dropdown-panel-background-color: #141414;
+  --ck-dropdown-panel-border-color: #5a5a5a;
+  --ck-input-background-color: #141414;
+  --ck-input-border-color: #5a5a5a;
+  --ck-input-text-color: #f9f8f8;
+  --ck-dialog-background-color: #141414;
+  --ck-button-save-color: #ca3e47;
+  --ck-button-cancel-color: #f9f8f8;
+}
+.ck.ck-rounded-corners {
+  --ck-editor-outer-radius: 0px;
+  --ck-border-radius: 0px;
+}
+.modal .ck.ck-editor,
+.reviewer-note .ck.ck-editor { width: 100%; max-width: 100%; }
+.modal .ck.ck-editor__editable { min-height: 160px; }
+.reviewer-note .ck.ck-editor__editable { min-height: 140px; }
+.ck.ck-editor__editable img { max-width: 100%; height: auto; }
+.ck.ck-editor__editable blockquote { border-left: 3px solid var(--signal); }
+.modal .ck-sticky-panel__content_sticky,
+.reviewer-note .ck-sticky-panel__content_sticky {
+  position: static !important; width: auto !important; top: auto !important; box-shadow: none !important;
+}
 .tag-edited { background: transparent; color: var(--paper); border: 1px solid #8a8a8a; }
 
 .references-block { margin-top: 10px; }
@@ -1320,19 +1457,19 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
         <p class="import-bm-hint">Format the text with the toolbar. A pasted image stays in the text.</p>
         <div class="form-group">
           <label class="form-label" for="custom-details">Details</label>
-          <textarea class="form-input" id="custom-details"></textarea>
+          <textarea class="form-input rich-source" id="custom-details"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-impact">Impact</label>
-          <textarea class="form-input" id="custom-impact"></textarea>
+          <textarea class="form-input rich-source" id="custom-impact"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-remediation">Remediation</label>
-          <textarea class="form-input" id="custom-remediation"></textarea>
+          <textarea class="form-input rich-source" id="custom-remediation"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-note">Reviewer note</label>
-          <textarea class="form-input" id="custom-note"></textarea>
+          <textarea class="form-input rich-source" id="custom-note"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Assets</label>
@@ -3361,7 +3498,7 @@ function noteEditorId(findingId) {
 function renderReviewerNote(id) {
   return `<div class="reviewer-note" onclick="event.stopPropagation()">
     <div class="section-label">Reviewer note</div>
-    <textarea class="reviewer-note-input" id="${noteEditorId(id)}">${esc(analysisNotes[id] || '')}</textarea>
+    <textarea class="reviewer-note-input rich-source" id="${noteEditorId(id)}">${esc(analysisNotes[id] || '')}</textarea>
   </div>`;
 }
 
@@ -4927,66 +5064,113 @@ async function boot() {
 
 const RICH_TEXT_MAX = 2 * 1024 * 1024;
 const MODAL_EDITOR_IDS = ['custom-details', 'custom-impact', 'custom-remediation', 'custom-note'];
+const richEditors = new Map();
+const noteEpoch = new Map();
+let modalEditorEpoch = 0;
+let ckEditorFailed = false;
 
-function richEditorConfig(height) {
+function richEditorPlugins() {
+  const {
+    Essentials, Paragraph, Bold, Italic, Underline, Strikethrough,
+    List, BlockQuote, Link, Image, ImageUpload, Base64UploadAdapter, RemoveFormat
+  } = CKEDITOR;
+  return [Essentials, Paragraph, Bold, Italic, Underline, Strikethrough, List, BlockQuote, Link, Image, ImageUpload, Base64UploadAdapter, RemoveFormat];
+}
+
+function richEditorConfig() {
   return {
-    height,
-    versionCheck: false,
-    removePlugins: 'elementspath,exportpdf,uploadimage,uploadwidget,cloudservices',
-    resize_enabled: true,
-    extraAllowedContent: 'img[src,alt,width,height]',
-    baseFloatZIndex: 20000,
-    contentsCss: [CKEDITOR_BASEPATH + 'contents.css', '/editor.css'],
-    toolbar: [[
-      'Bold', 'Italic', 'Underline', 'Strike', '-',
-      'NumberedList', 'BulletedList', 'Blockquote', '-',
-      'Link', 'Unlink', '-',
-      'RemoveFormat'
-    ]]
+    licenseKey: 'GPL',
+    plugins: richEditorPlugins(),
+    toolbar: {
+      items: ['bold', 'italic', 'underline', 'strikethrough', '|', 'numberedList', 'bulletedList', 'blockQuote', '|', 'link', '|', 'removeFormat'],
+      shouldNotGroupWhenFull: true
+    },
+    image: { upload: { types: ['png', 'jpeg', 'gif', 'webp'] } },
+    link: { defaultProtocol: 'https://' }
   };
 }
 
+function setCkTheme(theme) {
+  document.documentElement.dataset.ckTheme = theme;
+}
+
+function watchEditorTheme(editor, theme) {
+  editor.ui.focusTracker.on('change:isFocused', (_evt, _name, isFocused) => {
+    if (isFocused) setCkTheme(theme);
+  });
+}
+
+function reportEditorFailure(el) {
+  if (el) el.hidden = false;
+  if (ckEditorFailed) return;
+  ckEditorFailed = true;
+  toast('The text editor could not start.', 'error');
+}
+
 function destroyEditor(name) {
-  const editor = window.CKEDITOR?.instances[name];
-  if (editor) editor.destroy(true);
+  noteEpoch.set(name, (noteEpoch.get(name) || 0) + 1);
+  const editor = richEditors.get(name);
+  richEditors.delete(name);
+  if (editor) editor.destroy().catch(() => {});
 }
 
 function destroyNoteEditors() {
-  if (!window.CKEDITOR) return;
-  for (const name of Object.keys(CKEDITOR.instances)) {
+  for (const name of [...richEditors.keys()]) {
     if (name.startsWith('review-note-')) destroyEditor(name);
   }
 }
 
 function destroyModalEditors() {
+  modalEditorEpoch += 1;
   for (const id of MODAL_EDITOR_IDS) destroyEditor(id);
+  if ([...richEditors.keys()].some(name => name.startsWith('review-note-'))) setCkTheme('dark');
 }
 
 function syncModalEditors() {
-  if (!window.CKEDITOR) return;
-  for (const id of MODAL_EDITOR_IDS) CKEDITOR.instances[id]?.updateElement();
+  for (const id of MODAL_EDITOR_IDS) richEditors.get(id)?.updateSourceElement();
 }
 
 function mountModalEditors() {
-  if (!window.CKEDITOR) return;
+  if (!window.CKEDITOR?.ClassicEditor) return;
+  setCkTheme('light');
+  const epoch = ++modalEditorEpoch;
   for (const id of MODAL_EDITOR_IDS) {
     const el = document.getElementById(id);
     if (!el) continue;
     destroyEditor(id);
     el.value = toEditorHtml(el.value);
-    CKEDITOR.replace(el, richEditorConfig(160));
+    el.hidden = true;
+    CKEDITOR.ClassicEditor.create(el, richEditorConfig()).then(editor => {
+      if (epoch !== modalEditorEpoch || !el.isConnected) {
+        editor.destroy().catch(() => {});
+        return;
+      }
+      richEditors.set(id, editor);
+      watchEditorTheme(editor, 'light');
+    }).catch(() => {
+      if (epoch === modalEditorEpoch) reportEditorFailure(el);
+    });
   }
 }
 
 function mountNoteEditor(findingId) {
-  if (!window.CKEDITOR) return;
+  if (!window.CKEDITOR?.ClassicEditor) return;
   const name = noteEditorId(findingId);
   const el = document.getElementById(name);
-  if (!el || CKEDITOR.instances[name]) return;
+  if (!el || richEditors.has(name)) return;
+  const epoch = (noteEpoch.get(name) || 0) + 1;
+  noteEpoch.set(name, epoch);
+  setCkTheme('dark');
   el.value = toEditorHtml(el.value);
-  const editor = CKEDITOR.replace(el, richEditorConfig(140));
-  editor.on('instanceReady', () => {
-    editor.on('change', () => {
+  el.hidden = true;
+  CKEDITOR.ClassicEditor.create(el, richEditorConfig()).then(editor => {
+    if (noteEpoch.get(name) !== epoch || !el.isConnected) {
+      editor.destroy().catch(() => {});
+      return;
+    }
+    richEditors.set(name, editor);
+    watchEditorTheme(editor, 'dark');
+    editor.model.document.on('change:data', () => {
       const html = editor.getData();
       if (html.length > RICH_TEXT_MAX) {
         toast('This note is too large. Paste a smaller image.', 'error');
@@ -4995,6 +5179,8 @@ function mountNoteEditor(findingId) {
       const empty = !/<img\b/i.test(html) && !html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').trim();
       setNote(findingId, { value: empty ? '' : html, dataset: { noteFor: findingId } });
     });
+  }).catch(() => {
+    if (noteEpoch.get(name) === epoch) reportEditorFailure(el);
   });
 }
 
