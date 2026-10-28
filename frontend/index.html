@@ -595,6 +595,41 @@ html[data-ck-theme="dark"] .ck.ck-dialog {
   --ck-button-save-color: #ca3e47;
   --ck-button-cancel-color: #f9f8f8;
 }
+/* Text, divider, and surface tokens are computed on :root. Setting only the
+   base colors leaves toolbar icons in the light ink color on a dark toolbar. */
+:root,
+.modal .ck.ck-editor,
+.reviewer-note .ck.ck-editor,
+html[data-ck-theme="light"] .ck-body-wrapper,
+html[data-ck-theme="light"] .ck.ck-balloon-panel,
+html[data-ck-theme="light"] .ck.ck-dialog,
+html[data-ck-theme="dark"] .ck-body-wrapper,
+html[data-ck-theme="dark"] .ck.ck-balloon-panel,
+html[data-ck-theme="dark"] .ck.ck-dialog {
+  --ck-color-text: var(--ck-color-base-text);
+  --ck-color-text-primary: var(--ck-color-base-text);
+  --ck-color-text-secondary: var(--ck-color-base-text-light);
+  --ck-color-text-inverse: var(--ck-color-base-background);
+  --ck-color-divider: var(--ck-color-base-border);
+  --ck-color-border-control: var(--ck-color-base-border);
+  --ck-color-border-container: var(--ck-color-base-border);
+  --ck-color-surface-canvas: var(--ck-color-base-background);
+  --ck-color-surface-control: var(--ck-color-base-background);
+  --ck-color-surface-container: var(--ck-color-base-background);
+  --ck-color-interactive-hover-surface: var(--ck-color-base-hover);
+  --ck-color-interactive-hover-surface-strong: var(--ck-color-base-hover-strong);
+  --ck-color-interactive-selected-surface: var(--ck-color-base-selected);
+  --ck-color-interactive-selected-text: var(--ck-color-base-active);
+  --ck-color-interactive-focus-border: var(--ck-focus-border-color);
+  --ck-color-focus-border: var(--ck-focus-border-color);
+  --ck-color-toolbar-background: var(--ck-toolbar-background-color);
+}
+.ck.ck-icon,
+.ck.ck-icon * { color: inherit; }
+.ck.ck-icon :not([fill]) { fill: currentColor; }
+.ck.ck-powered-by,
+.ck.ck-balloon-panel.ck-powered-by-balloon,
+.ck.ck-evaluation-badge { display: none !important; }
 .ck.ck-rounded-corners {
   --ck-editor-outer-radius: 0px;
   --ck-border-radius: 0px;
