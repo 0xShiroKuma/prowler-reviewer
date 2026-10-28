@@ -603,6 +603,7 @@ html[data-ck-theme="dark"] .ck.ck-dialog {
 .reviewer-note .ck.ck-editor { width: 100%; max-width: 100%; }
 .modal .ck.ck-editor__editable { min-height: 160px; }
 .reviewer-note .ck.ck-editor__editable { min-height: 140px; }
+.report-section .reviewer-note .ck.ck-editor__editable { min-height: 96px; }
 .ck.ck-editor__editable img { max-width: 100%; height: auto; }
 .ck.ck-editor__editable blockquote { border-left: 3px solid var(--signal); }
 .modal .ck-sticky-panel__content_sticky,
@@ -1456,8 +1457,12 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
         <p class="import-bm-hint" id="custom-scan-hint" hidden>This edits the review copy of the scan finding. The uploaded scan file stays unchanged.</p>
         <p class="import-bm-hint">Format the text with the toolbar. A pasted image stays in the text.</p>
         <div class="form-group">
-          <label class="form-label" for="custom-details">Details</label>
+          <label class="form-label" for="custom-details">Background</label>
           <textarea class="form-input rich-source" id="custom-details"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custom-observations">Observation</label>
+          <textarea class="form-input rich-source" id="custom-observations"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-impact">Impact</label>
@@ -2006,38 +2011,6 @@ function getProwlerCheckUrl(checkName) {
   const url = normalizeProwlerUrl(meta?.Remediation?.Recommendation?.Url);
   if (url) return url;
   return `https://hub.prowler.com/check/${encodeURIComponent(getShortCheckId(checkName))}`;
-}
-
-function renderRemediationBlock(f) {
-  return `<div class="md-block">${renderMD(f.remediation)}</div>${renderReferences(f)}`;
-}
-
-function renderDetailsBlock(f, includeNonCompliant = false) {
-  const bg = f.details || f.description || '';
-  const obs = (f.observations || []).filter(Boolean);
-  let html = `
-    <div class="details-subsection">
-      <div class="section-label">Background</div>
-      <div class="md-block">${renderMD(bg)}</div>
-    </div>`;
-  if (obs.length) {
-    html += `
-    <div class="details-subsection">
-      <div class="section-label">Observation</div>
-      <div class="md-block">${obs.map(o => renderMD(o)).join('<hr style="border-color:var(--border);margin:8px 0">')}</div>
-    </div>`;
-  }
-  if (includeNonCompliant) {
-    const nc = getNonCompliantControlsMarkdown(f);
-    if (nc) {
-      html += `
-      <div class="non-compliant-controls">
-        <div class="section-label">Non-Compliant Controls</div>
-        <div class="md-block">${renderMD(nc)}</div>
-      </div>`;
-    }
-  }
-  return html;
 }
 
 function getDetailsCopyText(f, includeNonCompliant = false) {
@@ -3372,7 +3345,8 @@ function renderFindingCard(f) {
         <button class="btn small accent" onclick="copyDetails('${esc(f.id)}', false)">${icon('copy')} Copy</button>
       </div>
       ${renderReviewerNote(f.id)}
-      ${renderDetailsBlock(f)}
+      ${renderBodyField(f, 'details', 'Background')}
+      ${renderBodyField(f, 'observations', 'Observation')}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-impact">
@@ -3380,7 +3354,7 @@ function renderFindingCard(f) {
         <h4>Impact</h4>
         <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
-      <div class="md-block">${renderMD(f.impact || f.risk)}</div>
+      ${renderBodyField(f, 'impact', 'Impact')}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-remediation">
@@ -3388,7 +3362,8 @@ function renderFindingCard(f) {
         <h4>Remediation Guidance</h4>
         <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
-      ${renderRemediationBlock(f)}
+      ${renderBodyField(f, 'remediation', 'Remediation')}
+      ${renderReferences(f)}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-controls">
@@ -3440,7 +3415,13 @@ function switchTab(id, tab, el) {
   card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById(`tp-${id}-${tab}`)?.classList.add('active');
-  if (tab === 'details') mountNoteEditor(id);
+  if (tab === 'details') {
+    mountNoteEditor(id);
+    mountSurfaceEditor(id, 'analysis', 'details');
+    mountSurfaceEditor(id, 'analysis', 'observations');
+  }
+  if (tab === 'impact') mountSurfaceEditor(id, 'analysis', 'impact');
+  if (tab === 'remediation') mountSurfaceEditor(id, 'analysis', 'remediation');
 }
 
 // Analysis status
@@ -3498,8 +3479,102 @@ function noteEditorId(findingId) {
 function renderReviewerNote(id) {
   return `<div class="reviewer-note" onclick="event.stopPropagation()">
     <div class="section-label">Reviewer note</div>
-    <textarea class="reviewer-note-input rich-source" id="${noteEditorId(id)}">${esc(analysisNotes[id] || '')}</textarea>
+    <textarea class="reviewer-note-input rich-source" id="${noteEditorId(id)}" data-note-for="${esc(id)}">${esc(analysisNotes[id] || '')}</textarea>
   </div>`;
+}
+
+function surfaceEditorId(surface, findingId, field) {
+  if (surface === 'review') return noteEditorId(findingId);
+  return surface + '-' + field + '-' + encodeURIComponent(findingId).replace(/%/g, '_');
+}
+
+function findingFieldValue(finding, field) {
+  if (field === 'note') return analysisNotes[finding.id] || '';
+  if (field === 'details') return finding.details || finding.description || '';
+  if (field === 'impact') return finding.impact || finding.risk || '';
+  if (field === 'remediation') return finding.remediation || '';
+  if (field === 'observations') return (finding.observations || []).filter(Boolean).join('\n\n');
+  return '';
+}
+
+function richFieldTextarea(surface, finding, field) {
+  const noteAttr = field === 'note' ? ` data-note-for="${esc(finding.id)}"` : '';
+  return `<div class="reviewer-note" onclick="event.stopPropagation()">
+    <textarea class="reviewer-note-input rich-source" id="${surfaceEditorId(surface, finding.id, field)}"${noteAttr}>${esc(findingFieldValue(finding, field))}</textarea>
+  </div>`;
+}
+
+function renderBodyField(finding, field, label) {
+  return `<div class="details-subsection">
+    <div class="section-label">${label}</div>
+    ${richFieldTextarea('analysis', finding, field)}
+  </div>`;
+}
+
+function renderReportEditor(finding, field, label, copyButton) {
+  return `<div class="report-section">
+    <div class="report-section-hdr">
+      <div class="report-section-label">${label}</div>
+      ${copyButton || ''}
+    </div>
+    ${richFieldTextarea('report', finding, field)}
+  </div>`;
+}
+
+function renderNonCompliantBlock(finding) {
+  const text = getNonCompliantControlsMarkdown(finding);
+  if (!text) return '';
+  return `<div class="report-section">
+    <div class="report-section-hdr"><div class="report-section-label">Non-compliant controls</div></div>
+    <div class="md-block">${renderMD(text)}</div>
+  </div>`;
+}
+
+function observationsFromHtml(html) {
+  const text = (html || '').trim();
+  return text ? [text] : [];
+}
+
+function plainRichText(html) {
+  return !/<img\b/i.test(html || '') && !(html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').trim();
+}
+
+function saveFindingBody(findingId, field, value) {
+  const finding = rawFindings.find(item => item.id === findingId);
+  if (!finding) return;
+  if (finding.source === 'custom') {
+    const record = customFindings.find(item => item.id === findingId);
+    if (!record) return;
+    if (field === 'observations') record.observations = value ? [value] : [];
+    else record[field] = value;
+    record.updatedAt = new Date().toISOString();
+  } else {
+    const edit = { ...(findingEdits[findingId] || {}) };
+    if (field === 'observations') edit.observations = value ? [value] : [];
+    else edit[field] = value;
+    findingEdits[findingId] = edit;
+    finding.edited = true;
+  }
+  if (field === 'details') {
+    finding.details = value;
+    finding.description = value;
+  } else if (field === 'impact') {
+    finding.impact = value;
+    finding.risk = value;
+  } else if (field === 'remediation') {
+    finding.remediation = value;
+  } else if (field === 'observations') {
+    finding.observations = value ? [value] : [];
+  }
+  scheduleSave({ findingCount: rawFindings.length });
+}
+
+function toggleReportFinding(header) {
+  const card = header.closest('.report-finding');
+  if (!card) return;
+  const open = card.classList.toggle('open');
+  if (open) mountReportEditors(card.dataset.id);
+  else destroyReportEditors(card.dataset.id);
 }
 
 function setNote(id, inputEl) {
@@ -4130,6 +4205,7 @@ function renderCompReqRow(r) {
 // REPORTING VIEW
 // =========================================================
 function renderReportingView() {
+  destroyEditorsByPrefix('report-');
   const confirmed = rawFindings.filter(f => {
     const s = analysisStatuses[f.id] || '';
     return s === 'confirmed' || s === 'reported';
@@ -4181,11 +4257,12 @@ function renderReportFinding(f) {
       </details>` : ''}`;
 
   return `
-<div class="report-finding status-${aStatus}" id="rf-${esc(f.id)}">
-  <div class="report-finding-hdr" onclick="this.closest('.report-finding').classList.toggle('open')">
+<div class="report-finding status-${aStatus}" id="rf-${esc(f.id)}" data-id="${esc(f.id)}">
+  <div class="report-finding-hdr" onclick="toggleReportFinding(this)">
     <span class="report-expand-icon">${icon('chevron-right')}</span>
     <span class="sev-badge sev-${f.severity}">${f.severity}</span>
     <span class="report-finding-title">${esc(f.title)}</span>
+    <button class="btn small" type="button" onclick="event.stopPropagation(); openCustomFinding('${esc(f.id)}')">Edit</button>
     ${renderStatusMenu(f.id, aStatus, [
       { value: 'confirmed', label: 'Confirmed' },
       { value: 'reported', label: 'Reported' },
@@ -4193,30 +4270,13 @@ function renderReportFinding(f) {
     <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${failedAssets.length} failed</span>
   </div>
   <div class="report-finding-body">
-    <div class="report-section">
-      ${renderReviewerNote(f.id)}
-    </div>
-    <div class="report-section">
-      <div class="report-section-hdr">
-        <div class="report-section-label">Details</div>
-        <button class="btn small accent" onclick="copyDetails('${esc(f.id)}')">${icon('copy')} Copy</button>
-      </div>
-      ${renderDetailsBlock(f, true)}
-    </div>
-    <div class="report-section">
-      <div class="report-section-hdr">
-        <div class="report-section-label">Impact</div>
-        <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>
-      </div>
-      <div class="md-block">${renderMD(f.impact || f.risk)}</div>
-    </div>
-    <div class="report-section">
-      <div class="report-section-hdr">
-        <div class="report-section-label">Remediation</div>
-        <button class="btn small accent" onclick="copyRemediation('${esc(f.id)}')">${icon('copy')} Copy</button>
-      </div>
-      ${renderRemediationBlock(f)}
-    </div>
+    ${renderReportEditor(f, 'note', 'Reviewer note', '')}
+    ${renderReportEditor(f, 'details', 'Background', `<button class="btn small accent" type="button" onclick="copyDetails('${esc(f.id)}')">${icon('copy')} Copy</button>`)}
+    ${renderReportEditor(f, 'observations', 'Observation', '')}
+    ${renderNonCompliantBlock(f)}
+    ${renderReportEditor(f, 'impact', 'Impact', `<button class="btn small accent" type="button" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>`)}
+    ${renderReportEditor(f, 'remediation', 'Remediation', `<button class="btn small accent" type="button" onclick="copyRemediation('${esc(f.id)}')">${icon('copy')} Copy</button>`)}
+    ${f.remUrls?.length || f.addUrls?.length ? `<div class="report-section">${renderReferences(f)}</div>` : ''}
     <div class="report-section">
       <div class="report-section-hdr">
         <div class="report-section-label">Affected Assets (${failedAssets.length} failed)</div>
@@ -4560,6 +4620,7 @@ function applyClientFindingEdit(finding, edit) {
     next.risk = edit.impact;
   }
   if (Object.prototype.hasOwnProperty.call(edit, 'remediation')) next.remediation = edit.remediation;
+  if (Object.prototype.hasOwnProperty.call(edit, 'observations')) next.observations = edit.observations;
   if (edit.assets) {
     const assets = edit.assets.map(asset => ({ ...asset, absent: false }));
     next.assets = assets;
@@ -4606,6 +4667,7 @@ async function openCustomFinding(id) {
   document.getElementById('custom-service').value = existing?.service || '';
   document.getElementById('custom-reason').value = id ? (analysisReasons[id] || '') : '';
   document.getElementById('custom-details').value = existing?.details || existing?.description || '';
+  document.getElementById('custom-observations').value = (existing?.observations || []).filter(Boolean).join('\n\n');
   document.getElementById('custom-impact').value = existing?.impact || existing?.risk || '';
   document.getElementById('custom-remediation').value = existing?.remediation || '';
   document.getElementById('custom-note').value = id ? (analysisNotes[id] || '') : '';
@@ -4700,6 +4762,7 @@ function submitCustomFinding(event) {
       details: document.getElementById('custom-details').value,
       impact: document.getElementById('custom-impact').value,
       remediation: document.getElementById('custom-remediation').value,
+      observations: observationsFromHtml(document.getElementById('custom-observations').value),
       controls,
       assets
     };
@@ -4719,6 +4782,7 @@ function submitCustomFinding(event) {
     details: document.getElementById('custom-details').value,
     impact: document.getElementById('custom-impact').value,
     remediation: document.getElementById('custom-remediation').value,
+    observations: observationsFromHtml(document.getElementById('custom-observations').value),
     controls,
     assets,
     createdAt: previous?.createdAt || new Date().toISOString(),
@@ -5063,7 +5127,7 @@ async function boot() {
 }
 
 const RICH_TEXT_MAX = 2 * 1024 * 1024;
-const MODAL_EDITOR_IDS = ['custom-details', 'custom-impact', 'custom-remediation', 'custom-note'];
+const MODAL_EDITOR_IDS = ['custom-details', 'custom-observations', 'custom-impact', 'custom-remediation', 'custom-note'];
 const richEditors = new Map();
 const noteEpoch = new Map();
 let modalEditorEpoch = 0;
@@ -5114,16 +5178,34 @@ function destroyEditor(name) {
   if (editor) editor.destroy().catch(() => {});
 }
 
-function destroyNoteEditors() {
+function destroyEditorsByPrefix(prefix) {
   for (const name of [...richEditors.keys()]) {
-    if (name.startsWith('review-note-')) destroyEditor(name);
+    if (name.startsWith(prefix)) destroyEditor(name);
   }
+}
+
+function destroyNoteEditors() {
+  destroyEditorsByPrefix('review-note-');
+  destroyEditorsByPrefix('analysis-');
+}
+
+function destroyReportEditors(findingId) {
+  const suffix = '-' + encodeURIComponent(findingId).replace(/%/g, '_');
+  for (const name of [...richEditors.keys()]) {
+    if (name.startsWith('report-') && name.endsWith(suffix)) destroyEditor(name);
+  }
+}
+
+function hasDarkEditor() {
+  return [...richEditors.keys()].some(name =>
+    name.startsWith('review-note-') || name.startsWith('analysis-') || name.startsWith('report-')
+  );
 }
 
 function destroyModalEditors() {
   modalEditorEpoch += 1;
   for (const id of MODAL_EDITOR_IDS) destroyEditor(id);
-  if ([...richEditors.keys()].some(name => name.startsWith('review-note-'))) setCkTheme('dark');
+  if (hasDarkEditor()) setCkTheme('dark');
 }
 
 function syncModalEditors() {
@@ -5153,14 +5235,39 @@ function mountModalEditors() {
   }
 }
 
-function mountNoteEditor(findingId) {
+function mirrorRichField(findingId, field, value, source) {
+  const names = field === 'note'
+    ? [noteEditorId(findingId), surfaceEditorId('report', findingId, 'note')]
+    : [surfaceEditorId('analysis', findingId, field), surfaceEditorId('report', findingId, field)];
+  for (const name of names) {
+    const editor = richEditors.get(name);
+    if (editor && editor !== source && editor.getData() !== value) {
+      editor._suppress = true;
+      Promise.resolve(editor.setData(value)).finally(() => { editor._suppress = false; });
+    }
+    const el = document.getElementById(name);
+    if (el && el.value !== value) el.value = value;
+  }
+}
+
+function commitRichField(findingId, field, html, source) {
+  if ((html || '').length > RICH_TEXT_MAX) {
+    toast('This text is too large. Paste a smaller image.', 'error');
+    return;
+  }
+  const value = plainRichText(html) ? '' : html;
+  if (field === 'note') setNote(findingId, { value, dataset: { noteFor: findingId } });
+  else saveFindingBody(findingId, field, value);
+  mirrorRichField(findingId, field, value, source);
+}
+
+function mountRichEditor(name, theme, findingId, field) {
   if (!window.CKEDITOR?.ClassicEditor) return;
-  const name = noteEditorId(findingId);
   const el = document.getElementById(name);
   if (!el || richEditors.has(name)) return;
   const epoch = (noteEpoch.get(name) || 0) + 1;
   noteEpoch.set(name, epoch);
-  setCkTheme('dark');
+  setCkTheme(theme);
   el.value = toEditorHtml(el.value);
   el.hidden = true;
   CKEDITOR.ClassicEditor.create(el, richEditorConfig()).then(editor => {
@@ -5169,19 +5276,28 @@ function mountNoteEditor(findingId) {
       return;
     }
     richEditors.set(name, editor);
-    watchEditorTheme(editor, 'dark');
+    watchEditorTheme(editor, theme);
     editor.model.document.on('change:data', () => {
-      const html = editor.getData();
-      if (html.length > RICH_TEXT_MAX) {
-        toast('This note is too large. Paste a smaller image.', 'error');
-        return;
-      }
-      const empty = !/<img\b/i.test(html) && !html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').trim();
-      setNote(findingId, { value: empty ? '' : html, dataset: { noteFor: findingId } });
+      if (editor._suppress) return;
+      commitRichField(findingId, field, editor.getData(), editor);
     });
   }).catch(() => {
     if (noteEpoch.get(name) === epoch) reportEditorFailure(el);
   });
+}
+
+function mountNoteEditor(findingId) {
+  mountRichEditor(noteEditorId(findingId), 'dark', findingId, 'note');
+}
+
+function mountSurfaceEditor(findingId, surface, field) {
+  mountRichEditor(surfaceEditorId(surface, findingId, field), 'dark', findingId, field);
+}
+
+function mountReportEditors(findingId) {
+  for (const field of ['note', 'details', 'observations', 'impact', 'remediation']) {
+    mountSurfaceEditor(findingId, 'report', field);
+  }
 }
 
 // =========================================================

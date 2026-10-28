@@ -100,7 +100,7 @@ function sanitizeCustomFinding(raw) {
   }
   const observations = [];
   for (const item of Array.isArray(raw.observations) ? raw.observations.slice(0, 20) : []) {
-    const text = clampText(item, 4000).trim();
+    const text = clampText(item, RICH_TEXT_MAX).trim();
     if (text) observations.push(text);
   }
   const now = new Date().toISOString();
@@ -157,7 +157,7 @@ function sanitizeFindingEdit(raw) {
   if (Array.isArray(raw.observations)) {
     const observations = [];
     for (const item of raw.observations.slice(0, 20)) {
-      const text = clampText(item, 4000).trim();
+      const text = clampText(item, RICH_TEXT_MAX).trim();
       if (text) observations.push(text);
     }
     edit.observations = observations;
