@@ -1,0 +1,5 @@
+.git
+data
+resources
+**/node_modules
+backend

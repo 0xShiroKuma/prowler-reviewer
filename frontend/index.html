@@ -285,8 +285,13 @@ input[type=checkbox]:disabled { opacity: 0.45; cursor: not-allowed; }
 .menu-item-label { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .menu-check { width: 16px; height: 16px; flex-shrink: 0; color: #141414; }
 .menu-select-list, .ms-options-container { list-style: none; margin: 0; padding: 0; }
+#comp-benchmark-panel { padding: 0; }
+#comp-benchmark-panel .menu-select-list { padding: 0 8px 8px; }
+.menu-select-toolbar {
+  position: sticky; top: 0; z-index: 2; background: #fff; padding: 8px 8px 8px;
+}
 .menu-select-search {
-  width: calc(100% - 8px); margin: 0 4px 8px; min-height: 40px; padding: 0 12px;
+  width: 100%; margin: 0; min-height: 40px; padding: 0 12px;
   border: 1px solid #bdbdbd; border-radius: 0; background: #fff; color: #141414;
   font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 400;
 }
@@ -541,7 +546,11 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
 }
 .form-input:focus { outline: 2px solid var(--ink); outline-offset: 1px; border-color: var(--ink); }
 
-.import-bm-search { width: 100%; min-height: 42px; padding: 0 12px; background: #fff; border: 1px solid #bdbdbd; color: var(--ink); font-family: var(--font-ui); font-size: 15px; border-radius: 0; margin-bottom: 10px; }
+.import-bm-search {
+  position: sticky; top: 0; z-index: 2;
+  width: 100%; min-height: 42px; padding: 0 12px; background: var(--paper); border: 1px solid #bdbdbd;
+  color: var(--ink); font-family: var(--font-ui); font-size: 15px; border-radius: 0; margin-bottom: 10px;
+}
 .import-bm-search:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .import-bm-list { max-height: 280px; overflow-y: auto; border: 1px solid #d7d3d3; border-radius: 0; }
 .import-bm-group { border-bottom: 1px solid #d7d3d3; }
@@ -566,6 +575,7 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
 .import-bm-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; }
 .import-bm-meta { font-size: 12px; color: #6d6d6d; font-family: var(--font-body); white-space: nowrap; }
 .import-bm-hint { font-size: 14px; color: #6d6d6d; margin-bottom: 8px; }
+.api-doc-link { color: var(--signal); font-weight: 600; }
 
 /* =========================================================
    HISTORY MODAL
@@ -1122,8 +1132,10 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
                 <svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
               </button>
               <div class="menu-select-panel" id="comp-benchmark-panel" role="menu">
-                <div class="menu-select-head"><p class="menu-select-kicker">Benchmark</p></div>
-                <input type="text" class="menu-select-search" placeholder="Filter benchmarks…" oninput="filterBenchmarkMenu(this.value)" onclick="event.stopPropagation()">
+                <div class="menu-select-toolbar">
+                  <div class="menu-select-head"><p class="menu-select-kicker">Benchmark</p></div>
+                  <input type="text" class="menu-select-search" placeholder="Filter benchmarks…" oninput="filterBenchmarkMenu(this.value)" onclick="event.stopPropagation()">
+                </div>
                 <ul class="menu-select-list" id="comp-benchmark-list"></ul>
               </div>
               <select class="visually-hidden" id="comp-benchmark-select" onchange="onCompBenchmarkChange(this.value)">
@@ -1350,7 +1362,7 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
     </div>
     <form id="api-form">
       <div class="modal-body">
-        <p class="import-bm-hint">Create a key for a harness such as Cursor or Codex. The token is shown once. It can read one project, and change findings only if Write is checked. It cannot delete the project, upload scans, or create other keys.</p>
+        <p class="import-bm-hint">Create a key for a harness such as Cursor or Codex. The token is shown once. It can read one project, and change findings only if Write is checked. It cannot delete the project, upload scans, or create other keys. <a class="api-doc-link" href="/api-doc.html" target="_blank" rel="noopener">API documentation</a></p>
         <div id="api-key-list"></div>
         <div id="api-token-panel" hidden>
           <p class="import-bm-hint">Copy this token now. It will not be shown again.</p>
