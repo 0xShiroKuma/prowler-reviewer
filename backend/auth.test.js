@@ -62,10 +62,12 @@ test('lockout window does not slide when the cap is reached', () => {
   assert.deepEqual(pruneAttempts([Date.now() + 60000], Date.now(), windowMs), []);
 });
 
-test('password length is five characters with no composition rule', () => {
+test('password rule is five characters and nothing else', () => {
   assert.match(validatePassword('abcd', 'reviewer'), /5 characters/);
   assert.equal(validatePassword('abcde', 'reviewer'), '');
-  assert.equal(validatePassword('12345', 'reviewer'), '');
+  assert.equal(validatePassword('password', 'reviewer'), '');
+  assert.equal(validatePassword('aaaaa', 'reviewer'), '');
+  assert.equal(validatePassword('reviewer', 'reviewer'), '');
 });
 
 test('authentication', { timeout: 180000 }, async () => {
@@ -105,14 +107,6 @@ test('authentication', { timeout: 180000 }, async () => {
     const short = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: 'abcd' } });
     assert.equal(short.status, 400);
     assert.match(short.json.error, /5 characters/);
-
-    const common = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: 'password12345' } });
-    assert.equal(common.status, 400);
-
-    const containsUser = await call(base, 'POST', '/api/auth/register', {
-      body: { username: USER, password: 'reviewer-passphrase' }
-    });
-    assert.equal(containsUser.status, 400);
 
     const created = await call(base, 'POST', '/api/auth/register', { body: { username: USER, password: PASS } });
     assert.equal(created.status, 201);

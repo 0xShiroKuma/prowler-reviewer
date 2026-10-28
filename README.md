@@ -118,7 +118,7 @@ Scan results remain the source for affected assets, failed, passed, and manual s
 
 One account per installation. It is created in the browser on first launch, then every visit requires a sign-in. There is no second user and no online password reset.
 
-- Passwords must be at least 5 characters. There is no uppercase, number, or symbol requirement.
+- The only password rule is a minimum of 5 characters. Common passwords are allowed.
 - Passwords are hashed with scrypt (N=2^17, r=8, p=1, 16-byte salt) and stored on the data volume. The password itself is not stored.
 - Checking the password takes a couple of seconds. That delay is the hash, not a stuck page.
 - The session cookie is `HttpOnly` and `SameSite=Strict`. The server stores only a SHA-256 of the token. A session ends after 12 hours idle or 7 days, whichever comes first.

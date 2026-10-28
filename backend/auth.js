@@ -41,15 +41,6 @@ const LIMITS = {
 
 const INVALID_CREDENTIALS = 'Invalid username or password.';
 
-const COMMON_PASSWORDS = new Set([
-  'password', 'password1', 'password12', 'password123', 'password1234', 'password12345',
-  'passw0rd', 'passw0rd123', 'qwerty', 'qwerty123', 'qwerty12345', 'qwerty123456',
-  '123456789', '1234567890', '12345678901', '123456789012', '111111111111',
-  'iloveyou', 'iloveyou123', 'letmein', 'letmein123', 'welcome', 'welcome1',
-  'welcome123', 'admin', 'admin123', 'admin12345', 'admin123456', 'changeme',
-  'changeme123', 'prowler', 'prowler123', 'prowler1234', 'prowlerreviewer'
-]);
-
 let dummyRecord = null;
 
 function pruneAttempts(list, now, windowMs) {
@@ -158,19 +149,10 @@ function validateUsername(username) {
   return '';
 }
 
-function validatePassword(password, username) {
+function validatePassword(password) {
   if (typeof password !== 'string' || !password) return 'Password is required.';
   if (password.length < MIN_PASSWORD) return `Password must be at least ${MIN_PASSWORD} characters.`;
   if (password.length > MAX_PASSWORD) return `Password must be at most ${MAX_PASSWORD} characters.`;
-  if (/[\u0000-\u001F\u007F]/.test(password)) return 'Password cannot include control characters.';
-  const lower = password.toLowerCase();
-  if (COMMON_PASSWORDS.has(lower) || /^(.)\1+$/.test(password)) {
-    return 'Choose a less common password.';
-  }
-  const user = String(username || '').trim().toLowerCase();
-  if (user.length >= MIN_USERNAME && lower.includes(user)) {
-    return 'Password cannot contain the username.';
-  }
   return '';
 }
 
