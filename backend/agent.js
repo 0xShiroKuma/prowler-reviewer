@@ -144,6 +144,45 @@ function ipAllowed(allowlist, ip) {
   });
 }
 
+function isLocalhostEntry(entry) {
+  if (!entry) return false;
+  if (entry.family === 4 && entry.addr === '127.0.0.1' && entry.bits === 32) return true;
+  return entry.family === 6 && entry.bits === 128 && (entry.addr === '::1' || entry.addr === '0:0:0:0:0:0:0:1');
+}
+
+// A published Docker port shows the host as the bridge gateway, not 127.0.0.1.
+function gatewayFromRoute(text) {
+  const lines = String(text || '').trim().split('\n').slice(1);
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/);
+    if (parts[1] !== '00000000' || !parts[2] || parts[2] === '00000000') continue;
+    const value = Number.parseInt(parts[2], 16);
+    if (!Number.isFinite(value)) continue;
+    return `${value & 255}.${(value >> 8) & 255}.${(value >> 16) & 255}.${(value >> 24) & 255}`;
+  }
+  return '';
+}
+
+let cachedGateway;
+function hostGateway() {
+  if (cachedGateway !== undefined) return cachedGateway;
+  try {
+    cachedGateway = gatewayFromRoute(fs.readFileSync('/proc/net/route', 'utf8'));
+  } catch {
+    cachedGateway = '';
+  }
+  return cachedGateway;
+}
+
+function clientAllowed(allowlist, ip, aliases = []) {
+  if (!allowlist.length) return true;
+  if (ipAllowed(allowlist, ip)) return true;
+  if (!allowlist.some(isLocalhostEntry)) return false;
+  const normalized = normalizeIp(ip);
+  if (normalized === '127.0.0.1' || normalized === '::1') return true;
+  return aliases.includes(normalized);
+}
+
 function sanitizeAllowlist(value) {
   if (value == null || value === '') return [];
   const list = Array.isArray(value) ? value : String(value).split(/[\n,]/);
@@ -387,7 +426,8 @@ function createAgent({
       return deny(res, 401, 'This key has expired.');
     }
     const allow = (key.ipAllowlist || []).map(parseAllow).filter(Boolean);
-    if (key.ipAllowlist?.length && !ipAllowed(allow, ip)) {
+    const gateway = hostGateway();
+    if (key.ipAllowlist?.length && !clientAllowed(allow, ip, gateway ? [gateway] : [])) {
       audit('agent_denied', { ip, keyId: key.id, reason: 'address' });
       return deny(res, 403, 'This address is not allowed for this key.');
     }
@@ -766,5 +806,7 @@ module.exports = {
   createAgent,
   parseAllow,
   ipAllowed,
+  clientAllowed,
+  gatewayFromRoute,
   normalizeIp
 };

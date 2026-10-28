@@ -10,7 +10,7 @@ Prowler Reviewer is a local app. A person uploads a Prowler OCSF scan, selects b
 
 Call the app origin. The default local origin is `http://localhost:8081`. The path prefix is `/api/v1`. Do not call the backend port. The address check uses the address nginx records for the connection.
 
-A person creates the key in the app under **API**, sets an expiry (90 days at most), and optionally an IP allowlist. The token is shown once. You cannot create, list, or revoke keys. You cannot upload a scan, delete the project, or restore history. A successful write does store a history snapshot.
+A person creates the key in the app under **API**, sets an expiry (90 days at most), and an IP allowlist. The form starts with `127.0.0.1` and `::1`. Those entries also allow the Docker bridge gateway, which is the address this app sees for a harness on the same machine. An empty allowlist allows every address. The token is shown once. You cannot create, list, or revoke keys. You cannot upload a scan, delete the project, or restore history. A successful write does store a history snapshot.
 
 Send the token on every request:
 

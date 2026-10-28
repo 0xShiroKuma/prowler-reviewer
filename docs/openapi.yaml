@@ -1134,7 +1134,7 @@ components:
           type: string
           format: date-time
         ipAllowlist:
-          description: IPv4, IPv6, or CIDR entries. An empty list allows any address. At most 32 entries. Host names are rejected.
+          description: "IPv4, IPv6, or CIDR entries. An empty list allows any address. 127.0.0.1 and ::1 also allow the Docker host gateway, so a harness on the same machine can use the published port. At most 32 entries. Host names are rejected."
           oneOf:
             - type: array
               maxItems: 32

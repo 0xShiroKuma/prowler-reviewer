@@ -15,7 +15,7 @@ process.env.CHECK_METADATA_DIR = path.join(tmp, 'meta');
 delete process.env.COOKIE_SECURE;
 
 const { app } = require('./server');
-const { ipAllowed, parseAllow } = require('./agent');
+const { ipAllowed, parseAllow, clientAllowed, gatewayFromRoute } = require('./agent');
 
 const USER = 'reviewer';
 const PASS = 'correct-horse-battery';
@@ -54,6 +54,14 @@ test('address lists match an address or a range', () => {
   const v6 = parseAllow('2001:db8::/32');
   assert.equal(ipAllowed([v6], '2001:db8::1'), true);
   assert.equal(ipAllowed([v6], '2001:db9::1'), false);
+
+  const local = [parseAllow('127.0.0.1'), parseAllow('::1')];
+  assert.equal(clientAllowed(local, '127.0.0.1', ['172.22.0.1']), true);
+  assert.equal(clientAllowed(local, '::1', ['172.22.0.1']), true);
+  assert.equal(clientAllowed(local, '172.22.0.1', ['172.22.0.1']), true);
+  assert.equal(clientAllowed(local, '203.0.113.9', ['172.22.0.1']), false);
+  assert.equal(clientAllowed([parseAllow('203.0.113.9')], '172.22.0.1', ['172.22.0.1']), false);
+  assert.equal(gatewayFromRoute('Iface Destination Gateway Flags\neth0 00000000 010016AC 0003\n'), '172.22.0.1');
 });
 
 test('agent api', { timeout: 180000 }, async () => {

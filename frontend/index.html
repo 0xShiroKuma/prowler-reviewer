@@ -1361,8 +1361,9 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
         </div>
         <div class="form-group">
           <label class="form-label" for="api-ips">IP addresses</label>
-          <textarea class="form-input" id="api-ips" placeholder="203.0.113.10&#10;10.0.0.0/8"></textarea>
-          <p class="import-bm-hint">One address or CIDR range per line. Leave this empty only when the harness address changes. An empty list allows any address that can reach this app.</p>
+          <textarea class="form-input" id="api-ips" placeholder="203.0.113.10&#10;10.0.0.0/8">127.0.0.1
+::1</textarea>
+          <p class="import-bm-hint">One address or CIDR range per line. The default is this machine. A harness on the same host is still accepted when this app runs in Docker. Clear the list to allow every address that can reach the app.</p>
         </div>
         <label class="import-bm-item" style="padding-left:0">
           <input type="checkbox" id="api-write">
@@ -4492,6 +4493,20 @@ function renderApiKeys(keys) {
   });
 }
 
+const LOCAL_API_IPS = '127.0.0.1\n::1';
+
+function fillApiProjects(projects) {
+  const select = document.getElementById('api-project');
+  const current = select.value || currentProjectId || '';
+  const list = Array.isArray(projects) ? projects : [];
+  if (!list.length) {
+    select.innerHTML = '<option value="">No projects yet</option>';
+    return;
+  }
+  select.innerHTML = list.map(project => `<option value="${esc(project.id)}">${esc(project.name || project.id)}</option>`).join('');
+  if (current && list.some(project => project.id === current)) select.value = current;
+}
+
 async function openApiAccess() {
   document.getElementById('api-error').textContent = '';
   document.getElementById('api-token-panel').hidden = true;
@@ -4499,6 +4514,9 @@ async function openApiAccess() {
   document.getElementById('api-expires').min = localDateInput(0);
   document.getElementById('api-expires').max = localDateInput(90);
   document.getElementById('api-expires').value = localDateInput(30);
+  const ips = document.getElementById('api-ips');
+  if (!ips.value.trim()) ips.value = LOCAL_API_IPS;
+  fillApiProjects(landingProjects);
   document.getElementById('api-modal').classList.add('open');
   try {
     const [keys, projects] = await Promise.all([
@@ -4506,9 +4524,7 @@ async function openApiAccess() {
       api('GET', '/api/projects')
     ]);
     renderApiKeys(keys.keys || []);
-    const select = document.getElementById('api-project');
-    select.innerHTML = (projects || []).map(project => `<option value="${esc(project.id)}">${esc(project.name || project.id)}</option>`).join('');
-    if (currentProjectId) select.value = currentProjectId;
+    fillApiProjects(projects);
   } catch (err) {
     document.getElementById('api-error').textContent = err.message || 'Could not load API keys.';
   }
@@ -4543,7 +4559,7 @@ async function submitApiKey(event) {
     document.getElementById('api-token-value').textContent = apiTokenOnce;
     document.getElementById('api-token-panel').hidden = false;
     document.getElementById('api-name').value = '';
-    document.getElementById('api-ips').value = '';
+    document.getElementById('api-ips').value = LOCAL_API_IPS;
     document.getElementById('api-write').checked = false;
     const keys = await api('GET', '/api/access');
     renderApiKeys(keys.keys || []);
