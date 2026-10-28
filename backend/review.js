@@ -11,6 +11,7 @@ const FINDING_STATUSES = new Set(['', 'confirmed', 'flagged', 'false-positive', 
 const CONTROL_STATUSES = new Set(['', 'pass', 'fail', 'manual', 'n/a']);
 const SEVERITIES = new Set(['critical', 'high', 'medium', 'low', 'informational']);
 const ASSET_STATUSES = new Set(['FAIL', 'PASS', 'MANUAL']);
+const RICH_TEXT_MAX = 2 * 1024 * 1024;
 const CUSTOM_ID = /^custom_[A-Za-z0-9_-]{16,64}$/;
 const BENCHMARK_ID = /^[a-zA-Z0-9_./-]{1,180}$/;
 const REQUIREMENT_ID = /^[A-Za-z0-9][A-Za-z0-9._()[\]:/+-]{0,159}$/;
@@ -109,9 +110,9 @@ function sanitizeCustomFinding(raw) {
     severity,
     cloud: clampText(raw.cloud, 40).trim() || 'Custom',
     service: clampText(raw.service, 120).trim(),
-    details: clampText(raw.details, 16000),
-    impact: clampText(raw.impact, 16000),
-    remediation: clampText(raw.remediation, 16000),
+    details: clampText(raw.details, RICH_TEXT_MAX),
+    impact: clampText(raw.impact, RICH_TEXT_MAX),
+    remediation: clampText(raw.remediation, RICH_TEXT_MAX),
     observations,
     controls,
     assets,
@@ -150,9 +151,9 @@ function sanitizeFindingEdit(raw) {
   if (SEVERITIES.has(raw.severity)) edit.severity = raw.severity;
   if (typeof raw.cloud === 'string') edit.cloud = clampText(raw.cloud, 40).trim();
   if (typeof raw.service === 'string') edit.service = clampText(raw.service, 120).trim();
-  if (typeof raw.details === 'string') edit.details = clampText(raw.details, 16000);
-  if (typeof raw.impact === 'string') edit.impact = clampText(raw.impact, 16000);
-  if (typeof raw.remediation === 'string') edit.remediation = clampText(raw.remediation, 16000);
+  if (typeof raw.details === 'string') edit.details = clampText(raw.details, RICH_TEXT_MAX);
+  if (typeof raw.impact === 'string') edit.impact = clampText(raw.impact, RICH_TEXT_MAX);
+  if (typeof raw.remediation === 'string') edit.remediation = clampText(raw.remediation, RICH_TEXT_MAX);
   if (Array.isArray(raw.observations)) {
     const observations = [];
     for (const item of raw.observations.slice(0, 20)) {
@@ -248,9 +249,9 @@ function buildFindingEdit(body, existing) {
   }
   if (Object.prototype.hasOwnProperty.call(body, 'cloud')) source.cloud = clampText(body.cloud, 40).trim();
   if (Object.prototype.hasOwnProperty.call(body, 'service')) source.service = clampText(body.service, 120).trim();
-  if (Object.prototype.hasOwnProperty.call(body, 'details')) source.details = clampText(body.details, 16000);
-  if (Object.prototype.hasOwnProperty.call(body, 'impact')) source.impact = clampText(body.impact, 16000);
-  if (Object.prototype.hasOwnProperty.call(body, 'remediation')) source.remediation = clampText(body.remediation, 16000);
+  if (Object.prototype.hasOwnProperty.call(body, 'details')) source.details = clampText(body.details, RICH_TEXT_MAX);
+  if (Object.prototype.hasOwnProperty.call(body, 'impact')) source.impact = clampText(body.impact, RICH_TEXT_MAX);
+  if (Object.prototype.hasOwnProperty.call(body, 'remediation')) source.remediation = clampText(body.remediation, RICH_TEXT_MAX);
   if (Object.prototype.hasOwnProperty.call(body, 'observations')) {
     if (!Array.isArray(body.observations)) return { error: 'Observations must be a list.' };
     source.observations = body.observations;
@@ -988,6 +989,7 @@ module.exports = {
   FINDING_STATUSES,
   CONTROL_STATUSES,
   SEVERITIES,
+  RICH_TEXT_MAX,
   withStateLock,
   reviewKey,
   splitReviewKey,

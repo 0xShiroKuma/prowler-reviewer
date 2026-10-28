@@ -19,6 +19,7 @@ const {
   sanitizeControlReviews,
   sanitizeFindingEdits,
   buildFindingEdit,
+  RICH_TEXT_MAX,
   sanitizeControlRef,
   buildProjectReview,
   publicFinding,
@@ -558,13 +559,13 @@ function createAgent({
   const router = express.Router();
   router.use((req, res, next) => {
     const length = Number(req.headers['content-length'] || 0);
-    if (Number.isFinite(length) && length > 262144) {
+    if (Number.isFinite(length) && length > 3 * 1024 * 1024) {
       res.status(413).json({ error: 'Request too large.' });
       return;
     }
     next();
   });
-  router.use(express.json({ limit: '256kb', strict: true }));
+  router.use(express.json({ limit: '3mb', strict: true }));
   router.use(authenticate);
 
   router.get('/', (req, res) => {
@@ -664,7 +665,7 @@ function createAgent({
       if (missing) return deny(res, 400, missing);
       const status = typeof body.status === 'string' ? body.status : '';
       const reason = typeof body.reason === 'string' ? body.reason.replace(/\u0000/g, '').slice(0, 16000) : '';
-      const note = typeof body.note === 'string' ? body.note.replace(/\u0000/g, '').slice(0, 16000) : '';
+      const note = typeof body.note === 'string' ? body.note.replace(/\u0000/g, '').slice(0, RICH_TEXT_MAX) : '';
       if (!FINDING_STATUSES.has(status)) return deny(res, 400, 'Unknown finding status.');
       const customFindings = loaded.state.customFindings.concat(built.finding);
       const next = {
@@ -728,7 +729,7 @@ function createAgent({
         findingEdits,
         statuses: setMapValue(loaded.state.statuses, findingId, status),
         reasons: setMapValue(loaded.state.reasons, findingId, reason.replace(/\u0000/g, '').slice(0, 16000)),
-        notes: setMapValue(loaded.state.notes, findingId, note.replace(/\u0000/g, '').slice(0, 16000))
+        notes: setMapValue(loaded.state.notes, findingId, note.replace(/\u0000/g, '').slice(0, RICH_TEXT_MAX))
       };
       saveState(projectId, loaded.dir, loaded.stored, next, true);
       audit('finding_updated', { keyId: req.agentKey.id, projectId, ip: req.agentIp, findingId });

@@ -779,16 +779,18 @@ components:
           maxLength: 16000
         note:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
+          description: HTML. A pasted image is stored inline in this text.
         details:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
+          description: HTML or the original scan text. A pasted image is stored inline.
         impact:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         remediation:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         observations:
           type: array
           maxItems: 20
@@ -817,7 +819,7 @@ components:
           maxLength: 16000
         note:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         title:
           type: string
           maxLength: 200
@@ -831,13 +833,13 @@ components:
           maxLength: 120
         details:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         impact:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         remediation:
           type: string
-          maxLength: 16000
+          maxLength: 2097152
         observations:
           type: array
           maxItems: 20

@@ -223,31 +223,6 @@ test('agent api', { timeout: 180000 }, async () => {
     assert.equal(content.json.details, 'Reviewed copy of the scan text.');
     assert.equal(content.json.scanner.fail, 1);
 
-    const png = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c49444154789c63000100000500010d0a2db40000000049454e44ae426082', 'hex');
-    const form = new FormData();
-    form.append('image', new Blob([png], { type: 'image/png' }), 'shot.png');
-    const uploaded = await fetch(`${base}/api/project/${projectId}/images`, {
-      method: 'POST',
-      headers: { Cookie: cookie, 'X-Requested-With': 'prowler-reviewer' },
-      body: form
-    });
-    const uploadedJson = await uploaded.json();
-    assert.equal(uploaded.status, 201, JSON.stringify(uploadedJson));
-    assert.match(uploadedJson.url, /^\/api\/project\/proj_agent\/images\/img_[a-f0-9]{32}\.png$/);
-    const image = await fetch(base + uploadedJson.url, { headers: { Cookie: cookie } });
-    assert.equal(image.status, 200);
-    assert.equal(image.headers.get('content-type'), 'image/png');
-    const anonymous = await fetch(base + uploadedJson.url);
-    assert.equal(anonymous.status, 401);
-    const textFile = new FormData();
-    textFile.append('image', new Blob(['not an image'], { type: 'image/png' }), 'note.png');
-    const rejected = await fetch(`${base}/api/project/${projectId}/images`, {
-      method: 'POST',
-      headers: { Cookie: cookie, 'X-Requested-With': 'prowler-reviewer' },
-      body: textFile
-    });
-    assert.equal(rejected.status, 400);
-
     const reviewed = await call(base, 'PATCH', '/api/v1/controls', {
       token,
       body: { benchmarkId: 'aws/cis_test', requirementId: '1.20', status: 'fail', note: 'Checked the console.' }

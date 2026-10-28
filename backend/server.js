@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const { createAuth } = require('./auth');
 const { createAgent } = require('./agent');
-const crypto = require('crypto');
 const { withStateLock, sanitizeCustomFindings, sanitizeControlReviews, sanitizeFindingEdits } = require('./review');
 
 const app = express();
@@ -29,7 +28,6 @@ app.use('/api/auth', express.json({ limit: '8kb', strict: true }));
 app.use('/api/auth', auth.router);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
-const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 } });
 
 function projectDir(id) { return path.join(DATA_DIR, 'projects', id); }
 function historyDir(id) { return path.join(projectDir(id), 'history'); }
@@ -510,52 +508,6 @@ app.get('/api/check-metadata', (req, res) => {
   res.json(buildCheckMetadataIndex());
 });
 
-function safeProjectId(id) {
-  return typeof id === 'string' && /^proj_[A-Za-z0-9_-]+$/.test(id);
-}
-
-function imageKind(buffer) {
-  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return null;
-  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { ext: 'png', type: 'image/png' };
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return { ext: 'jpg', type: 'image/jpeg' };
-  const gif = buffer.subarray(0, 6).toString('ascii');
-  if (gif === 'GIF87a' || gif === 'GIF89a') return { ext: 'gif', type: 'image/gif' };
-  if (buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return { ext: 'webp', type: 'image/webp' };
-  return null;
-}
-
-function safeImageName(name) {
-  return typeof name === 'string' && /^img_[a-f0-9]{32}\.(png|jpg|gif|webp)$/.test(name);
-}
-
-app.post('/api/project/:id/images', imageUpload.single('image'), (req, res) => {
-  const id = req.params.id;
-  if (!safeProjectId(id) || !fs.existsSync(projectDir(id))) return res.status(404).json({ error: 'Project not found.' });
-  if (!req.file) return res.status(400).json({ error: 'Choose an image.' });
-  const kind = imageKind(req.file.buffer);
-  if (!kind) return res.status(400).json({ error: 'Use a PNG, JPEG, GIF, or WebP image.' });
-  const name = `img_${crypto.randomBytes(16).toString('hex')}.${kind.ext}`;
-  const dir = path.join(projectDir(id), 'images');
-  ensureDir(dir);
-  fs.writeFileSync(path.join(dir, name), req.file.buffer);
-  res.status(201).json({ url: `/api/project/${id}/images/${name}` });
-});
-
-app.get('/api/project/:id/images/:name', (req, res) => {
-  const id = req.params.id;
-  const name = req.params.name;
-  if (!safeProjectId(id) || !safeImageName(name)) return res.status(404).json({ error: 'Image not found.' });
-  const dir = path.join(projectDir(id), 'images');
-  const fp = path.join(dir, name);
-  if (!fp.startsWith(dir + path.sep) || !fs.existsSync(fp)) return res.status(404).json({ error: 'Image not found.' });
-  const buffer = fs.readFileSync(fp);
-  const kind = imageKind(buffer);
-  if (!kind) return res.status(404).json({ error: 'Image not found.' });
-  res.setHeader('Content-Type', kind.type);
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.send(buffer);
-});
-
 app.get('/api/check-metadata/:checkId', (req, res) => {
   const id = String(req.params.checkId || '').toLowerCase();
   if (!id || !/^[a-z0-9_-]+$/.test(id)) {
@@ -569,9 +521,6 @@ app.get('/api/check-metadata/:checkId', (req, res) => {
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   const status = Number(err.status || err.statusCode || 0);
-  if (err.code === 'LIMIT_FILE_SIZE' && err.field === 'image') {
-    return res.status(413).json({ error: 'Image is too large.' });
-  }
   if (status === 413 || err.type === 'entity.too.large' || err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: 'Request too large.' });
   }

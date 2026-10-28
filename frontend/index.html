@@ -7,6 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>window.CKEDITOR_BASEPATH = 'https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.22.1/';</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.22.1/ckeditor.js"></script>
 <style>
 @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 300; font-display: swap; src: url("/fonts/montserrat-300.woff2") format("woff2"); }
 @font-face { font-family: "Montserrat"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/montserrat-700.woff2") format("woff2"); }
@@ -468,20 +470,8 @@ input[type=checkbox]:disabled { opacity: 0.45; cursor: not-allowed; }
 .md-block ul,.md-block ol { padding-left: 20px; margin-bottom: 8px; }
 .md-block strong { color: var(--grey1); }
 .md-block a { color: var(--accent); }
-.md-block img, .md-editor-preview img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
-.md-editor { display: flex; flex-direction: column; gap: 6px; }
-.md-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
-.md-toolbar [data-format="bold"] { font-weight: 700; }
-.md-toolbar [data-format="italic"] { font-style: italic; }
-.md-editor-input { min-height: 120px; padding: 8px 12px; resize: vertical; line-height: 1.5; }
-.md-editor-preview[hidden] { display: none; }
-.modal .md-editor-preview { background: #fff; border-color: #bdbdbd; color: var(--ink); }
-.modal .md-editor-preview p,
-.modal .md-editor-preview li,
-.modal .md-editor-preview h1,
-.modal .md-editor-preview h2,
-.modal .md-editor-preview h3,
-.modal .md-editor-preview strong { color: var(--ink); }
+.md-block img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
+.cke_dialog_container, .cke_panel { z-index: 20010 !important; }
 .tag-edited { background: transparent; color: var(--paper); border: 1px solid #8a8a8a; }
 
 .references-block { margin-top: 10px; }
@@ -1327,33 +1317,22 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
           <input class="form-input" id="custom-reason" maxlength="4000" placeholder="Why this is a false positive">
         </div>
         <p class="import-bm-hint" id="custom-scan-hint" hidden>This edits the review copy of the scan finding. The uploaded scan file stays unchanged.</p>
+        <p class="import-bm-hint">Format the text with the toolbar. A pasted image stays in the text.</p>
         <div class="form-group">
           <label class="form-label" for="custom-details">Details</label>
-          <div class="md-editor">
-            <textarea class="form-input md-editor-input" id="custom-details" maxlength="16000" placeholder="Markdown. Paste an image to attach it."></textarea>
-            <div class="md-editor-preview md-block" hidden></div>
-          </div>
+          <textarea class="form-input" id="custom-details"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-impact">Impact</label>
-          <div class="md-editor">
-            <textarea class="form-input md-editor-input" id="custom-impact" maxlength="16000"></textarea>
-            <div class="md-editor-preview md-block" hidden></div>
-          </div>
+          <textarea class="form-input" id="custom-impact"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-remediation">Remediation</label>
-          <div class="md-editor">
-            <textarea class="form-input md-editor-input" id="custom-remediation" maxlength="16000"></textarea>
-            <div class="md-editor-preview md-block" hidden></div>
-          </div>
+          <textarea class="form-input" id="custom-remediation"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-note">Reviewer note</label>
-          <div class="md-editor">
-            <textarea class="form-input md-editor-input" id="custom-note" maxlength="16000" placeholder="Paragraph for the client"></textarea>
-            <div class="md-editor-preview md-block" hidden></div>
-          </div>
+          <textarea class="form-input" id="custom-note"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Assets</label>
@@ -1684,7 +1663,7 @@ async function copyRichContent(plain, html, successMsg) {
 
 function markdownToCopyHtml(text) {
   if (!text) return '';
-  try { return DOMPurify.sanitize(marked.parse(text)); }
+  try { return DOMPurify.sanitize(toEditorHtml(text)); }
   catch { return esc(text).replace(/\n/g, '<br>'); }
 }
 
@@ -1751,9 +1730,17 @@ function getUniqueFromFailedAssets(findings, field) {
   return [...items].join('; ');
 }
 
+function toEditorHtml(value) {
+  const text = value || '';
+  if (!text.trim()) return '';
+  if (/^\s*</.test(text) || /<img\b/i.test(text) || text.includes('data:image/')) return text;
+  try { return marked.parse(text); }
+  catch { return text; }
+}
+
 function renderMD(text) {
   if (!text) return '<span style="color:var(--text-dim);font-size:12px">No information available</span>';
-  try { return DOMPurify.sanitize(marked.parse(text)); }
+  try { return DOMPurify.sanitize(toEditorHtml(text)); }
   catch { return esc(text).replace(/\n/g,'<br>'); }
 }
 marked.setOptions({ breaks: true, gfm: true });
@@ -3144,6 +3131,7 @@ function updateBulkStatusBar() {
 }
 
 function renderFindings() {
+  destroyNoteEditors();
   updateBulkStatusBar();
   const el = document.getElementById('findings-list');
   if (!filteredFindings.length) {
@@ -3315,6 +3303,7 @@ function switchTab(id, tab, el) {
   card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById(`tp-${id}-${tab}`)?.classList.add('active');
+  if (tab === 'details') mountNoteEditor(id);
 }
 
 // Analysis status
@@ -3365,26 +3354,14 @@ function setReason(id, inputEl) {
   scheduleSave({ statuses: analysisStatuses, reasons: analysisReasons, notes: analysisNotes });
 }
 
-function mdToolbarHtml() {
-  return `<div class="md-toolbar" role="toolbar" aria-label="Formatting">
-    <button class="btn small" type="button" data-format="bold" title="Bold">B</button>
-    <button class="btn small" type="button" data-format="italic" title="Italic">I</button>
-    <button class="btn small" type="button" data-format="code" title="Code">Code</button>
-    <button class="btn small" type="button" data-format="h2" title="Heading">H</button>
-    <button class="btn small" type="button" data-format="list" title="List">List</button>
-    <button class="btn small" type="button" data-format="link" title="Link">Link</button>
-    <button class="btn small" type="button" data-format="image" title="Insert image">Image</button>
-    <button class="btn small" type="button" data-format="preview" title="Preview">Preview</button>
-  </div>`;
+function noteEditorId(findingId) {
+  return 'review-note-' + encodeURIComponent(findingId).replace(/%/g, '_');
 }
 
 function renderReviewerNote(id) {
-  return `<div class="reviewer-note md-editor" onclick="event.stopPropagation()">
-    ${mdToolbarHtml()}
+  return `<div class="reviewer-note" onclick="event.stopPropagation()">
     <div class="section-label">Reviewer note</div>
-    <textarea class="reviewer-note-input md-editor-input" data-note-for="${esc(id)}" maxlength="16000" placeholder="Paragraph for the client. Markdown, and you can paste an image." oninput="setNote('${esc(id)}', this)">${esc(analysisNotes[id] || '')}</textarea>
-    <div class="md-editor-preview md-block" hidden></div>
-    <input class="md-editor-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+    <textarea class="reviewer-note-input" id="${noteEditorId(id)}">${esc(analysisNotes[id] || '')}</textarea>
   </div>`;
 }
 
@@ -4498,10 +4475,6 @@ async function openCustomFinding(id) {
   document.getElementById('custom-error').textContent = '';
   document.getElementById('custom-asset-search').value = '';
   document.getElementById('custom-control-search').value = '';
-  document.querySelectorAll('#custom-finding-modal .md-editor-preview').forEach(preview => {
-    preview.hidden = true;
-    preview.innerHTML = '';
-  });
   const assets = document.getElementById('custom-assets');
   assets.innerHTML = '';
   const visibleAssets = (existing?.assets || []).filter(asset => !asset.absent);
@@ -4520,10 +4493,12 @@ async function openCustomFinding(id) {
   customControlPicks = new Set(controls.map(control => `${control.benchmarkId}|${control.requirementId}`));
   renderCustomControlChoices();
   renderCustomAssetChoices();
+  mountModalEditors();
   document.getElementById('custom-title').focus();
 }
 
 function closeCustomFinding() {
+  destroyModalEditors();
   document.getElementById('custom-finding-modal').classList.remove('open');
   customDraftId = null;
   customDraftKind = '';
@@ -4531,8 +4506,15 @@ function closeCustomFinding() {
 
 function submitCustomFinding(event) {
   event.preventDefault();
+  syncModalEditors();
   const title = document.getElementById('custom-title').value.trim();
   const error = document.getElementById('custom-error');
+  for (const id of MODAL_EDITOR_IDS) {
+    if ((document.getElementById(id).value || '').length > RICH_TEXT_MAX) {
+      error.textContent = 'One of the text fields is too large. Paste a smaller image.';
+      return;
+    }
+  }
   if (!title) {
     error.textContent = 'A title is required.';
     return;
@@ -4943,137 +4925,78 @@ async function boot() {
   }
 }
 
-function prepareMarkdownEditors(root = document) {
-  root.querySelectorAll('.md-editor').forEach(editor => {
-    if (!editor.querySelector('.md-toolbar')) editor.insertAdjacentHTML('afterbegin', mdToolbarHtml());
-    if (!editor.querySelector('.md-editor-preview')) editor.insertAdjacentHTML('beforeend', '<div class="md-editor-preview md-block" hidden></div>');
-    if (!editor.querySelector('.md-editor-file')) editor.insertAdjacentHTML('beforeend', '<input class="md-editor-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>');
+const RICH_TEXT_MAX = 2 * 1024 * 1024;
+const MODAL_EDITOR_IDS = ['custom-details', 'custom-impact', 'custom-remediation', 'custom-note'];
+
+function richEditorConfig(height) {
+  return {
+    height,
+    versionCheck: false,
+    removePlugins: 'elementspath,exportpdf,uploadimage,uploadwidget,cloudservices',
+    resize_enabled: true,
+    extraAllowedContent: 'img[src,alt,width,height]',
+    baseFloatZIndex: 20000,
+    contentsCss: [CKEDITOR_BASEPATH + 'contents.css', '/editor.css'],
+    toolbar: [[
+      'Bold', 'Italic', 'Underline', 'Strike', '-',
+      'NumberedList', 'BulletedList', 'Blockquote', '-',
+      'Link', 'Unlink', '-',
+      'RemoveFormat'
+    ]]
+  };
+}
+
+function destroyEditor(name) {
+  const editor = window.CKEDITOR?.instances[name];
+  if (editor) editor.destroy(true);
+}
+
+function destroyNoteEditors() {
+  if (!window.CKEDITOR) return;
+  for (const name of Object.keys(CKEDITOR.instances)) {
+    if (name.startsWith('review-note-')) destroyEditor(name);
+  }
+}
+
+function destroyModalEditors() {
+  for (const id of MODAL_EDITOR_IDS) destroyEditor(id);
+}
+
+function syncModalEditors() {
+  if (!window.CKEDITOR) return;
+  for (const id of MODAL_EDITOR_IDS) CKEDITOR.instances[id]?.updateElement();
+}
+
+function mountModalEditors() {
+  if (!window.CKEDITOR) return;
+  for (const id of MODAL_EDITOR_IDS) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    destroyEditor(id);
+    el.value = toEditorHtml(el.value);
+    CKEDITOR.replace(el, richEditorConfig(160));
+  }
+}
+
+function mountNoteEditor(findingId) {
+  if (!window.CKEDITOR) return;
+  const name = noteEditorId(findingId);
+  const el = document.getElementById(name);
+  if (!el || CKEDITOR.instances[name]) return;
+  el.value = toEditorHtml(el.value);
+  const editor = CKEDITOR.replace(el, richEditorConfig(140));
+  editor.on('instanceReady', () => {
+    editor.on('change', () => {
+      const html = editor.getData();
+      if (html.length > RICH_TEXT_MAX) {
+        toast('This note is too large. Paste a smaller image.', 'error');
+        return;
+      }
+      const empty = !/<img\b/i.test(html) && !html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').trim();
+      setNote(findingId, { value: empty ? '' : html, dataset: { noteFor: findingId } });
+    });
   });
 }
-
-function replaceEditorSelection(textarea, replacement, selectFrom, selectTo) {
-  const start = textarea.selectionStart ?? textarea.value.length;
-  const end = textarea.selectionEnd ?? start;
-  textarea.value = textarea.value.slice(0, start) + replacement + textarea.value.slice(end);
-  const from = start + (selectFrom ?? replacement.length);
-  const to = start + (selectTo ?? replacement.length);
-  textarea.focus();
-  textarea.setSelectionRange(from, to);
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function applyEditorFormat(editor, format) {
-  const textarea = editor.querySelector('.md-editor-input');
-  if (!textarea) return;
-  const start = textarea.selectionStart ?? 0;
-  const end = textarea.selectionEnd ?? start;
-  const selected = textarea.value.slice(start, end);
-  if (format === 'preview') {
-    const preview = editor.querySelector('.md-editor-preview');
-    const show = preview.hidden;
-    preview.hidden = !show;
-    if (show) preview.innerHTML = renderMD(textarea.value);
-    editor.querySelector('[data-format="preview"]')?.setAttribute('aria-pressed', show ? 'true' : 'false');
-    return;
-  }
-  if (format === 'image') {
-    editor.querySelector('.md-editor-file')?.click();
-    return;
-  }
-  if (format === 'bold') {
-    const text = selected || 'text';
-    replaceEditorSelection(textarea, `**${text}**`, 2, 2 + text.length);
-    return;
-  }
-  if (format === 'italic') {
-    const text = selected || 'text';
-    replaceEditorSelection(textarea, `*${text}*`, 1, 1 + text.length);
-    return;
-  }
-  if (format === 'code') {
-    const text = selected || 'code';
-    if (text.includes('\n')) replaceEditorSelection(textarea, '```\n' + text + '\n```', 4, 4 + text.length);
-    else replaceEditorSelection(textarea, '`' + text + '`', 1, 1 + text.length);
-    return;
-  }
-  if (format === 'h2') {
-    const text = selected || 'Heading';
-    const prefix = start === 0 || textarea.value[start - 1] === '\n' ? '## ' : '\n## ';
-    replaceEditorSelection(textarea, prefix + text, prefix.length, prefix.length + text.length);
-    return;
-  }
-  if (format === 'list') {
-    const lines = (selected || 'item').split('\n').map(line => line.startsWith('- ') ? line : `- ${line}`);
-    const prefix = start === 0 || textarea.value[start - 1] === '\n' ? '' : '\n';
-    replaceEditorSelection(textarea, prefix + lines.join('\n'));
-    return;
-  }
-  if (format === 'link') {
-    const text = selected || 'link text';
-    const markdown = `[${text}](https://)`;
-    const urlStart = markdown.lastIndexOf('https://');
-    replaceEditorSelection(textarea, markdown, urlStart, urlStart + 'https://'.length);
-  }
-}
-
-function imageFileFromClipboard(data) {
-  if (!data?.items) return null;
-  for (const item of data.items) {
-    if (item.kind === 'file' && /^image\/(png|jpeg|gif|webp)$/.test(item.type)) return item.getAsFile();
-  }
-  return null;
-}
-
-async function insertEditorImage(textarea, file) {
-  if (!currentProjectId) {
-    toast('Open a project before adding an image.', 'error');
-    return;
-  }
-  const body = new FormData();
-  const name = file.name && /\.(png|jpe?g|gif|webp)$/i.test(file.name) ? file.name : 'pasted.png';
-  body.append('image', file, name);
-  try {
-    const saved = await api('POST', `/api/project/${currentProjectId}/images`, body);
-    const markdown = `![pasted image](${saved.url})`;
-    const start = textarea.selectionStart ?? textarea.value.length;
-    const prefix = start > 0 && textarea.value[start - 1] !== '\n' ? '\n' : '';
-    replaceEditorSelection(textarea, prefix + markdown);
-    toast('Image added');
-  } catch (err) {
-    toast(err.message || 'Could not add the image.', 'error');
-  }
-}
-
-document.addEventListener('click', event => {
-  const button = event.target.closest?.('[data-format]');
-  if (!button?.closest('.md-editor')) return;
-  event.preventDefault();
-  event.stopPropagation();
-  applyEditorFormat(button.closest('.md-editor'), button.dataset.format);
-});
-document.addEventListener('paste', event => {
-  const textarea = event.target.closest?.('.md-editor-input');
-  if (!textarea) return;
-  const file = imageFileFromClipboard(event.clipboardData);
-  if (!file) return;
-  event.preventDefault();
-  insertEditorImage(textarea, file);
-});
-document.addEventListener('change', event => {
-  const input = event.target.closest?.('.md-editor-file');
-  if (!input?.files?.[0]) return;
-  const file = input.files[0];
-  input.value = '';
-  const textarea = input.closest('.md-editor')?.querySelector('.md-editor-input');
-  if (textarea) insertEditorImage(textarea, file);
-});
-document.addEventListener('input', event => {
-  const textarea = event.target.closest?.('.md-editor-input');
-  if (!textarea) return;
-  const preview = textarea.closest('.md-editor')?.querySelector('.md-editor-preview');
-  if (preview && !preview.hidden) preview.innerHTML = renderMD(textarea.value);
-});
-prepareMarkdownEditors();
 
 // =========================================================
 // INIT

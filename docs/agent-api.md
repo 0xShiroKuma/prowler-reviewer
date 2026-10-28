@@ -186,7 +186,7 @@ Asset `status` on a stored custom finding is `FAIL`, `PASS`, or `MANUAL`. Omitte
 
 Write scope. Creates a custom finding and returns the detail object with `201`.
 
-Required: `title` (1–200 characters) and `assets` (1–100 items, each with `name`, 1–300 characters). Optional: `severity` (default `medium`), `cloud` (default `Custom`, max 40), `service` (max 120), `status`, `reason` (max 16000), `note` (max 16000), `details`, `impact`, `remediation` (each max 16000), `observations` (max 20 strings, 4000 each), `controls` (max 40).
+Required: `title` (1–200 characters) and `assets` (1–100 items, each with `name`, 1–300 characters). Optional: `severity` (default `medium`), `cloud` (default `Custom`, max 40), `service` (max 120), `status`, `reason` (max 16000), `note`, `details`, `impact`, and `remediation` (each max 2 MiB, HTML from the editor, with pasted images inline), `observations` (max 20 strings, 4000 each), `controls` (max 40).
 
 Each control is `{ "benchmarkId", "requirementId", "label" }`. `label` is optional and max 240 characters. The benchmark and requirement must exist in the catalog. The project keeps at most 200 custom findings.
 
