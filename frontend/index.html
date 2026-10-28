@@ -468,6 +468,21 @@ input[type=checkbox]:disabled { opacity: 0.45; cursor: not-allowed; }
 .md-block ul,.md-block ol { padding-left: 20px; margin-bottom: 8px; }
 .md-block strong { color: var(--grey1); }
 .md-block a { color: var(--accent); }
+.md-block img, .md-editor-preview img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
+.md-editor { display: flex; flex-direction: column; gap: 6px; }
+.md-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+.md-toolbar [data-format="bold"] { font-weight: 700; }
+.md-toolbar [data-format="italic"] { font-style: italic; }
+.md-editor-input { min-height: 120px; padding: 8px 12px; resize: vertical; line-height: 1.5; }
+.md-editor-preview[hidden] { display: none; }
+.modal .md-editor-preview { background: #fff; border-color: #bdbdbd; color: var(--ink); }
+.modal .md-editor-preview p,
+.modal .md-editor-preview li,
+.modal .md-editor-preview h1,
+.modal .md-editor-preview h2,
+.modal .md-editor-preview h3,
+.modal .md-editor-preview strong { color: var(--ink); }
+.tag-edited { background: transparent; color: var(--paper); border: 1px solid #8a8a8a; }
 
 .references-block { margin-top: 10px; }
 .references-block a { display: block; font-size: 11px; color: var(--accent); margin-top: 4px; word-break: break-all; }
@@ -1311,21 +1326,34 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
           <label class="form-label" for="custom-reason">False positive reason</label>
           <input class="form-input" id="custom-reason" maxlength="4000" placeholder="Why this is a false positive">
         </div>
+        <p class="import-bm-hint" id="custom-scan-hint" hidden>This edits the review copy of the scan finding. The uploaded scan file stays unchanged.</p>
         <div class="form-group">
           <label class="form-label" for="custom-details">Details</label>
-          <textarea class="form-input" id="custom-details" maxlength="16000"></textarea>
+          <div class="md-editor">
+            <textarea class="form-input md-editor-input" id="custom-details" maxlength="16000" placeholder="Markdown. Paste an image to attach it."></textarea>
+            <div class="md-editor-preview md-block" hidden></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-impact">Impact</label>
-          <textarea class="form-input" id="custom-impact" maxlength="16000"></textarea>
+          <div class="md-editor">
+            <textarea class="form-input md-editor-input" id="custom-impact" maxlength="16000"></textarea>
+            <div class="md-editor-preview md-block" hidden></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-remediation">Remediation</label>
-          <textarea class="form-input" id="custom-remediation" maxlength="16000"></textarea>
+          <div class="md-editor">
+            <textarea class="form-input md-editor-input" id="custom-remediation" maxlength="16000"></textarea>
+            <div class="md-editor-preview md-block" hidden></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label" for="custom-note">Reviewer note</label>
-          <textarea class="form-input" id="custom-note" maxlength="16000" placeholder="Paragraph for the client"></textarea>
+          <div class="md-editor">
+            <textarea class="form-input md-editor-input" id="custom-note" maxlength="16000" placeholder="Paragraph for the client"></textarea>
+            <div class="md-editor-preview md-block" hidden></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Assets</label>
@@ -1470,6 +1498,8 @@ function mountIcons(root) {
 // =========================================================
 let currentProjectId   = null;
 let rawFindings        = [];
+let scanFindings       = [];
+let findingEdits       = {};
 let filteredFindings   = [];
 let analysisStatuses   = {};
 let analysisReasons    = {};
@@ -1505,6 +1535,7 @@ let projectsLoaded = false;
 let sessionEnding = false;
 let authMode = 'login';
 let customDraftId = null;
+let customDraftKind = '';
 let customControlPicks = new Set();
 let apiTokenOnce = '';
 
@@ -2389,6 +2420,9 @@ function applyReviewState(state) {
   projectScans = source.scans || [];
   preferredBenchmarks = source.preferredBenchmarks || [];
   customFindings = Array.isArray(source.customFindings) ? source.customFindings : [];
+  findingEdits = source.findingEdits && typeof source.findingEdits === 'object' && !Array.isArray(source.findingEdits)
+    ? source.findingEdits
+    : {};
   controlReviews = source.controlReviews && typeof source.controlReviews === 'object' && !Array.isArray(source.controlReviews)
     ? source.controlReviews
     : {};
@@ -2425,6 +2459,7 @@ function alignReviewerKeys(findings, originalCloud) {
   analysisStatuses = rewrite(analysisStatuses);
   analysisReasons = rewrite(analysisReasons);
   analysisNotes = rewrite(analysisNotes);
+  findingEdits = rewrite(findingEdits);
 }
 
 function matchPrevAsset(asset, prevAssets) {
@@ -2543,7 +2578,8 @@ async function rebuildFindings(state) {
   alignReviewerKeys(findings, firstCloud(evidence.items));
   if (evidence.hasRetest) findings = annotateRetest(findings, consolidateFindings(evidence.baselineItems, clouds.size > 1));
   enrichFindingsWithMetadata(findings);
-  rawFindings = sortFindings([...findings, ...customFindings.map(materializeCustomFinding)]);
+  scanFindings = findings;
+  composeFindings();
   retestActive = evidence.hasRetest;
   const filter = document.getElementById('retest-filter');
   if (filter) filter.hidden = !retestActive;
@@ -2617,6 +2653,8 @@ function goHome(opts = {}) {
   analysisReasons      = {};
   analysisNotes        = {};
   customFindings       = [];
+  findingEdits         = {};
+  scanFindings         = [];
   controlReviews       = {};
   projectScans         = [];
   retestActive         = false;
@@ -3148,6 +3186,7 @@ function renderFindingCard(f) {
     <span class="finding-title">${esc(f.title)}</span>
     <div class="finding-meta">
       ${f.source === 'custom' ? '<span class="tag tag-custom">Custom</span>' : ''}
+      ${findingEdits[f.id] ? '<span class="tag tag-edited">Edited</span>' : ''}
       ${f.cloud   ? `<span class="tag tag-cloud">${esc(f.cloud)}</span>` : ''}
       ${f.service ? `<span class="tag tag-service">${esc(f.service)}</span>` : ''}
       ${failedAssets.length ? `<span class="tag tag-failed">${failedAssets.length} FAIL</span>` : ''}
@@ -3161,7 +3200,8 @@ function renderFindingCard(f) {
         { value: 'false-positive', label: 'False Positive' },
         { value: 'reported', label: 'Reported' },
       ])}
-      ${f.source === 'custom' ? `<button class="btn small" type="button" onclick="event.stopPropagation(); openCustomFinding('${esc(f.id)}')">Edit</button><button class="btn small danger" type="button" onclick="event.stopPropagation(); deleteCustomFinding('${esc(f.id)}')">Delete</button>` : ''}
+      <button class="btn small" type="button" onclick="event.stopPropagation(); openCustomFinding('${esc(f.id)}')">Edit</button>
+      ${f.source === 'custom' ? `<button class="btn small danger" type="button" onclick="event.stopPropagation(); deleteCustomFinding('${esc(f.id)}')">Delete</button>` : ''}
     </div>
   </div>
   ${aStatus === 'false-positive' ? renderReasonField(f.id) : ''}
@@ -3325,10 +3365,26 @@ function setReason(id, inputEl) {
   scheduleSave({ statuses: analysisStatuses, reasons: analysisReasons, notes: analysisNotes });
 }
 
+function mdToolbarHtml() {
+  return `<div class="md-toolbar" role="toolbar" aria-label="Formatting">
+    <button class="btn small" type="button" data-format="bold" title="Bold">B</button>
+    <button class="btn small" type="button" data-format="italic" title="Italic">I</button>
+    <button class="btn small" type="button" data-format="code" title="Code">Code</button>
+    <button class="btn small" type="button" data-format="h2" title="Heading">H</button>
+    <button class="btn small" type="button" data-format="list" title="List">List</button>
+    <button class="btn small" type="button" data-format="link" title="Link">Link</button>
+    <button class="btn small" type="button" data-format="image" title="Insert image">Image</button>
+    <button class="btn small" type="button" data-format="preview" title="Preview">Preview</button>
+  </div>`;
+}
+
 function renderReviewerNote(id) {
-  return `<div class="reviewer-note" onclick="event.stopPropagation()">
+  return `<div class="reviewer-note md-editor" onclick="event.stopPropagation()">
+    ${mdToolbarHtml()}
     <div class="section-label">Reviewer note</div>
-    <textarea class="reviewer-note-input" data-note-for="${esc(id)}" placeholder="Paragraph for the client" oninput="setNote('${esc(id)}', this)">${esc(analysisNotes[id] || '')}</textarea>
+    <textarea class="reviewer-note-input md-editor-input" data-note-for="${esc(id)}" maxlength="16000" placeholder="Paragraph for the client. Markdown, and you can paste an image." oninput="setNote('${esc(id)}', this)">${esc(analysisNotes[id] || '')}</textarea>
+    <div class="md-editor-preview md-block" hidden></div>
+    <input class="md-editor-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
   </div>`;
 }
 
@@ -4140,6 +4196,7 @@ async function doSave(extra = {}, withSnapshot = true) {
       scans: projectScans,
       preferredBenchmarks,
       customFindings,
+      findingEdits,
       controlReviews,
       ...extra,
       _snapshot: withSnapshot
@@ -4160,7 +4217,7 @@ function relatedBenchmarkControls(finding) {
     if (!benchmark?.Requirements) continue;
     for (const requirement of benchmark.Requirements) {
       const key = reviewKey(benchmarkId, requirement.Id);
-      const byCheck = finding.source !== 'custom' && (requirement.Checks || []).some(check => String(check).toLowerCase() === short);
+      const byCheck = !finding.controlsEdited && finding.source !== 'custom' && (requirement.Checks || []).some(check => String(check).toLowerCase() === short);
       const byRef = refs.has(key);
       if (!byCheck && !byRef) continue;
       if (seen.has(key)) continue;
@@ -4282,6 +4339,12 @@ function toggleCustomReason() {
 function customAssetRow(asset = {}) {
   const row = document.createElement('div');
   row.className = 'custom-asset-row';
+  row.dataset.subscription = asset.subscription || '';
+  row.dataset.resourceGroup = asset.resourceGroup || '';
+  row.dataset.service = asset.service || '';
+  row.dataset.uid = asset.uid || '';
+  row.dataset.resourceId = asset.resourceId || '';
+  row.dataset.portalLink = asset.portalLink || '';
   row.innerHTML = `
     <input class="form-input custom-asset-name" maxlength="300" placeholder="Asset name" value="${esc(asset.name || '')}">
     <input class="form-input custom-asset-region" maxlength="200" placeholder="Region" value="${esc(asset.region || '')}">
@@ -4367,9 +4430,45 @@ function renderCustomControlChoices() {
   });
 }
 
-function syncCustomFindings() {
-  const prowler = rawFindings.filter(finding => finding.source !== 'custom');
+function applyClientFindingEdit(finding, edit) {
+  if (!edit || finding.source === 'custom') return finding;
+  const next = { ...finding, edited: true };
+  if (edit.title) next.title = edit.title;
+  if (edit.severity) next.severity = edit.severity;
+  if (edit.cloud) next.cloud = edit.cloud;
+  if (Object.prototype.hasOwnProperty.call(edit, 'service')) next.service = edit.service;
+  if (Object.prototype.hasOwnProperty.call(edit, 'details')) {
+    next.details = edit.details;
+    next.description = edit.details;
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'impact')) {
+    next.impact = edit.impact;
+    next.risk = edit.impact;
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'remediation')) next.remediation = edit.remediation;
+  if (edit.assets) {
+    const assets = edit.assets.map(asset => ({ ...asset, absent: false }));
+    next.assets = assets;
+    next.failCount = assets.filter(asset => asset.status === 'FAIL').length;
+    next.passCount = assets.filter(asset => asset.status === 'PASS').length;
+    next.manualCount = assets.filter(asset => asset.status === 'MANUAL').length;
+    next.subscriptions = [...new Set(assets.map(asset => asset.subscription).filter(Boolean))];
+    next.resourceGroups = [...new Set(assets.map(asset => asset.resourceGroup).filter(Boolean))];
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'controls')) {
+    next.controlRefs = edit.controls;
+    next.controlsEdited = true;
+  }
+  return next;
+}
+
+function composeFindings() {
+  const prowler = scanFindings.map(finding => applyClientFindingEdit(finding, findingEdits[finding.id]));
   rawFindings = sortFindings([...prowler, ...customFindings.map(materializeCustomFinding)]);
+}
+
+function syncCustomFindings() {
+  composeFindings();
   buildCheckNameMap();
   buildFilterOptions();
   applyFilters();
@@ -4379,29 +4478,46 @@ function syncCustomFindings() {
 
 async function openCustomFinding(id) {
   customDraftId = id || null;
-  const existing = id ? customFindings.find(finding => finding.id === id) : null;
+  const custom = id ? customFindings.find(finding => finding.id === id) : null;
+  const live = id ? rawFindings.find(finding => finding.id === id) : null;
+  const prowler = live && live.source !== 'custom' ? live : null;
+  customDraftKind = custom ? 'custom' : (prowler ? 'prowler' : '');
+  const existing = custom || prowler;
   document.getElementById('custom-finding-title').textContent = existing ? 'Edit finding' : 'Add finding';
+  document.getElementById('custom-scan-hint').hidden = customDraftKind !== 'prowler';
   document.getElementById('custom-title').value = existing?.title || '';
   document.getElementById('custom-severity').value = existing?.severity || 'medium';
   document.getElementById('custom-status').value = analysisStatuses[id] || '';
   document.getElementById('custom-cloud').value = existing?.cloud === 'Custom' ? '' : (existing?.cloud || '');
   document.getElementById('custom-service').value = existing?.service || '';
   document.getElementById('custom-reason').value = id ? (analysisReasons[id] || '') : '';
-  document.getElementById('custom-details').value = existing?.details || '';
-  document.getElementById('custom-impact').value = existing?.impact || '';
+  document.getElementById('custom-details').value = existing?.details || existing?.description || '';
+  document.getElementById('custom-impact').value = existing?.impact || existing?.risk || '';
   document.getElementById('custom-remediation').value = existing?.remediation || '';
   document.getElementById('custom-note').value = id ? (analysisNotes[id] || '') : '';
   document.getElementById('custom-error').textContent = '';
   document.getElementById('custom-asset-search').value = '';
   document.getElementById('custom-control-search').value = '';
+  document.querySelectorAll('#custom-finding-modal .md-editor-preview').forEach(preview => {
+    preview.hidden = true;
+    preview.innerHTML = '';
+  });
   const assets = document.getElementById('custom-assets');
   assets.innerHTML = '';
-  for (const asset of existing?.assets || []) addCustomAsset(asset);
+  const visibleAssets = (existing?.assets || []).filter(asset => !asset.absent);
+  for (const asset of visibleAssets) addCustomAsset(asset);
   if (!existing) addCustomAsset();
   toggleCustomReason();
   document.getElementById('custom-finding-modal').classList.add('open');
   await ensurePreferredBenchmarksLoaded();
-  customControlPicks = new Set((existing?.controls || []).map(control => `${control.benchmarkId}|${control.requirementId}`));
+  let controls = custom?.controls || [];
+  if (prowler) {
+    controls = findingEdits[id]?.controls || relatedBenchmarkControls(prowler).map(row => ({
+      benchmarkId: row.benchmarkId,
+      requirementId: row.requirementId
+    }));
+  }
+  customControlPicks = new Set(controls.map(control => `${control.benchmarkId}|${control.requirementId}`));
   renderCustomControlChoices();
   renderCustomAssetChoices();
   document.getElementById('custom-title').focus();
@@ -4410,6 +4526,7 @@ async function openCustomFinding(id) {
 function closeCustomFinding() {
   document.getElementById('custom-finding-modal').classList.remove('open');
   customDraftId = null;
+  customDraftKind = '';
 }
 
 function submitCustomFinding(event) {
@@ -4423,7 +4540,13 @@ function submitCustomFinding(event) {
   const assets = [...document.querySelectorAll('#custom-assets .custom-asset-row')].map(row => ({
     name: row.querySelector('.custom-asset-name').value.trim(),
     region: row.querySelector('.custom-asset-region').value.trim(),
-    status: row.querySelector('.custom-asset-status').value
+    status: row.querySelector('.custom-asset-status').value,
+    subscription: row.dataset.subscription || '',
+    resourceGroup: row.dataset.resourceGroup || '',
+    service: row.dataset.service || '',
+    uid: row.dataset.uid || '',
+    resourceId: row.dataset.resourceId || '',
+    portalLink: row.dataset.portalLink || ''
   })).filter(asset => asset.name);
   if (!assets.length) {
     error.textContent = 'Add at least one asset.';
@@ -4440,6 +4563,33 @@ function submitCustomFinding(event) {
     };
   });
   const id = customDraftId || newCustomId();
+  const status = document.getElementById('custom-status').value;
+  const reason = document.getElementById('custom-reason').value;
+  const note = document.getElementById('custom-note').value;
+  if (status) analysisStatuses[id] = status;
+  else delete analysisStatuses[id];
+  if (reason) analysisReasons[id] = reason;
+  else delete analysisReasons[id];
+  if (note) analysisNotes[id] = note;
+  else delete analysisNotes[id];
+  if (customDraftKind === 'prowler') {
+    findingEdits[id] = {
+      title,
+      severity: document.getElementById('custom-severity').value,
+      cloud: document.getElementById('custom-cloud').value.trim(),
+      service: document.getElementById('custom-service').value.trim(),
+      details: document.getElementById('custom-details').value,
+      impact: document.getElementById('custom-impact').value,
+      remediation: document.getElementById('custom-remediation').value,
+      controls,
+      assets
+    };
+    closeCustomFinding();
+    syncCustomFindings();
+    scheduleSave({ findingCount: rawFindings.length });
+    toast('Finding updated');
+    return;
+  }
   const previous = customFindings.find(finding => finding.id === id);
   const record = {
     id,
@@ -4458,15 +4608,6 @@ function submitCustomFinding(event) {
   customFindings = previous
     ? customFindings.map(finding => finding.id === id ? record : finding)
     : customFindings.concat(record);
-  const status = document.getElementById('custom-status').value;
-  const reason = document.getElementById('custom-reason').value;
-  const note = document.getElementById('custom-note').value;
-  if (status) analysisStatuses[id] = status;
-  else delete analysisStatuses[id];
-  if (reason) analysisReasons[id] = reason;
-  else delete analysisReasons[id];
-  if (note) analysisNotes[id] = note;
-  else delete analysisNotes[id];
   closeCustomFinding();
   syncCustomFindings();
   scheduleSave({ findingCount: rawFindings.length });
@@ -4801,6 +4942,138 @@ async function boot() {
     setAuthError('Cannot reach the server.');
   }
 }
+
+function prepareMarkdownEditors(root = document) {
+  root.querySelectorAll('.md-editor').forEach(editor => {
+    if (!editor.querySelector('.md-toolbar')) editor.insertAdjacentHTML('afterbegin', mdToolbarHtml());
+    if (!editor.querySelector('.md-editor-preview')) editor.insertAdjacentHTML('beforeend', '<div class="md-editor-preview md-block" hidden></div>');
+    if (!editor.querySelector('.md-editor-file')) editor.insertAdjacentHTML('beforeend', '<input class="md-editor-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>');
+  });
+}
+
+function replaceEditorSelection(textarea, replacement, selectFrom, selectTo) {
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? start;
+  textarea.value = textarea.value.slice(0, start) + replacement + textarea.value.slice(end);
+  const from = start + (selectFrom ?? replacement.length);
+  const to = start + (selectTo ?? replacement.length);
+  textarea.focus();
+  textarea.setSelectionRange(from, to);
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function applyEditorFormat(editor, format) {
+  const textarea = editor.querySelector('.md-editor-input');
+  if (!textarea) return;
+  const start = textarea.selectionStart ?? 0;
+  const end = textarea.selectionEnd ?? start;
+  const selected = textarea.value.slice(start, end);
+  if (format === 'preview') {
+    const preview = editor.querySelector('.md-editor-preview');
+    const show = preview.hidden;
+    preview.hidden = !show;
+    if (show) preview.innerHTML = renderMD(textarea.value);
+    editor.querySelector('[data-format="preview"]')?.setAttribute('aria-pressed', show ? 'true' : 'false');
+    return;
+  }
+  if (format === 'image') {
+    editor.querySelector('.md-editor-file')?.click();
+    return;
+  }
+  if (format === 'bold') {
+    const text = selected || 'text';
+    replaceEditorSelection(textarea, `**${text}**`, 2, 2 + text.length);
+    return;
+  }
+  if (format === 'italic') {
+    const text = selected || 'text';
+    replaceEditorSelection(textarea, `*${text}*`, 1, 1 + text.length);
+    return;
+  }
+  if (format === 'code') {
+    const text = selected || 'code';
+    if (text.includes('\n')) replaceEditorSelection(textarea, '```\n' + text + '\n```', 4, 4 + text.length);
+    else replaceEditorSelection(textarea, '`' + text + '`', 1, 1 + text.length);
+    return;
+  }
+  if (format === 'h2') {
+    const text = selected || 'Heading';
+    const prefix = start === 0 || textarea.value[start - 1] === '\n' ? '## ' : '\n## ';
+    replaceEditorSelection(textarea, prefix + text, prefix.length, prefix.length + text.length);
+    return;
+  }
+  if (format === 'list') {
+    const lines = (selected || 'item').split('\n').map(line => line.startsWith('- ') ? line : `- ${line}`);
+    const prefix = start === 0 || textarea.value[start - 1] === '\n' ? '' : '\n';
+    replaceEditorSelection(textarea, prefix + lines.join('\n'));
+    return;
+  }
+  if (format === 'link') {
+    const text = selected || 'link text';
+    const markdown = `[${text}](https://)`;
+    const urlStart = markdown.lastIndexOf('https://');
+    replaceEditorSelection(textarea, markdown, urlStart, urlStart + 'https://'.length);
+  }
+}
+
+function imageFileFromClipboard(data) {
+  if (!data?.items) return null;
+  for (const item of data.items) {
+    if (item.kind === 'file' && /^image\/(png|jpeg|gif|webp)$/.test(item.type)) return item.getAsFile();
+  }
+  return null;
+}
+
+async function insertEditorImage(textarea, file) {
+  if (!currentProjectId) {
+    toast('Open a project before adding an image.', 'error');
+    return;
+  }
+  const body = new FormData();
+  const name = file.name && /\.(png|jpe?g|gif|webp)$/i.test(file.name) ? file.name : 'pasted.png';
+  body.append('image', file, name);
+  try {
+    const saved = await api('POST', `/api/project/${currentProjectId}/images`, body);
+    const markdown = `![pasted image](${saved.url})`;
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const prefix = start > 0 && textarea.value[start - 1] !== '\n' ? '\n' : '';
+    replaceEditorSelection(textarea, prefix + markdown);
+    toast('Image added');
+  } catch (err) {
+    toast(err.message || 'Could not add the image.', 'error');
+  }
+}
+
+document.addEventListener('click', event => {
+  const button = event.target.closest?.('[data-format]');
+  if (!button?.closest('.md-editor')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  applyEditorFormat(button.closest('.md-editor'), button.dataset.format);
+});
+document.addEventListener('paste', event => {
+  const textarea = event.target.closest?.('.md-editor-input');
+  if (!textarea) return;
+  const file = imageFileFromClipboard(event.clipboardData);
+  if (!file) return;
+  event.preventDefault();
+  insertEditorImage(textarea, file);
+});
+document.addEventListener('change', event => {
+  const input = event.target.closest?.('.md-editor-file');
+  if (!input?.files?.[0]) return;
+  const file = input.files[0];
+  input.value = '';
+  const textarea = input.closest('.md-editor')?.querySelector('.md-editor-input');
+  if (textarea) insertEditorImage(textarea, file);
+});
+document.addEventListener('input', event => {
+  const textarea = event.target.closest?.('.md-editor-input');
+  if (!textarea) return;
+  const preview = textarea.closest('.md-editor')?.querySelector('.md-editor-preview');
+  if (preview && !preview.hidden) preview.innerHTML = renderMD(textarea.value);
+});
+prepareMarkdownEditors();
 
 // =========================================================
 // INIT

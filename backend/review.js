@@ -59,7 +59,10 @@ function sanitizeAsset(raw) {
     region: clampText(raw.region, 200).trim(),
     service: clampText(raw.service, 200).trim(),
     subscription: clampText(raw.subscription, 200).trim(),
-    resourceGroup: clampText(raw.resourceGroup, 200).trim()
+    resourceGroup: clampText(raw.resourceGroup, 200).trim(),
+    uid: clampText(raw.uid, 300).trim(),
+    resourceId: clampText(raw.resourceId, 500).trim(),
+    portalLink: clampText(raw.portalLink, 500).trim()
   };
 }
 
@@ -128,6 +131,151 @@ function sanitizeCustomFindings(value) {
     out.push(clean);
   }
   return out;
+}
+
+function findingEditKey(key) {
+  if (typeof key !== 'string') return '';
+  const id = key.trim();
+  if (!id || id.length > 300 || id.includes('..') || /[\u0000\r\n]/.test(id)) return '';
+  return id;
+}
+
+function sanitizeFindingEdit(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const edit = {};
+  if (typeof raw.title === 'string') {
+    const title = clampText(raw.title, 200).trim();
+    if (title) edit.title = title;
+  }
+  if (SEVERITIES.has(raw.severity)) edit.severity = raw.severity;
+  if (typeof raw.cloud === 'string') edit.cloud = clampText(raw.cloud, 40).trim();
+  if (typeof raw.service === 'string') edit.service = clampText(raw.service, 120).trim();
+  if (typeof raw.details === 'string') edit.details = clampText(raw.details, 16000);
+  if (typeof raw.impact === 'string') edit.impact = clampText(raw.impact, 16000);
+  if (typeof raw.remediation === 'string') edit.remediation = clampText(raw.remediation, 16000);
+  if (Array.isArray(raw.observations)) {
+    const observations = [];
+    for (const item of raw.observations.slice(0, 20)) {
+      const text = clampText(item, 4000).trim();
+      if (text) observations.push(text);
+    }
+    edit.observations = observations;
+  }
+  if (Array.isArray(raw.assets)) {
+    const assets = [];
+    for (const asset of raw.assets.slice(0, 100)) {
+      const clean = sanitizeAsset(asset);
+      if (clean) assets.push(clean);
+    }
+    if (assets.length) edit.assets = assets;
+  }
+  if (Array.isArray(raw.controls)) {
+    const controls = [];
+    const seen = new Set();
+    for (const control of raw.controls.slice(0, 40)) {
+      const clean = sanitizeControlRef(control);
+      if (!clean) continue;
+      const key = reviewKey(clean.benchmarkId, clean.requirementId);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      controls.push(clean);
+    }
+    edit.controls = controls;
+  }
+  return Object.keys(edit).length ? edit : null;
+}
+
+function sanitizeFindingEdits(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out = {};
+  let count = 0;
+  for (const [key, raw] of Object.entries(value)) {
+    if (count >= 2000) break;
+    const id = findingEditKey(key);
+    if (!id) continue;
+    const edit = sanitizeFindingEdit(raw);
+    if (!edit) continue;
+    out[id] = edit;
+    count += 1;
+  }
+  return out;
+}
+
+function applyFindingEdit(finding, edit) {
+  if (!edit || finding.source === 'custom') return finding;
+  const next = { ...finding, edited: true };
+  if (edit.title) next.title = edit.title;
+  if (edit.severity) next.severity = edit.severity;
+  if (edit.cloud) next.cloud = edit.cloud;
+  if (Object.prototype.hasOwnProperty.call(edit, 'service')) next.service = edit.service;
+  if (Object.prototype.hasOwnProperty.call(edit, 'details')) {
+    next.details = edit.details;
+    next.description = edit.details;
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'impact')) {
+    next.impact = edit.impact;
+    next.risk = edit.impact;
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'remediation')) next.remediation = edit.remediation;
+  if (Object.prototype.hasOwnProperty.call(edit, 'observations')) next.observations = edit.observations;
+  if (edit.assets) {
+    const assets = edit.assets.map(asset => ({ ...asset, absent: false }));
+    next.assets = assets;
+    next.failCount = assets.filter(asset => asset.status === 'FAIL').length;
+    next.passCount = assets.filter(asset => asset.status === 'PASS').length;
+    next.manualCount = assets.filter(asset => asset.status === 'MANUAL').length;
+    next.subscriptions = [...new Set(assets.map(asset => asset.subscription).filter(Boolean))];
+    next.resourceGroups = [...new Set(assets.map(asset => asset.resourceGroup).filter(Boolean))];
+  }
+  if (Object.prototype.hasOwnProperty.call(edit, 'controls')) {
+    next.controlRefs = edit.controls;
+    next.controlsEdited = true;
+  }
+  return next;
+}
+
+function buildFindingEdit(body, existing) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request.' };
+  const source = { ...(existing || {}) };
+  if (Object.prototype.hasOwnProperty.call(body, 'title')) {
+    const title = clampText(body.title, 200).trim();
+    if (title) source.title = title;
+    else delete source.title;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'severity')) {
+    if (!SEVERITIES.has(body.severity)) return { error: 'Unknown severity.' };
+    source.severity = body.severity;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'cloud')) source.cloud = clampText(body.cloud, 40).trim();
+  if (Object.prototype.hasOwnProperty.call(body, 'service')) source.service = clampText(body.service, 120).trim();
+  if (Object.prototype.hasOwnProperty.call(body, 'details')) source.details = clampText(body.details, 16000);
+  if (Object.prototype.hasOwnProperty.call(body, 'impact')) source.impact = clampText(body.impact, 16000);
+  if (Object.prototype.hasOwnProperty.call(body, 'remediation')) source.remediation = clampText(body.remediation, 16000);
+  if (Object.prototype.hasOwnProperty.call(body, 'observations')) {
+    if (!Array.isArray(body.observations)) return { error: 'Observations must be a list.' };
+    source.observations = body.observations;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'assets')) {
+    if (!Array.isArray(body.assets)) return { error: 'Assets must be a list.' };
+    for (const asset of body.assets) {
+      if (!asset || typeof asset !== 'object' || Array.isArray(asset) || !String(asset.name || '').trim()) {
+        return { error: 'Each asset needs a name.' };
+      }
+      if (asset.status && !ASSET_STATUSES.has(asset.status)) {
+        return { error: 'Asset status must be FAIL, PASS, or MANUAL.' };
+      }
+    }
+    if (!body.assets.length) return { error: 'Add at least one asset.' };
+    source.assets = body.assets;
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'controls')) {
+    if (!Array.isArray(body.controls)) return { error: 'Controls must be a list.' };
+    for (const control of body.controls) {
+      if (!sanitizeControlRef(control)) return { error: 'A control needs a benchmark id and a requirement id.' };
+    }
+    source.controls = body.controls;
+  }
+  return { edit: sanitizeFindingEdit(source) };
 }
 
 function sanitizeControlReviews(value) {
@@ -509,7 +657,8 @@ function alignReviewState(findings, state, originalCloud) {
     ...state,
     statuses: rewriteReviewMap(state.statuses, findings, multi, originalCloud, clouds),
     reasons: rewriteReviewMap(state.reasons, findings, multi, originalCloud, clouds),
-    notes: rewriteReviewMap(state.notes, findings, multi, originalCloud, clouds)
+    notes: rewriteReviewMap(state.notes, findings, multi, originalCloud, clouds),
+    findingEdits: rewriteReviewMap(state.findingEdits, findings, multi, originalCloud, clouds)
   };
 }
 
@@ -605,7 +754,7 @@ function relatedControls(finding, benchmarks, state, findings) {
   for (const benchmark of benchmarks) {
     for (const requirement of benchmark.data?.Requirements || []) {
       const key = reviewKey(benchmark.id, requirement.Id);
-      const byCheck = finding.source !== 'custom' && (requirement.Checks || []).some(check => String(check).toLowerCase() === short);
+      const byCheck = !finding.controlsEdited && finding.source !== 'custom' && (requirement.Checks || []).some(check => String(check).toLowerCase() === short);
       const byRef = refs.has(key);
       if (!byCheck && !byRef) continue;
       if (seen.has(key)) continue;
@@ -629,6 +778,7 @@ function relatedControls(finding, benchmarks, state, findings) {
 
 function touched(state, finding) {
   if (finding.source === 'custom') return true;
+  if (state.findingEdits?.[finding.id]) return true;
   return Boolean(state.statuses?.[finding.id] || state.reasons?.[finding.id] || state.notes?.[finding.id]);
 }
 
@@ -670,7 +820,8 @@ function publicFinding(finding, state, benchmarks, findings, { includeAssets = f
     scanControls: finding.source === 'custom' ? [] : (finding.controls || []),
     controls,
     failedAssetNames: failedNames.slice(0, 25),
-    failedAssetCount: failedNames.length
+    failedAssetCount: failedNames.length,
+    edited: Boolean(state.findingEdits?.[finding.id])
   };
   if (includeAssets) {
     view.details = finding.details || finding.description || '';
@@ -758,6 +909,8 @@ function buildProjectReview({ projectPath, state, metadataIndex, benchmarks }) {
     findings = annotateRetest(findings, baseline);
   }
   findings = findings.map(finding => enrichFinding(finding, metadataIndex || {}));
+  const findingEdits = sanitizeFindingEdits(state?.findingEdits);
+  findings = findings.map(finding => applyFindingEdit(finding, findingEdits[finding.id]));
   const custom = sanitizeCustomFindings(state?.customFindings).map(materializeCustom);
   findings = sortFindings([...findings, ...custom]);
   const aligned = alignReviewState(findings, {
@@ -766,7 +919,8 @@ function buildProjectReview({ projectPath, state, metadataIndex, benchmarks }) {
     reasons: state?.reasons || {},
     notes: state?.notes || {},
     controlReviews: sanitizeControlReviews(state?.controlReviews),
-    customFindings: sanitizeCustomFindings(state?.customFindings)
+    customFindings: sanitizeCustomFindings(state?.customFindings),
+    findingEdits
   }, firstCloud(evidence.items));
   return { findings, state: aligned, benchmarks: benchmarks || [] };
 }
@@ -845,6 +999,8 @@ module.exports = {
   publicControl,
   benchmarkSummary,
   buildCustomRecord,
+  buildFindingEdit,
+  sanitizeFindingEdits,
   setMapValue,
   textField,
   newCustomId,

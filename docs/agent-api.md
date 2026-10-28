@@ -77,7 +77,7 @@ Errors are JSON `{ "error": "..." }`:
 | 429 | 120 reads per key per minute, 30 writes per key per minute, or 30 failed authentications per address per 15 minutes. `Retry-After` is seconds. |
 | 500 | Unexpected server error. |
 
-Known 400 texts include `Unknown finding status.`, `Unknown severity.`, `A custom finding needs a title.`, `Add at least one asset.`, `Each asset needs a name.`, `Asset status must be FAIL, PASS, or MANUAL.`, `Controls must be a list.`, `A control needs a benchmark id and a requirement id.`, `Benchmark not found: …`, `Control … is not in …`, `Prowler findings only accept status, reason, and note.`, `Prowler findings cannot be deleted.`, and `Unknown control status. Use pass, fail, manual, n/a, or an empty string.`
+Known 400 texts include `Unknown finding status.`, `Unknown severity.`, `A custom finding needs a title.`, `Add at least one asset.`, `Each asset needs a name.`, `Asset status must be FAIL, PASS, or MANUAL.`, `Controls must be a list.`, `A control needs a benchmark id and a requirement id.`, `Benchmark not found: …`, `Control … is not in …`, `Prowler findings cannot be deleted.`, and `Unknown control status. Use pass, fail, manual, n/a, or an empty string.`
 
 ## GET /api/v1
 
@@ -216,9 +216,9 @@ Each control is `{ "benchmarkId", "requirementId", "label" }`. `label` is option
 
 Write scope. Returns the detail object. Omitted fields stay as they are. Send `""` to clear `status`, `reason`, or `note`.
 
-On a Prowler finding, the body may contain only `status`, `reason`, and `note`.
+On a Prowler finding, `title`, `severity`, `cloud`, `service`, `details`, `impact`, `remediation`, `observations`, `assets`, and `controls` are stored as a review copy. The uploaded scan file stays unchanged. A field you send replaces that part of the copy. Send an empty `title` to show the scan title again. `edited` is true when a review copy exists. Scanner counts follow the review copy when `assets` is sent.
 
-On a custom finding, the body may also contain `title`, `severity`, `cloud`, `service`, `details`, `impact`, `remediation`, `observations`, `assets`, and `controls`. A field you send replaces the stored value. After the merge, the finding still needs a title and at least one named asset, and every control must exist in the catalog.
+On a custom finding, those content fields replace the stored value when present. The merged record still needs a title and at least one named asset, and every control must exist in the catalog.
 
 ```json
 { "status": "flagged", "reason": "", "note": "Checked against the account alias." }

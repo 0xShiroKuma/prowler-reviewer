@@ -17,6 +17,8 @@ const {
   reviewKey,
   sanitizeCustomFindings,
   sanitizeControlReviews,
+  sanitizeFindingEdits,
+  buildFindingEdit,
   sanitizeControlRef,
   buildProjectReview,
   publicFinding,
@@ -528,6 +530,7 @@ function createAgent({
       ...next,
       customFindings: sanitizeCustomFindings(next.customFindings),
       controlReviews: sanitizeControlReviews(next.controlReviews),
+      findingEdits: sanitizeFindingEdits(Object.prototype.hasOwnProperty.call(next, 'findingEdits') ? next.findingEdits : stored.findingEdits),
       updatedAt: new Date().toISOString()
     };
     delete updated._agent;
@@ -698,10 +701,18 @@ function createAgent({
       if (typeof status !== 'string' || !FINDING_STATUSES.has(status)) return deny(res, 400, 'Unknown finding status.');
       if (typeof reason !== 'string' || typeof note !== 'string') return deny(res, 400, 'Invalid request.');
       let customFindings = loaded.state.customFindings;
+      let findingEdits = sanitizeFindingEdits(loaded.state.findingEdits);
       if (finding.source !== 'custom') {
         const contentKeys = ['title', 'severity', 'cloud', 'service', 'details', 'impact', 'remediation', 'observations', 'controls', 'assets'];
         if (contentKeys.some(key => Object.prototype.hasOwnProperty.call(body, key))) {
-          return deny(res, 400, 'Prowler findings only accept status, reason, and note.');
+          const built = buildFindingEdit(body, findingEdits[findingId]);
+          if (built.error) return deny(res, 400, built.error);
+          if (built.edit?.controls) {
+            const missing = controlsExist({ controls: built.edit.controls });
+            if (missing) return deny(res, 400, missing);
+          }
+          if (built.edit) findingEdits[findingId] = built.edit;
+          else delete findingEdits[findingId];
         }
       } else {
         const existing = customFindings.find(item => item.id === findingId);
@@ -714,6 +725,7 @@ function createAgent({
       const next = {
         ...loaded.state,
         customFindings,
+        findingEdits,
         statuses: setMapValue(loaded.state.statuses, findingId, status),
         reasons: setMapValue(loaded.state.reasons, findingId, reason.replace(/\u0000/g, '').slice(0, 16000)),
         notes: setMapValue(loaded.state.notes, findingId, note.replace(/\u0000/g, '').slice(0, 16000))

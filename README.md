@@ -176,7 +176,7 @@ curl -s http://localhost:8081/api/v1 \
 | GET | `/api/v1/findings` | Prowler findings and custom findings. Each one has the scanner result, the pentester status, the false-positive reason, the note, and whether the pentester has touched it. |
 | GET | `/api/v1/findings/:id` | The same finding, including details, impact, remediation, and assets. |
 | POST | `/api/v1/findings` | Create a custom finding. Requires a write key. |
-| PATCH | `/api/v1/findings/:id` | Set status, reason, and note. A write key can also edit a custom finding's text, assets, and linked controls. |
+| PATCH | `/api/v1/findings/:id` | Set status, reason, and note. A write key can also edit the text, assets, and linked controls. On a scan finding that edit is a review copy; the uploaded scan stays unchanged. |
 | DELETE | `/api/v1/findings/:id` | Delete a custom finding. Prowler findings stay. |
 | GET | `/api/v1/benchmarks` | Benchmarks selected for the project. |
 | GET | `/api/v1/controls` | Requirements for those benchmarks, with the scanner result and the pentester's validation. `?benchmark=` reads one framework, including one that is not selected. `?validated=false` lists controls that have not been reviewed. |

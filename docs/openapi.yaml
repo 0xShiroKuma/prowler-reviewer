@@ -167,10 +167,12 @@ paths:
       description: |
         Requires the `write` scope. Omitted fields stay as they are.
 
-        On a Prowler finding, send only `status`, `reason`, and `note`.
-        `title`, `severity`, `cloud`, `service`, `details`, `impact`,
-        `remediation`, `observations`, `controls`, and `assets` return
-        400 with "Prowler findings only accept status, reason, and note."
+        On a Prowler finding, `title`, `severity`, `cloud`, `service`,
+        `details`, `impact`, `remediation`, `observations`, `controls`,
+        and `assets` are stored as a review copy. The uploaded scan file
+        stays unchanged. A field you send replaces that part of the copy.
+        An empty `title` shows the scan title again. `edited` is true when
+        a review copy exists.
 
         On a custom finding, those content fields replace the stored value
         when present. The merged record still needs a title and at least
@@ -705,6 +707,9 @@ components:
             type: string
         failedAssetCount:
           type: integer
+        edited:
+          type: boolean
+          description: True when a Prowler finding has a review copy. The scan file is unchanged.
     FindingDetail:
       allOf:
         - $ref: "#/components/schemas/Finding"
