@@ -582,8 +582,12 @@ html[data-ck-theme="dark"] .ck.ck-dialog {
   --ck-editor-editable-focus-border-color: #ca3e47;
   --ck-button-on-background-color: rgba(202, 62, 71, 0.22);
   --ck-button-on-hover-background-color: rgba(202, 62, 71, 0.32);
-  --ck-button-on-text-color: #ca3e47;
+  --ck-button-on-active-background-color: rgba(202, 62, 71, 0.4);
+  --ck-button-on-text-color: #f9f8f8;
   --ck-button-default-hover-background-color: #242424;
+  --ck-button-default-active-background-color: #2c2c2c;
+  --ck-color-interactive-active-surface: var(--ck-color-base-hover);
+  --ck-color-interactive-selected-surface-hover: var(--ck-color-base-selected-hover);
   --ck-balloon-panel-background-color: #141414;
   --ck-balloon-panel-border-color: #5a5a5a;
   --ck-dropdown-panel-background-color: #141414;
@@ -635,6 +639,25 @@ html[data-ck-theme="dark"] .ck.ck-dialog {
 .ck.ck-icon,
 .ck.ck-icon * { color: inherit; }
 .ck.ck-icon :not([fill]) { fill: currentColor; }
+/* Pressed and selected toolbar icons stay on a dark surface. The active color
+   is substituted on :root as the light hover chip, which hides a light glyph. */
+.reviewer-note .ck.ck-toolbar .ck.ck-button:hover:not(.ck-disabled),
+.reviewer-note .ck.ck-toolbar .ck.ck-button:active:not(.ck-disabled) {
+  background: #242424;
+  color: #f9f8f8;
+}
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on,
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on:hover,
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on:active,
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on:focus {
+  background: rgba(202, 62, 71, 0.28);
+  color: #f9f8f8;
+}
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on .ck-icon,
+.reviewer-note .ck.ck-toolbar .ck.ck-button.ck-on .ck-icon * {
+  color: #f9f8f8;
+  fill: currentColor;
+}
 .ck.ck-powered-by,
 .ck.ck-balloon-panel.ck-powered-by-balloon,
 .ck.ck-evaluation-badge { display: none !important; }
@@ -3528,7 +3551,7 @@ function renderFindingCard(f) {
         <h4>Impact</h4>
         <button class="btn small accent" onclick="copyImpact('${esc(f.id)}')">${icon('copy')} Copy</button>
       </div>
-      ${renderBodyField(f, 'impact', 'Impact')}
+      ${renderBodyField(f, 'impact', '')}
     </div>
 
     <div class="tab-panel" id="tp-${esc(f.id)}-remediation">
@@ -3679,8 +3702,9 @@ function richFieldTextarea(surface, finding, field) {
 }
 
 function renderBodyField(finding, field, label) {
+  const heading = label ? `<div class="section-label">${label}</div>` : '';
   return `<div class="details-subsection">
-    <div class="section-label">${label}</div>
+    ${heading}
     ${richFieldTextarea('analysis', finding, field)}
   </div>`;
 }
