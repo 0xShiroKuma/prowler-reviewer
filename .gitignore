@@ -14,3 +14,24 @@ npm-debug.log*
 
 # Optional local Docker overrides
 docker-compose.override.yml
+
+# Harness and editor state for this machine
+.agents/
+skills-lock.json
+.cursor/
+.codex/
+.claude/
+
+# Local working notes and sample scans
+docs/pentester-review-plan.md
+resources/examples/
+
+# Catalogs are copied into the backend image at build time
+resources/check-metadata/
+resources/compliance/
+
+# Editor and OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
