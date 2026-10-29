@@ -1066,7 +1066,6 @@ textarea.form-input { min-height: 88px; padding: 10px 12px; resize: vertical; }
       <button class="btn small" id="btn-settings" style="display:none" onclick="openSettings()"><span data-icon="settings"></span> Settings</button>
       <button class="btn small" id="btn-history" style="display:none" onclick="openHistory()"><span data-icon="history"></span> History</button>
       <button class="btn small" id="btn-back" style="display:none" onclick="goHome()"><span data-icon="arrow-left"></span> Projects</button>
-      <a class="btn small" href="/identity.html">Identity</a>
       <button class="btn small primary" id="btn-new" onclick="goHome()"><span data-icon="plus"></span> New Project</button>
       <span class="header-user" id="header-user"></span>
       <button class="btn small" id="btn-api" type="button" onclick="openApiAccess()">API</button>
@@ -3995,22 +3994,74 @@ function setCompProfileFilter(value) {
   renderComplianceView();
 }
 
+function applyReviewedStatus(req, result) {
+  if (!complianceBenchmarkId || !req) return result;
+  const review = controlReviews[reviewKey(complianceBenchmarkId, req.Id)]?.status || '';
+  if (review === 'pass' || review === 'fail' || review === 'manual' || review === 'n/a') {
+    return { ...result, status: review };
+  }
+  return result;
+}
+
 function getRequirementStatus(req) {
   const checks = req.Checks || [];
   const empty = { status:'n/a', failCount:0, passCount:0, manualCount:0, findings:[] };
-  if (!checks.length) return empty;
+  if (!checks.length) return applyReviewedStatus(req, empty);
   const findings = [];
   let failCount=0, passCount=0, manualCount=0;
   for (const name of checks) {
     const f = checkNameMap.get(name.toLowerCase());
     if (f) { findings.push(f); failCount += f.failCount; passCount += f.passCount; manualCount += f.manualCount || 0; }
   }
-  if (!findings.length) return empty;
+  if (!findings.length) return applyReviewedStatus(req, empty);
   let status = 'n/a';
   if (failCount > 0) status = 'fail';
   else if (passCount > 0) status = 'pass';
   else if (manualCount > 0) status = 'manual';
-  return { status, failCount, passCount, manualCount, findings };
+  return applyReviewedStatus(req, { status, failCount, passCount, manualCount, findings });
+}
+
+function collectComplianceResults() {
+  let reqs = loadedBenchmark.Requirements || [];
+  if (complianceProfileFilter) {
+    reqs = reqs.filter(req => {
+      const attr = req.Attributes?.[0] || {};
+      return (attr.Profile || attr.Type || '') === complianceProfileFilter;
+    });
+  }
+  let totalFail = 0, totalPass = 0, totalManual = 0, totalNA = 0;
+  const isCis = isCisBenchmark();
+  const results = reqs.map(req => {
+    const attr = req.Attributes?.[0] || {};
+    const res = getRequirementStatus(req);
+    if (res.status === 'fail') totalFail++;
+    else if (res.status === 'pass') totalPass++;
+    else if (res.status === 'manual') totalManual++;
+    else totalNA++;
+    return {
+      id: req.Id,
+      description: req.Description,
+      section: attr.Section || 'General',
+      subSection: attr.SubSection || '',
+      checks: req.Checks || [],
+      cisImpact: attr.ImpactStatement || '',
+      isCis,
+      ...res
+    };
+  });
+  return { results, totalFail, totalPass, totalManual, totalNA };
+}
+
+function sectionCountHtml(flat) {
+  const sFail = flat.filter(r => r.status === 'fail').length;
+  const sPass = flat.filter(r => r.status === 'pass').length;
+  const sManual = flat.filter(r => r.status === 'manual').length;
+  const sNA = flat.filter(r => r.status === 'n/a').length;
+  return `
+            ${sFail ? `<span class="comp-req-count-fail">${sFail} FAIL</span>` : ''}
+            ${sPass ? `<span class="comp-req-count-pass">${sPass} PASS</span>` : ''}
+            ${sManual ? `<span class="comp-req-count-manual">${sManual} MANUAL</span>` : ''}
+            ${sNA ? `<span style="color:var(--text-dim)">${sNA} N/A</span>` : ''}`;
 }
 
 const COMPLIANCE_EXPORT_COLUMNS = [
@@ -4231,34 +4282,7 @@ function runCompExportAction() {
 function renderComplianceView() {
   if (!loadedBenchmark) return;
   updateCompExportButton();
-  let reqs = loadedBenchmark.Requirements;
-  if (complianceProfileFilter) {
-    reqs = reqs.filter(req => {
-      const attr = req.Attributes?.[0] || {};
-      return (attr.Profile || attr.Type || '') === complianceProfileFilter;
-    });
-  }
-
-  let totalFail=0, totalPass=0, totalManual=0, totalNA=0;
-  const isCis = isCisBenchmark();
-  const results = reqs.map(req => {
-    const attr = req.Attributes?.[0] || {};
-    const res  = getRequirementStatus(req);
-    if (res.status==='fail') totalFail++;
-    else if (res.status==='pass') totalPass++;
-    else if (res.status==='manual') totalManual++;
-    else totalNA++;
-    return {
-      id: req.Id,
-      description: req.Description,
-      section: attr.Section||'General',
-      subSection: attr.SubSection||'',
-      checks: req.Checks||[],
-      cisImpact: attr.ImpactStatement || '',
-      isCis,
-      ...res
-    };
-  });
+  const { results, totalFail, totalPass, totalManual, totalNA } = collectComplianceResults();
 
   // Stats + charts (Analysis-style layout)
   document.getElementById('comp-stats').innerHTML = `
@@ -4321,9 +4345,6 @@ function renderComplianceView() {
   reqsEl.innerHTML = [...sections.entries()].map(([section, subsMap]) => {
     const flat = [...subsMap.values()].flat();
     const sFail = flat.filter(r=>r.status==='fail').length;
-    const sPass = flat.filter(r=>r.status==='pass').length;
-    const sManual = flat.filter(r=>r.status==='manual').length;
-    const sNA   = flat.filter(r=>r.status==='n/a').length;
     const isOpen = sFail > 0;
 
     const subsHTML = [...subsMap.entries()].map(([sub, reqs]) => {
@@ -4343,11 +4364,7 @@ function renderComplianceView() {
         <div class="comp-section-header" onclick="this.closest('.comp-section').classList.toggle('open')">
           <span class="comp-section-toggle">${icon('chevron-right')}</span>
           <span class="comp-section-title">${esc(section)}</span>
-          <div class="comp-section-counts">
-            ${sFail ? `<span class="comp-req-count-fail">${sFail} FAIL</span>` : ''}
-            ${sPass ? `<span class="comp-req-count-pass">${sPass} PASS</span>` : ''}
-            ${sManual ? `<span class="comp-req-count-manual">${sManual} MANUAL</span>` : ''}
-            ${sNA   ? `<span style="color:var(--text-dim)">${sNA} N/A</span>` : ''}
+          <div class="comp-section-counts">${sectionCountHtml(flat)}
           </div>
         </div>
         <div class="comp-section-body">${subsHTML}</div>
@@ -4357,6 +4374,7 @@ function renderComplianceView() {
 
 function renderCompReqRow(r) {
   const statusLabel = r.status === 'n/a' ? 'N/A' : r.status.toUpperCase();
+  const statusClass = r.status === 'n/a' ? 'na' : r.status;
   const counts = r.status !== 'n/a' ? `
     ${r.failCount ? `<span class="comp-req-count-fail">${r.failCount}${icon('x')}</span>` : ''}
     ${r.passCount ? `<span class="comp-req-count-pass">${r.passCount}${icon('check')}</span>` : ''}
@@ -4382,7 +4400,7 @@ function renderCompReqRow(r) {
   return `
     <div class="comp-req" data-requirement-id="${esc(r.id)}">
       <div class="comp-req-row" onclick="this.closest('.comp-req').classList.toggle('open')">
-        <span class="comp-status-badge ${r.status}">${statusLabel}</span>
+        <span class="comp-status-badge ${statusClass}">${statusLabel}</span>
         <span class="comp-req-id">${esc(r.id)}</span>
         <span class="comp-req-desc" title="${esc(r.description)}">${esc(r.description)}</span>
         <div class="comp-req-counts">${counts}</div>
@@ -4694,8 +4712,38 @@ function rememberControlReview(benchmarkId, requirementId, patch) {
   scheduleSave();
 }
 
+function refreshComplianceAfterReview() {
+  if (currentView !== 'compliance' || !loadedBenchmark) return;
+  const { results, totalFail, totalPass, totalManual, totalNA } = collectComplianceResults();
+  const values = document.querySelectorAll('#comp-stats .stat-value');
+  if (values.length < 5) {
+    renderComplianceView();
+    return;
+  }
+  [results.length, totalFail, totalPass, totalManual, totalNA].forEach((count, index) => {
+    values[index].textContent = String(count);
+  });
+  renderComplianceCharts(totalFail, totalPass, totalManual, totalNA, results);
+  const byId = new Map(results.map(result => [result.id, result]));
+  document.querySelectorAll('#comp-requirements .comp-req').forEach(row => {
+    const result = byId.get(row.getAttribute('data-requirement-id'));
+    const badge = row.querySelector('.comp-status-badge');
+    if (!result || !badge) return;
+    const statusClass = result.status === 'n/a' ? 'na' : result.status;
+    badge.className = `comp-status-badge ${statusClass}`;
+    badge.textContent = result.status === 'n/a' ? 'N/A' : result.status.toUpperCase();
+  });
+  document.querySelectorAll('#comp-requirements .comp-section').forEach(section => {
+    const title = section.querySelector('.comp-section-title')?.textContent || '';
+    const counts = section.querySelector('.comp-section-counts');
+    if (!counts) return;
+    counts.innerHTML = sectionCountHtml(results.filter(result => result.section === title));
+  });
+}
+
 function setRequirementReview(benchmarkId, requirementId, selectEl) {
   rememberControlReview(benchmarkId, requirementId, { status: selectEl.value });
+  if (benchmarkId === complianceBenchmarkId) refreshComplianceAfterReview();
 }
 
 function setRequirementNote(benchmarkId, requirementId, inputEl) {
