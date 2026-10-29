@@ -594,6 +594,14 @@ html[data-ck-theme="dark"] .ck.ck-dialog {
   --ck-dialog-background-color: #141414;
   --ck-button-save-color: #ca3e47;
   --ck-button-cancel-color: #f9f8f8;
+  /* These composites are resolved on :root. Reset them here so the dark colors above are the ones that paint. */
+  --ck-editor-frame-border: var(--ck-border-width-surface) solid var(--ck-editor-frame-border-color);
+  --ck-toolbar-border: var(--ck-border-width-surface) solid var(--ck-toolbar-border-color);
+  --ck-balloon-panel-border: var(--ck-balloon-border-width, var(--ck-border-width-surface)) solid var(--ck-balloon-panel-border-color);
+  --ck-dropdown-panel-border: var(--ck-border-width-surface) solid var(--ck-dropdown-panel-border-color);
+  --ck-input-border: var(--ck-border-width-control) solid var(--ck-input-border-color);
+  --ck-input-disabled-text-color: #b5b5b5;
+  --ck-labeled-field-label-background-color: var(--ck-color-base-background);
 }
 /* Text, divider, and surface tokens are computed on :root. Setting only the
    base colors leaves toolbar icons in the light ink color on a dark toolbar. */
