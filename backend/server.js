@@ -1,8 +1,10 @@
 const express = require('express');
 const multer = require('multer');
-const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { createAuth } = require('./auth');
+const { createAgent } = require('./agent');
+const { withStateLock, sanitizeCustomFindings, sanitizeControlReviews, sanitizeFindingEdits } = require('./review');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -11,13 +13,82 @@ const COMPLIANCE_DIR = process.env.COMPLIANCE_DIR || '/compliance';
 const CHECK_METADATA_DIR = process.env.CHECK_METADATA_DIR || '/check-metadata';
 const MAX_HISTORY = 50;
 
-app.use(cors());
-app.use(express.json({ limit: '500mb' }));
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+const auth = createAuth({ dataDir: DATA_DIR });
+app.use('/api/auth', express.json({ limit: '8kb', strict: true }));
+app.use('/api/auth', auth.router);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
-function projectDir(id) { return path.join(DATA_DIR, 'projects', id); }
+function safeProjectId(id) {
+  return typeof id === 'string' && /^proj_[A-Za-z0-9_-]+$/.test(id);
+}
+
+function projectDir(id) {
+  if (!safeProjectId(id)) {
+    const err = new Error('Invalid project id');
+    err.status = 400;
+    throw err;
+  }
+  const root = path.resolve(DATA_DIR, 'projects');
+  const dir = path.resolve(root, id);
+  if (!dir.startsWith(root + path.sep)) {
+    const err = new Error('Invalid project id');
+    err.status = 400;
+    throw err;
+  }
+  return dir;
+}
+
 function historyDir(id) { return path.join(projectDir(id), 'history'); }
+function scansDir(id) { return path.join(projectDir(id), 'scans'); }
+
+function safeScanId(id) {
+  return typeof id === 'string' && /^scan_[A-Za-z0-9_-]+$/.test(id);
+}
+
+function safeHistoryFilename(name) {
+  return typeof name === 'string' && /^\d{4}-\d{2}-\d{2}T[0-9-]+Z\.json$/.test(name);
+}
+
+function historyPath(projectId, filename) {
+  if (!safeHistoryFilename(filename)) return null;
+  const dir = path.resolve(historyDir(projectId));
+  const fp = path.resolve(dir, filename);
+  if (!fp.startsWith(dir + path.sep)) return null;
+  return fp;
+}
+
+// A project that only has raw.json keeps working until a scan is added.
+// The first add or retest copies that file into scans/ and records it.
+function migrateLegacyScan(projectId, state) {
+  if (Array.isArray(state.scans) && state.scans.length) return state;
+  const rawPath = path.join(projectDir(projectId), 'raw.json');
+  if (!fs.existsSync(rawPath)) {
+    state.scans = [];
+    return state;
+  }
+  const id = 'scan_legacy';
+  ensureDir(scansDir(projectId));
+  const dest = path.join(scansDir(projectId), `${id}.json`);
+  if (!fs.existsSync(dest)) fs.copyFileSync(rawPath, dest);
+  state.scans = [{
+    id,
+    label: state.name || 'raw.json',
+    addedAt: state.createdAt || new Date().toISOString(),
+    replaces: null
+  }];
+  return state;
+}
 
 function ensureDir(d) { fs.mkdirSync(d, { recursive: true }); }
 
@@ -86,6 +157,45 @@ function normalizeProvider(raw, benchmarkId) {
   return 'Other';
 }
 
+function flattenChecks(checks) {
+  if (Array.isArray(checks)) return checks.map(check => String(check));
+  if (!checks || typeof checks !== 'object') return [];
+  const out = [];
+  for (const value of Object.values(checks)) {
+    if (Array.isArray(value)) out.push(...value.map(check => String(check)));
+    else if (value) out.push(String(value));
+  }
+  return [...new Set(out)];
+}
+
+function normalizeAttributes(attributes) {
+  if (Array.isArray(attributes)) return attributes;
+  if (attributes && typeof attributes === 'object') return [attributes];
+  return [];
+}
+
+// Prowler now publishes two benchmark shapes. The UI reads the original
+// Requirements / Checks / Attributes form, so newer files are translated here.
+function normalizeBenchmark(data, benchmarkId) {
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data.Requirements)) return data;
+  if (!Array.isArray(data.requirements)) return null;
+  const provider = data.Provider || data.provider || (String(benchmarkId).includes('/') ? '' : 'Multi-cloud');
+  return {
+    Framework: data.framework || '',
+    Name: data.name || benchmarkId,
+    Version: data.version || '',
+    Provider: provider,
+    Description: data.description || '',
+    Requirements: data.requirements.map(req => ({
+      Id: req.id || '',
+      Description: req.description || req.name || '',
+      Checks: flattenChecks(req.checks),
+      Attributes: normalizeAttributes(req.attributes)
+    }))
+  };
+}
+
 function walkMetadataFiles(dir) {
   const results = [];
   if (!fs.existsSync(dir)) return results;
@@ -119,7 +229,39 @@ function buildCheckMetadataIndex() {
   return index;
 }
 
+function loadBenchmark(id) {
+  if (!id || !/^[a-zA-Z0-9_./-]+$/.test(id) || id.includes('..')) return null;
+  const base = path.resolve(COMPLIANCE_DIR);
+  const fp = path.resolve(COMPLIANCE_DIR, id + '.json');
+  if (!fp.startsWith(base + path.sep) && fp !== base) return null;
+  if (!fs.existsSync(fp)) return null;
+  return normalizeBenchmark(readJSON(fp, null), id);
+}
+
+const agentApi = createAgent({
+  dataDir: DATA_DIR,
+  projectDir,
+  readJSON,
+  writeJSON,
+  saveSnapshot,
+  loadBenchmark,
+  metadataIndex: buildCheckMetadataIndex
+});
+
+// The harness API authenticates with its own key. It must be mounted before
+// the session gate so a browser cookie cannot call it, and a key cannot ride
+// the session middleware.
+app.use('/api/v1', agentApi.router);
+app.use('/api', auth.requireAuth);
+app.use('/api/access', agentApi.access);
+app.use(express.json({ limit: '500mb', strict: true }));
+
 // ─── Project endpoints ────────────────────────────────────────────────────────
+
+app.use('/api/project/:id', (req, res, next) => {
+  if (!safeProjectId(req.params.id)) return res.status(400).json({ error: 'Invalid project id' });
+  next();
+});
 
 app.get('/api/projects', (req, res) => {
   const base = path.join(DATA_DIR, 'projects');
@@ -151,19 +293,28 @@ app.post('/api/project', upload.single('file'), (req, res) => {
   const rawData = req.file ? req.file.buffer.toString('utf8') : req.body.rawJson;
   if (!rawData) return res.status(400).json({ error: 'No file provided' });
 
-  fs.writeFileSync(path.join(pDir, 'raw.json'), rawData, 'utf8');
+  const scanId = `scan_${Date.now()}`;
+  ensureDir(scansDir(id));
+  fs.writeFileSync(path.join(scansDir(id), `${scanId}.json`), rawData, 'utf8');
 
   const name = req.body.name || req.file?.originalname || id;
   let preferred = [];
   try { preferred = JSON.parse(req.body.preferredBenchmarks || '[]'); } catch {}
 
+  const now = new Date().toISOString();
   const state = {
     name,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
     findingCount: 0,
     statuses: {},
-    preferredBenchmarks: Array.isArray(preferred) ? preferred : []
+    preferredBenchmarks: Array.isArray(preferred) ? preferred : [],
+    scans: [{
+      id: scanId,
+      label: req.file?.originalname || 'scan.json',
+      addedAt: now,
+      replaces: null
+    }]
   };
   writeJSON(path.join(pDir, 'state.json'), state);
   saveSnapshot(id, state);
@@ -178,6 +329,70 @@ app.get('/api/project/:id/raw', (req, res) => {
   fs.createReadStream(fp).pipe(res);
 });
 
+app.get('/api/project/:id/scans/:scanId', (req, res) => {
+  if (!safeScanId(req.params.scanId)) return res.status(400).json({ error: 'Invalid scan id' });
+  const fp = path.join(scansDir(req.params.id), `${req.params.scanId}.json`);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Not found' });
+  res.setHeader('Content-Type', 'application/json');
+  fs.createReadStream(fp).pipe(res);
+});
+
+app.post('/api/project/:id/scans', upload.single('file'), (req, res) => {
+  const projectId = req.params.id;
+  const pDir = projectDir(projectId);
+  if (!fs.existsSync(pDir)) return res.status(404).json({ error: 'Project not found' });
+  if (!req.file) return res.status(400).json({ error: 'No file provided' });
+
+  const statePath = path.join(pDir, 'state.json');
+  const state = readJSON(statePath, {});
+  migrateLegacyScan(projectId, state);
+
+  let replaces = req.body.replaces || null;
+  if (replaces === 'legacy') replaces = 'scan_legacy';
+  if (replaces) {
+    if (!safeScanId(replaces) || !state.scans.some(scan => scan.id === replaces)) {
+      return res.status(400).json({ error: 'Scan to replace was not found' });
+    }
+  }
+
+  const scanId = `scan_${Date.now()}`;
+  ensureDir(scansDir(projectId));
+  fs.writeFileSync(path.join(scansDir(projectId), `${scanId}.json`), req.file.buffer);
+
+  const record = {
+    id: scanId,
+    label: req.file.originalname || `${scanId}.json`,
+    addedAt: new Date().toISOString(),
+    replaces
+  };
+  state.scans.push(record);
+  state.updatedAt = new Date().toISOString();
+  writeJSON(statePath, state);
+  saveSnapshot(projectId, state);
+  res.json({ scan: record, scans: state.scans });
+});
+
+app.delete('/api/project/:id/scans/:scanId', (req, res) => {
+  const projectId = req.params.id;
+  const scanId = req.params.scanId;
+  if (!safeScanId(scanId)) return res.status(400).json({ error: 'Invalid scan id' });
+  const pDir = projectDir(projectId);
+  if (!fs.existsSync(pDir)) return res.status(404).json({ error: 'Project not found' });
+
+  const statePath = path.join(pDir, 'state.json');
+  const state = readJSON(statePath, {});
+  const scans = Array.isArray(state.scans) ? state.scans : [];
+  if (!scans.some(scan => scan.id === scanId)) return res.status(404).json({ error: 'Scan not found' });
+
+  const fp = path.join(scansDir(projectId), `${scanId}.json`);
+  if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  state.scans = scans.filter(scan => scan.id !== scanId);
+  state.updatedAt = new Date().toISOString();
+  writeJSON(statePath, state);
+  saveSnapshot(projectId, state);
+  res.json({ ok: true, scans: state.scans });
+});
+
 app.get('/api/project/:id/state', (req, res) => {
   const fp = path.join(projectDir(req.params.id), 'state.json');
   const state = readJSON(fp, { statuses: {} });
@@ -186,22 +401,47 @@ app.get('/api/project/:id/state', (req, res) => {
 
 app.post('/api/project/:id/state', (req, res) => {
   const id = req.params.id;
-  const pDir = projectDir(id);
-  if (!fs.existsSync(pDir)) return res.status(404).json({ error: 'Project not found' });
+  withStateLock(id, () => {
+    const pDir = projectDir(id);
+    if (!fs.existsSync(pDir)) return res.status(404).json({ error: 'Project not found' });
 
-  const existing = readJSON(path.join(pDir, 'state.json'), { statuses: {} });
-  const updated = { ...existing, ...req.body, updatedAt: new Date().toISOString() };
-  writeJSON(path.join(pDir, 'state.json'), updated);
-  saveSnapshot(id, updated);
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+    if (Object.prototype.hasOwnProperty.call(body, 'customFindings') && !Array.isArray(body.customFindings)) {
+      return res.status(400).json({ error: 'Invalid findings.' });
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'controlReviews') && (!body.controlReviews || typeof body.controlReviews !== 'object' || Array.isArray(body.controlReviews))) {
+      return res.status(400).json({ error: 'Invalid control reviews.' });
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'findingEdits') && (!body.findingEdits || typeof body.findingEdits !== 'object' || Array.isArray(body.findingEdits))) {
+      return res.status(400).json({ error: 'Invalid finding edits.' });
+    }
 
-  res.json({ ok: true });
+    const existing = readJSON(path.join(pDir, 'state.json'), { statuses: {} });
+    const updated = { ...existing, ...body, updatedAt: new Date().toISOString() };
+    if (Object.prototype.hasOwnProperty.call(body, 'customFindings')) {
+      updated.customFindings = sanitizeCustomFindings(body.customFindings);
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'controlReviews')) {
+      updated.controlReviews = sanitizeControlReviews(body.controlReviews);
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'findingEdits')) {
+      updated.findingEdits = sanitizeFindingEdits(body.findingEdits);
+    }
+    writeJSON(path.join(pDir, 'state.json'), updated);
+    if (body._snapshot !== false) saveSnapshot(id, updated);
+
+    res.json({ ok: true });
+  }).catch(err => {
+    console.error(err && err.stack ? err.stack.split('\n').slice(0, 4).join('\n') : 'state save failed');
+    if (!res.headersSent) res.status(500).json({ error: 'Internal error.' });
+  });
 });
 
 app.get('/api/project/:id/history', (req, res) => {
   const hDir = historyDir(req.params.id);
   ensureDir(hDir);
   const files = fs.readdirSync(hDir)
-    .filter(f => f.endsWith('.json'))
+    .filter(safeHistoryFilename)
     .sort()
     .reverse()
     .map(f => ({ filename: f, timestamp: f.replace('.json', '').replace(/-/g, (m, o) => o > 10 ? ':' : '-') }));
@@ -209,7 +449,8 @@ app.get('/api/project/:id/history', (req, res) => {
 });
 
 app.get('/api/project/:id/history/:filename', (req, res) => {
-  const fp = path.join(historyDir(req.params.id), req.params.filename);
+  const fp = historyPath(req.params.id, req.params.filename);
+  if (!fp) return res.status(400).json({ error: 'Invalid snapshot' });
   const data = readJSON(fp);
   if (!data) return res.status(404).json({ error: 'Snapshot not found' });
   res.json(data);
@@ -217,7 +458,8 @@ app.get('/api/project/:id/history/:filename', (req, res) => {
 
 app.post('/api/project/:id/history/:filename/restore', (req, res) => {
   const id = req.params.id;
-  const fp = path.join(historyDir(id), req.params.filename);
+  const fp = historyPath(id, req.params.filename);
+  if (!fp) return res.status(400).json({ error: 'Invalid snapshot' });
   const snapshot = readJSON(fp);
   if (!snapshot) return res.status(404).json({ error: 'Snapshot not found' });
 
@@ -237,6 +479,18 @@ app.delete('/api/project/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── Catalog stamp (written at image build from the Prowler git ref) ─────────
+
+app.get('/api/catalog', (req, res) => {
+  res.json(readJSON('/prowler-catalog.json', {
+    repo: null,
+    ref: null,
+    commit: null,
+    complianceFiles: null,
+    metadataFiles: null
+  }));
+});
+
 // ─── Compliance catalog endpoints ─────────────────────────────────────────────
 
 // List all available benchmarks with metadata (no full requirements payload)
@@ -244,7 +498,7 @@ app.get('/api/compliance/benchmarks', (req, res) => {
   const ids = walkComplianceDir(COMPLIANCE_DIR, '');
   const benchmarks = [];
   for (const id of ids) {
-    const data = readJSON(path.join(COMPLIANCE_DIR, id + '.json'), null);
+    const data = normalizeBenchmark(readJSON(path.join(COMPLIANCE_DIR, id + '.json'), null), id);
     if (!data || !Array.isArray(data.Requirements)) continue;
     const profiles = new Set();
     const types = new Set();
@@ -281,8 +535,9 @@ app.get('/api/compliance/benchmark/*', (req, res) => {
     return res.status(400).json({ error: 'Access denied' });
   }
   if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Not found' });
-  res.setHeader('Content-Type', 'application/json');
-  fs.createReadStream(fp).pipe(res);
+  const data = normalizeBenchmark(readJSON(fp, null), id);
+  if (!data) return res.status(404).json({ error: 'Not found' });
+  res.json(data);
 });
 
 // ─── Prowler check metadata endpoints ─────────────────────────────────────────
@@ -301,4 +556,25 @@ app.get('/api/check-metadata/:checkId', (req, res) => {
   res.json(data);
 });
 
-app.listen(PORT, () => console.log(`Prowler Reviewer backend running on :${PORT}`));
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = Number(err.status || err.statusCode || 0);
+  if (status === 413 || err.type === 'entity.too.large' || err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'Request too large.' });
+  }
+  if (status === 400) return res.status(400).json({ error: 'Invalid request.' });
+  console.error(err && err.stack ? err.stack.split('\n').slice(0, 4).join('\n') : 'request error');
+  return res.status(500).json({ error: 'Internal error.' });
+});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    const catalog = readJSON('/prowler-catalog.json', null);
+    const source = catalog?.commit
+      ? `catalog ${catalog.ref}@${String(catalog.commit).slice(0, 12)} (${catalog.complianceFiles} compliance files, ${catalog.metadataFiles} checks)`
+      : 'no catalog stamp';
+    console.log(`Prowler Reviewer backend running on :${PORT} — ${source}`);
+  });
+}
+
+module.exports = { app, auth };

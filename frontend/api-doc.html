@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API documentation — Prowler Reviewer</title>
+<style>
+@font-face { font-family: "Montserrat"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/montserrat-700.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/inter-400.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/inter-600.woff2") format("woff2"); }
+:root { --ink: #141414; --paper: #f9f8f8; --signal: #ca3e47; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Inter", sans-serif; font-size: 16px; line-height: 1.55; }
+header { background: var(--ink); color: var(--paper); border-bottom: 3px solid var(--signal); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+header a { color: var(--paper); font-size: 13px; font-weight: 600; }
+.logo { font-family: "Montserrat", sans-serif; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; font-size: 14px; }
+.logo span { color: var(--signal); }
+main { max-width: 52rem; margin: 0 auto; padding: 28px 24px 64px; }
+.links { display: flex; gap: 16px; margin: 0 0 24px; font-size: 14px; }
+.links a { color: var(--signal); font-weight: 600; }
+pre, code { font-family: "Inter", ui-monospace, monospace; }
+pre { background: #fff; border: 1px solid #d7d3d3; padding: 12px 14px; overflow: auto; }
+code { font-size: 0.92em; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; }
+th, td { border-top: 1px solid #d7d3d3; text-align: left; padding: 8px 10px; vertical-align: top; }
+h1, h2, h3 { font-family: "Montserrat", sans-serif; letter-spacing: 0.04em; }
+a { color: var(--signal); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo">Prowler <span>Reviewer</span></div>
+  <a href="/">Back to the app</a>
+</header>
+<main>
+  <p class="links"><a href="/openapi.yaml">OpenAPI specification</a><a href="/docs/agent-api.md">Markdown source</a></p>
+  <article id="doc">Loading the API documentation…</article>
+</main>
+<script>
+fetch('/docs/agent-api.md').then(res => {
+  if (!res.ok) throw new Error('Could not load the API documentation.');
+  return res.text();
+}).then(text => {
+  document.getElementById('doc').innerHTML = DOMPurify.sanitize(marked.parse(text));
+}).catch(err => {
+  document.getElementById('doc').textContent = err.message;
+});
+</script>
+</body>
+</html>

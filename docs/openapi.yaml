@@ -1,0 +1,1154 @@
+openapi: 3.0.3
+info:
+  title: Prowler Reviewer API
+  version: "1.0.0"
+  description: |
+    HTTP API for one local Prowler review project.
+
+    A person creates a key in the app. The harness calls `/api/v1` with
+    `Authorization: Bearer prk_…`. The browser session is not accepted on
+    `/api/v1`. The key is bound to one project, so paths do not take a
+    project id.
+
+    `/api/access` is the signed-in UI used to create and revoke keys. A
+    harness does not call it.
+
+    Scanner counts stay as the scan reported them. Finding review fields
+    and control review fields are separate records. This document describes
+    those records and the calls. It does not say which value to write.
+servers:
+  - url: http://localhost:8081
+    description: App origin. The published port is nginx. Do not call the backend port.
+tags:
+  - name: Review
+    description: Bearer-token calls for the project bound to the key.
+  - name: Access
+    description: Browser-session calls that create and revoke keys.
+security:
+  - bearerAuth: []
+paths:
+  /api/v1:
+    get:
+      tags: [Review]
+      operationId: getReviewRoot
+      summary: Project, key scope, and selected benchmarks
+      responses:
+        "200":
+          description: The project this key can see.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewRoot"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+  /api/v1/findings:
+    get:
+      tags: [Review]
+      operationId: listFindings
+      summary: List findings
+      description: |
+        Prowler findings and custom findings, already sorted by severity
+        (critical, high, medium, low, informational) and then by failing
+        asset count. The list omits details, impact, remediation,
+        observations, and the asset list. `review.reason` and `review.note`
+        are included.
+      parameters:
+        - $ref: "#/components/parameters/touched"
+        - $ref: "#/components/parameters/findingStatus"
+        - $ref: "#/components/parameters/scanner"
+        - $ref: "#/components/parameters/source"
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: A page of findings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+    post:
+      tags: [Review]
+      operationId: createFinding
+      summary: Create a custom finding
+      description: |
+        Requires the `write` scope. The server assigns `custom_` plus 32 hex
+        characters. At most 200 custom findings are kept. A write stores a
+        history snapshot. The key cannot list or restore snapshots.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindingWrite"
+            example:
+              title: Unused administrative access
+              severity: high
+              cloud: aws
+              service: iam
+              status: ""
+              reason: ""
+              note: ""
+              details: The role grants administrator access and has not been used.
+              impact: A stolen key can change the account.
+              remediation: Remove the unused policy.
+              observations: []
+              assets:
+                - name: arn:aws:iam::123456789012:role/Admin
+                  status: FAIL
+                  region: us-east-1
+              controls:
+                - benchmarkId: aws/cis_1.5_aws
+                  requirementId: "1.16"
+      responses:
+        "201":
+          description: The created finding, including assets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMedia"
+        "429":
+          $ref: "#/components/responses/TooMany"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /api/v1/findings/{id}:
+    parameters:
+      - $ref: "#/components/parameters/findingId"
+    get:
+      tags: [Review]
+      operationId: getFinding
+      summary: Read one finding
+      description: Includes details, impact, remediation, observations, and assets.
+      responses:
+        "200":
+          description: The finding.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+    patch:
+      tags: [Review]
+      operationId: updateFinding
+      summary: Update a finding
+      description: |
+        Requires the `write` scope. Omitted fields stay as they are.
+
+        On a Prowler finding, `title`, `severity`, `cloud`, `service`,
+        `details`, `impact`, `remediation`, `observations`, `controls`,
+        and `assets` are stored as a review copy. The uploaded scan file
+        stays unchanged. A field you send replaces that part of the copy.
+        An empty `title` shows the scan title again. `edited` is true when
+        a review copy exists.
+
+        On a custom finding, those content fields replace the stored value
+        when present. The merged record still needs a title and at least
+        one named asset. Linked controls must exist in the catalog.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindingPatch"
+            examples:
+              review:
+                summary: Set the pentester status, reason, and note
+                value:
+                  status: flagged
+                  reason: ""
+                  note: Checked against the account alias.
+              clear:
+                summary: Clear the pentester record
+                value:
+                  status: ""
+                  reason: ""
+                  note: ""
+      responses:
+        "200":
+          description: The updated finding, including assets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMedia"
+        "429":
+          $ref: "#/components/responses/TooMany"
+        "500":
+          $ref: "#/components/responses/Internal"
+    delete:
+      tags: [Review]
+      operationId: deleteFinding
+      summary: Delete a custom finding
+      description: |
+        Requires the `write` scope. A Prowler finding id returns 400
+        "Prowler findings cannot be deleted."
+      responses:
+        "200":
+          description: The custom finding was removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /api/v1/benchmarks:
+    get:
+      tags: [Review]
+      operationId: listBenchmarks
+      summary: Selected benchmarks
+      description: Benchmarks the project has selected. Each item includes its requirement count.
+      responses:
+        "200":
+          description: Selected benchmarks.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [benchmarks]
+                properties:
+                  benchmarks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BenchmarkCount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+  /api/v1/controls:
+    get:
+      tags: [Review]
+      operationId: listControls
+      summary: Benchmark controls and their reviews
+      description: |
+        Without `benchmark`, returns every requirement of the selected
+        benchmarks. `benchmark` loads one catalog id, including a benchmark
+        the project has not selected. `validated` keeps only controls whose
+        review status is set, or only controls whose review status is empty.
+      parameters:
+        - name: benchmark
+          in: query
+          description: Catalog benchmark id, such as `aws/cis_1.5_aws`.
+          schema:
+            type: string
+            maxLength: 180
+        - name: validated
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Controls grouped by benchmark.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlGroups"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooMany"
+    patch:
+      tags: [Review]
+      operationId: updateControl
+      summary: Set a control review
+      description: |
+        Requires the `write` scope. `benchmarkId` and `requirementId`
+        select the control. Omitted `status` or `note` keeps the current
+        value. An empty status and an empty note remove the review.
+        The control must exist in the catalog. At most 2000 control
+        reviews are kept.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ControlWrite"
+            example:
+              benchmarkId: aws/cis_1.5_aws
+              requirementId: "1.20"
+              status: fail
+              note: Analyzer is disabled in this region.
+      responses:
+        "200":
+          description: The control after the write.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Control"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMedia"
+        "429":
+          $ref: "#/components/responses/TooMany"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /api/access:
+    get:
+      tags: [Access]
+      operationId: listApiKeys
+      summary: List keys
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      description: Signed-in UI. The token and its hash are not returned.
+      responses:
+        "200":
+          description: Keys newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [keys]
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKey"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Access]
+      operationId: createApiKey
+      summary: Create a key
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      description: |
+        The response is the only time `token` is returned. Expiry must be
+        at least 60 seconds ahead and at most 90 days ahead, plus 36 hours
+        of clock slack. At most 20 unexpired keys exist at once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreate"
+      responses:
+        "201":
+          description: The new token and the key metadata.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, key]
+                properties:
+                  token:
+                    type: string
+                    pattern: "^prk_[A-Za-z0-9_-]{43}$"
+                  key:
+                    $ref: "#/components/schemas/ApiKey"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Twenty live keys already exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+  /api/access/{id}:
+    delete:
+      tags: [Access]
+      operationId: revokeApiKey
+      summary: Revoke a key
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The key was deleted and stops working immediately.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: prk_
+      description: |
+        `prk_` plus 43 base64url characters. Send `Authorization: Bearer prk_…`.
+        A session cookie is rejected.
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: pr_session
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-Requested-With
+      description: Required value is `prowler-reviewer` on browser write requests.
+  parameters:
+    findingId:
+      name: id
+      in: path
+      required: true
+      description: |
+        Id returned by the API. A Prowler id is the check id. When the
+        project has more than one cloud, it is `<cloud>::<check id>`.
+        A custom id starts with `custom_`.
+      schema:
+        type: string
+    touched:
+      name: touched
+      in: query
+      description: "`true` keeps findings with review.touched. `false` keeps the others."
+      schema:
+        type: string
+        enum: ["true", "false"]
+    findingStatus:
+      name: status
+      in: query
+      description: Exact `review.status`. An empty value does not filter, so the unset status cannot be selected with this parameter.
+      schema:
+        type: string
+        enum: [confirmed, flagged, false-positive, reported]
+    scanner:
+      name: scanner
+      in: query
+      description: Keep findings whose matching scanner count is greater than zero. A finding can match more than one value across separate requests.
+      schema:
+        type: string
+        enum: [fail, pass, manual]
+    source:
+      name: source
+      in: query
+      schema:
+        type: string
+        enum: [prowler, custom]
+    q:
+      name: q
+      in: query
+      description: Case-insensitive substring of title, id, or service. The first 200 characters are used.
+      schema:
+        type: string
+        maxLength: 200
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  responses:
+    BadRequest:
+      description: The body or a field was rejected. `error` is a short sentence.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: |
+        Missing, malformed, unknown, or expired key. Bodies are
+        "Invalid API key." and "This key has expired."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: |
+        "This address is not allowed for this key." or
+        "This key cannot change data."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Project, finding, benchmark, control, or key was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooLarge:
+      description: Body larger than 256 KB on `/api/v1`, or 16 KB on `/api/access`.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnsupportedMedia:
+      description: "A write did not send Content-Type: application/json."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooMany:
+      description: |
+        Read limit is 120 requests per key per minute. Write limit is 30
+        per key per minute. Failed authentication is 30 per address per
+        15 minutes. `Retry-After` is the wait in seconds.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Internal:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Ok:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+    ReviewRoot:
+      type: object
+      required: [project, scopes, expiresAt, key, review]
+      properties:
+        project:
+          type: object
+          required: [id, name, benchmarks]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            updatedAt:
+              type: string
+              nullable: true
+              format: date-time
+            benchmarks:
+              type: array
+              items:
+                $ref: "#/components/schemas/Benchmark"
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [read, write]
+        expiresAt:
+          type: string
+          format: date-time
+        key:
+          type: object
+          required: [id, name, prefix]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            prefix:
+              type: string
+              description: First 12 characters of the token.
+        review:
+          type: object
+          properties:
+            touched:
+              type: string
+            validated:
+              type: string
+    FindingPage:
+      type: object
+      required: [total, offset, limit, nextOffset, findings]
+      properties:
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+        nextOffset:
+          type: integer
+          nullable: true
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Finding"
+    Finding:
+      type: object
+      required: [id, source, title, severity, scanner, review, controls, failedAssetNames, failedAssetCount]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+          enum: [prowler, custom]
+        title:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        cloud:
+          type: string
+        service:
+          type: string
+        round:
+          type: string
+          description: Empty, `open`, `closed`, or `new` when a retest baseline exists.
+        scanner:
+          $ref: "#/components/schemas/ScannerCounts"
+        review:
+          $ref: "#/components/schemas/FindingReview"
+        scanControls:
+          type: array
+          items:
+            type: string
+          description: "Scan compliance labels such as CIS: 1.20. Empty for a custom finding."
+        controls:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatedControl"
+          description: Related requirements from the benchmarks loaded for this request. By default those are the selected benchmarks.
+        failedAssetNames:
+          type: array
+          maxItems: 25
+          items:
+            type: string
+        failedAssetCount:
+          type: integer
+        edited:
+          type: boolean
+          description: True when a Prowler finding has a review copy. The scan file is unchanged.
+    FindingDetail:
+      allOf:
+        - $ref: "#/components/schemas/Finding"
+        - type: object
+          properties:
+            details:
+              type: string
+            impact:
+              type: string
+            remediation:
+              type: string
+            observations:
+              type: array
+              items:
+                type: string
+            assets:
+              type: array
+              items:
+                $ref: "#/components/schemas/Asset"
+            custom:
+              type: object
+              description: Present on a custom finding.
+              properties:
+                controls:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ControlRef"
+                cloud:
+                  type: string
+                service:
+                  type: string
+    FindingReview:
+      type: object
+      required: [status, reason, note, touched]
+      properties:
+        status:
+          $ref: "#/components/schemas/FindingStatus"
+        reason:
+          type: string
+          description: Text stored with the finding. The UI labels this field as the false-positive reason.
+        note:
+          type: string
+        touched:
+          type: boolean
+          description: True when status, reason, or note is set, or when source is custom.
+    FindingWrite:
+      type: object
+      required: [title, assets]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        severity:
+          $ref: "#/components/schemas/Severity"
+        cloud:
+          type: string
+          maxLength: 40
+          default: Custom
+        service:
+          type: string
+          maxLength: 120
+        status:
+          $ref: "#/components/schemas/FindingStatus"
+        reason:
+          type: string
+          maxLength: 16000
+        note:
+          type: string
+          maxLength: 2097152
+          description: HTML. A pasted image is stored inline in this text.
+        details:
+          type: string
+          maxLength: 2097152
+          description: HTML or the original scan text. A pasted image is stored inline.
+        impact:
+          type: string
+          maxLength: 2097152
+        remediation:
+          type: string
+          maxLength: 2097152
+        observations:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 2097152
+        assets:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/AssetInput"
+        controls:
+          type: array
+          maxItems: 40
+          items:
+            $ref: "#/components/schemas/ControlRef"
+    FindingPatch:
+      type: object
+      description: Every field is optional. See the operation description for Prowler versus custom findings.
+      properties:
+        status:
+          $ref: "#/components/schemas/FindingStatus"
+        reason:
+          type: string
+          maxLength: 16000
+        note:
+          type: string
+          maxLength: 2097152
+        title:
+          type: string
+          maxLength: 200
+        severity:
+          $ref: "#/components/schemas/Severity"
+        cloud:
+          type: string
+          maxLength: 40
+        service:
+          type: string
+          maxLength: 120
+        details:
+          type: string
+          maxLength: 2097152
+        impact:
+          type: string
+          maxLength: 2097152
+        remediation:
+          type: string
+          maxLength: 2097152
+        observations:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 2097152
+        assets:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/AssetInput"
+        controls:
+          type: array
+          maxItems: 40
+          items:
+            $ref: "#/components/schemas/ControlRef"
+    FindingStatus:
+      type: string
+      enum: ["", confirmed, flagged, false-positive, reported]
+    Severity:
+      type: string
+      enum: [critical, high, medium, low, informational]
+    ScannerCounts:
+      type: object
+      required: [fail, pass, manual]
+      properties:
+        fail:
+          type: integer
+        pass:
+          type: integer
+        manual:
+          type: integer
+    Asset:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [FAIL, PASS, MANUAL, ""]
+        region:
+          type: string
+        service:
+          type: string
+        subscription:
+          type: string
+        resourceGroup:
+          type: string
+        round:
+          type: string
+          description: Empty, `open`, `closed`, or `new` on a retest.
+        absent:
+          type: boolean
+          description: True when a previously failing asset is no longer in the latest scan.
+    AssetInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 300
+        status:
+          type: string
+          enum: [FAIL, PASS, MANUAL]
+          default: FAIL
+        region:
+          type: string
+          maxLength: 200
+        service:
+          type: string
+          maxLength: 200
+        subscription:
+          type: string
+          maxLength: 200
+        resourceGroup:
+          type: string
+          maxLength: 200
+    RelatedControl:
+      type: object
+      properties:
+        benchmarkId:
+          type: string
+        benchmark:
+          type: string
+        requirementId:
+          type: string
+        description:
+          type: string
+        scannerStatus:
+          $ref: "#/components/schemas/ScannerStatus"
+        validated:
+          type: boolean
+        reviewStatus:
+          $ref: "#/components/schemas/ControlStatus"
+        note:
+          type: string
+    ControlRef:
+      type: object
+      required: [benchmarkId, requirementId]
+      properties:
+        benchmarkId:
+          type: string
+          maxLength: 180
+          description: Catalog id. Must not contain `..`.
+        requirementId:
+          type: string
+          maxLength: 80
+          description: "Requirement id from that benchmark. Must not contain ::."
+        label:
+          type: string
+          maxLength: 240
+    Benchmark:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        framework:
+          type: string
+        version:
+          type: string
+        provider:
+          type: string
+    BenchmarkCount:
+      allOf:
+        - $ref: "#/components/schemas/Benchmark"
+        - type: object
+          properties:
+            requirements:
+              type: integer
+    ControlGroups:
+      type: object
+      required: [benchmarks]
+      properties:
+        benchmarks:
+          type: array
+          items:
+            type: object
+            required: [benchmark, controls]
+            properties:
+              benchmark:
+                allOf:
+                  - $ref: "#/components/schemas/Benchmark"
+                  - type: object
+                    properties:
+                      selected:
+                        type: boolean
+              controls:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Control"
+    Control:
+      type: object
+      required: [id, scannerStatus, review, findings]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        section:
+          type: string
+        subsection:
+          type: string
+        profile:
+          type: string
+        checks:
+          type: array
+          description: Prowler check ids mapped to this requirement by the benchmark.
+          items:
+            type: string
+        scannerStatus:
+          $ref: "#/components/schemas/ScannerStatus"
+        failCount:
+          type: integer
+        passCount:
+          type: integer
+        manualCount:
+          type: integer
+        review:
+          $ref: "#/components/schemas/ControlReview"
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/LinkedFinding"
+    ControlReview:
+      type: object
+      required: [status, note, validated]
+      properties:
+        status:
+          $ref: "#/components/schemas/ControlStatus"
+        note:
+          type: string
+          maxLength: 8000
+        validated:
+          type: boolean
+          description: True when status is not empty.
+        updatedAt:
+          type: string
+          nullable: true
+          format: date-time
+    ControlWrite:
+      type: object
+      required: [benchmarkId, requirementId]
+      properties:
+        benchmarkId:
+          type: string
+          maxLength: 180
+        requirementId:
+          type: string
+          maxLength: 80
+        status:
+          $ref: "#/components/schemas/ControlStatus"
+        note:
+          type: string
+          maxLength: 8000
+    ControlStatus:
+      type: string
+      enum: ["", pass, fail, manual, n/a]
+    ScannerStatus:
+      type: string
+      enum: [fail, pass, manual, n/a]
+      description: |
+        Derived from Prowler checks on the requirement. `fail` when any
+        linked check has a fail count, otherwise `pass`, otherwise
+        `manual`, otherwise `n/a`. Custom findings do not change it.
+    LinkedFinding:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+          enum: [prowler, custom]
+        title:
+          type: string
+        reviewStatus:
+          $ref: "#/components/schemas/FindingStatus"
+        reason:
+          type: string
+        note:
+          type: string
+        touched:
+          type: boolean
+        failCount:
+          type: integer
+        passCount:
+          type: integer
+        manualCount:
+          type: integer
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [read, write]
+        expiresAt:
+          type: string
+          format: date-time
+        expired:
+          type: boolean
+        ipAllowlist:
+          type: array
+          items:
+            type: string
+        prefix:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          nullable: true
+          format: date-time
+    ApiKeyCreate:
+      type: object
+      required: [name, projectId, expiresAt]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        projectId:
+          type: string
+          pattern: "^proj_[A-Za-z0-9_-]+$"
+        expiresAt:
+          type: string
+          format: date-time
+        ipAllowlist:
+          description: "IPv4, IPv6, or CIDR entries. An empty list allows any address. 127.0.0.1 and ::1 also allow the Docker host gateway, so a harness on the same machine can use the published port. At most 32 entries. Host names are rejected."
+          oneOf:
+            - type: array
+              maxItems: 32
+              items:
+                type: string
+            - type: string
+        write:
+          type: boolean
+          default: false
+          description: "`true` adds the write scope. Read is always included."
