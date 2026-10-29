@@ -3,6 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -48,6 +49,32 @@ async function call(base, method, urlPath, { body, cookie, csrf = true, headers 
   try { json = text ? JSON.parse(text) : null; } catch { json = null; }
   const setCookie = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];
   return { status: res.status, json, text, setCookie };
+}
+
+function rawCall(port, method, urlPath, cookie) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      host: '127.0.0.1',
+      port,
+      method,
+      path: urlPath,
+      headers: {
+        Cookie: cookie,
+        'X-Requested-With': 'prowler-reviewer'
+      }
+    }, res => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch { json = null; }
+        resolve({ status: res.statusCode, json, text });
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 test('lockout window does not slide when the cap is reached', () => {
@@ -133,8 +160,15 @@ test('authentication', { timeout: 180000 }, async () => {
 
     const blockedWrite = await call(base, 'POST', '/api/project/missing/state', { cookie, csrf: false, body: { statuses: {} } });
     assert.equal(blockedWrite.status, 403);
-    const missingProject = await call(base, 'POST', '/api/project/missing/state', { cookie, body: { statuses: {} } });
+    const badProject = await call(base, 'POST', '/api/project/missing/state', { cookie, body: { statuses: {} } });
+    assert.equal(badProject.status, 400);
+    const missingProject = await call(base, 'POST', '/api/project/proj_missing/state', { cookie, body: { statuses: {} } });
     assert.equal(missingProject.status, 404);
+    const traversed = await rawCall(server.address().port, 'DELETE', '/api/project/..', cookie);
+    assert.equal(traversed.status, 400);
+    assert.equal(fs.existsSync(path.join(tmp, 'auth', 'account.json')), true);
+    const badHistory = await rawCall(server.address().port, 'GET', '/api/project/proj_missing/history/..%2F..%2Fauth%2Faccount.json', cookie);
+    assert.equal(badHistory.status, 400);
 
     const again = await call(base, 'POST', '/api/auth/register', { body: { username: 'other', password: NEXT } });
     assert.equal(again.status, 403);

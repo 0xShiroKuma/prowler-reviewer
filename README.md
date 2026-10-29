@@ -125,7 +125,7 @@ One account per installation. It is created in the browser on first launch, then
 - Sign-in is limited to 5 failures per 15 minutes. The failure message is the same for an unknown username and a wrong password.
 - State-changing requests must send `X-Requested-With: prowler-reviewer` and, for JSON, `Content-Type: application/json`.
 - Set `COOKIE_SECURE=1` on the backend when the site is served over HTTPS. Leave it unset for plain HTTP on localhost, or the browser will not send the cookie.
-- The published port listens on all interfaces. To keep it on this machine only, change the compose port mapping to `127.0.0.1:8081:80`.
+- The published port listens on this machine only (`127.0.0.1:8081`).
 - Anyone who can run commands in the backend container can reset the password. Treat Docker access as root access to this app.
 
 A signed-in user can change the password from the **Password** button. That signs every session out.

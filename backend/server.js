@@ -29,12 +29,43 @@ app.use('/api/auth', auth.router);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
-function projectDir(id) { return path.join(DATA_DIR, 'projects', id); }
+function safeProjectId(id) {
+  return typeof id === 'string' && /^proj_[A-Za-z0-9_-]+$/.test(id);
+}
+
+function projectDir(id) {
+  if (!safeProjectId(id)) {
+    const err = new Error('Invalid project id');
+    err.status = 400;
+    throw err;
+  }
+  const root = path.resolve(DATA_DIR, 'projects');
+  const dir = path.resolve(root, id);
+  if (!dir.startsWith(root + path.sep)) {
+    const err = new Error('Invalid project id');
+    err.status = 400;
+    throw err;
+  }
+  return dir;
+}
+
 function historyDir(id) { return path.join(projectDir(id), 'history'); }
 function scansDir(id) { return path.join(projectDir(id), 'scans'); }
 
 function safeScanId(id) {
   return typeof id === 'string' && /^scan_[A-Za-z0-9_-]+$/.test(id);
+}
+
+function safeHistoryFilename(name) {
+  return typeof name === 'string' && /^\d{4}-\d{2}-\d{2}T[0-9-]+Z\.json$/.test(name);
+}
+
+function historyPath(projectId, filename) {
+  if (!safeHistoryFilename(filename)) return null;
+  const dir = path.resolve(historyDir(projectId));
+  const fp = path.resolve(dir, filename);
+  if (!fp.startsWith(dir + path.sep)) return null;
+  return fp;
 }
 
 // A project that only has raw.json keeps working until a scan is added.
@@ -227,6 +258,11 @@ app.use(express.json({ limit: '500mb', strict: true }));
 
 // ─── Project endpoints ────────────────────────────────────────────────────────
 
+app.use('/api/project/:id', (req, res, next) => {
+  if (!safeProjectId(req.params.id)) return res.status(400).json({ error: 'Invalid project id' });
+  next();
+});
+
 app.get('/api/projects', (req, res) => {
   const base = path.join(DATA_DIR, 'projects');
   ensureDir(base);
@@ -405,7 +441,7 @@ app.get('/api/project/:id/history', (req, res) => {
   const hDir = historyDir(req.params.id);
   ensureDir(hDir);
   const files = fs.readdirSync(hDir)
-    .filter(f => f.endsWith('.json'))
+    .filter(safeHistoryFilename)
     .sort()
     .reverse()
     .map(f => ({ filename: f, timestamp: f.replace('.json', '').replace(/-/g, (m, o) => o > 10 ? ':' : '-') }));
@@ -413,7 +449,8 @@ app.get('/api/project/:id/history', (req, res) => {
 });
 
 app.get('/api/project/:id/history/:filename', (req, res) => {
-  const fp = path.join(historyDir(req.params.id), req.params.filename);
+  const fp = historyPath(req.params.id, req.params.filename);
+  if (!fp) return res.status(400).json({ error: 'Invalid snapshot' });
   const data = readJSON(fp);
   if (!data) return res.status(404).json({ error: 'Snapshot not found' });
   res.json(data);
@@ -421,7 +458,8 @@ app.get('/api/project/:id/history/:filename', (req, res) => {
 
 app.post('/api/project/:id/history/:filename/restore', (req, res) => {
   const id = req.params.id;
-  const fp = path.join(historyDir(id), req.params.filename);
+  const fp = historyPath(id, req.params.filename);
+  if (!fp) return res.status(400).json({ error: 'Invalid snapshot' });
   const snapshot = readJSON(fp);
   if (!snapshot) return res.status(404).json({ error: 'Snapshot not found' });
 
